@@ -1,0 +1,4 @@
+dataset:
+  refcoco:
+    image_dir: null
+    anno_dir: null
