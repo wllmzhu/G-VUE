@@ -12,10 +12,13 @@ General *Vision* Understanding Evaluation
 **Category 2: Ground** 
 
 * **Task 2.1:** Segmentation (COCO)
+  * image -> dense map
 * **Task 2.2:** Phrase Grounding (Ref-COCO)
+  * image+text -> bounding box coordinates
 * **Task 2.3:** Human-Object Interaction (V-COCO)
+  * image -> bounding box coordinates
 * **Task 2.4:** Vision-Language Retrieval (Flickr30k)
-
+  * image+text -> class label
 
 **Category 3: Reason** 
 
