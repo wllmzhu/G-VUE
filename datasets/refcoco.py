@@ -16,7 +16,7 @@ class RefcocoDataset(Dataset):
         self.subset = subset
         self.task = task
         self.samples = io.load_json_object(
-            os.path.join(info['anno_dir'], f'{subset}.json')
+            os.path.join(info.anno_dir, f'{subset}.json')
         )
         print(f'load {len(self.samples)} samples in {self.dataset_name}_{self.subset}')
         self.transform = make_coco_transforms(subset, cautious=True)
@@ -25,7 +25,7 @@ class RefcocoDataset(Dataset):
         return len(self.samples)
 
     def read_image(self, img_name):
-        img = Image.open(os.path.join(self.info.img_dir, img_name)).convert("RGB")
+        img = Image.open(os.path.join(self.info.img_dir, img_name)).convert('RGB')
         return img
 
     def __getitem__(self, i):
@@ -48,7 +48,7 @@ class RefcocoDataset(Dataset):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)
 
 
-@hydra.main(config_path="../config", config_name="phrase_grounding.yaml")
+@hydra.main(config_path='../config', config_name='phrase_grounding.yaml')
 def main(cfg):
     dataset = RefcocoDataset('refcoco', cfg.dataset.refcoco, 'val', 'phrase_grounding')
     dataloader = dataset.get_dataloader(batch_size=8, shuffle=False)
