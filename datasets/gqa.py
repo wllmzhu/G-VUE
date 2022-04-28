@@ -1,3 +1,8 @@
+"""
+Dataloader for GQA
+Mostly copy-paste from Annotated-BUTD
+"""
+
 import torch
 import torch.utils.data as data
 import json
