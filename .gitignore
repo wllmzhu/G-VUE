@@ -1,6 +1,5 @@
-datasets/data
 .DS_Store
-scripts/.DS_Store
-configs/.DS_Store
-datasets/.DS_Store
-models/.DS_Store
+__pycache__/
+
+data/hoi/*/
+data/vqa/*/
