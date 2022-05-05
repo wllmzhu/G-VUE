@@ -2,12 +2,13 @@ import os
 
 import utils.io as io
 
+script_dir = os.path.dirname(os.path.realpath(__file__))
 
 class HicoConstants(io.JsonSerializableClass):
     def __init__(
             self,
-            clean_dir=os.path.join(os.getcwd(),'data_symlinks/hico_clean'),
-            proc_dir=os.path.join(os.getcwd(),'data_symlinks/hico_processed')):
+            clean_dir=os.path.join(script_dir,'../../data/hoi/hico_20160224_det'),
+            proc_dir=os.path.join(script_dir,'../../data/hoi/hico_processed')):
         self.clean_dir = clean_dir
         self.proc_dir = proc_dir
 
