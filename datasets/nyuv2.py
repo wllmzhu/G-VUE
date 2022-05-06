@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 import utils.io as io
-from utils.transforms import make_nyuv2_transforms
+from utils.nyuv2_transforms import make_nyuv2_transforms
 from utils.misc import collate_fn
 
 

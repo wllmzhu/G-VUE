@@ -1,0 +1,3 @@
+dataset:
+  hicodet:
+    data_dir: ../data/hicodet/
