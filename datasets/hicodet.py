@@ -592,3 +592,10 @@ def build(image_set, test_scale=-1):
     dataset = HICODET(root='./data/hico', annFile=annotation_file,
                            transforms=make_hico_transforms(image_set, test_scale), image_set=image_set)
     return dataset
+
+
+def main():
+    dataset = build("test")
+
+if __name__ == '__main__':
+    main()
