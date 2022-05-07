@@ -19,17 +19,16 @@ class JointModel(nn.Module):
         self.cfg = cfg
         self.v_backbone = build_v_backbone(cfg.backbone_key)
         self.l_backbone = RoBERTa()
-        self.v_proj = nn.Linear(cfg.v_backbone.hidden_dim, cfg.hidden_dim)
         self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
-        self.decoder = build_decoder(cfg.task.decoder_type)
+        self.decoder = build_decoder(cfg.task.decoder)
         self.initialize(cfg.v_backbone.fix)
     
     def initialize(self, fix_v_backbone=True):
         for p in self.l_backbone.parameters():
-            p.requires_grad = False
+            p.requires_grad_(False)
         if fix_v_backbone:
             for p in self.v_backbone.parameters():
-                p.requires_grad = False
+                p.requires_grad_(False)
 
     def forward(self, imgs, txts=None, train=True):
         """
@@ -40,13 +39,12 @@ class JointModel(nn.Module):
         
         if txts is not None:
             txt_seqs, txt_pad_masks = self.encode_txt(txts)
+            txt_seqs = self.l_proj(txt_seqs)
         #  [B, T, D],  [B, T]
         
-        img_seqs = self.v_backbone(imgs)
+        v_feature_list = self.v_backbone(imgs)
 
-        features, pos = self.v_backbone(imgs)
-
-        return self.decoder(img_seqs, txt_seqs, txt_pad_masks, train=train)
+        return self.decoder(v_feature_list, txt_seqs, txt_pad_masks, train=train)
 
     @torch.no_grad()
     def encode_txt(self, txts):
