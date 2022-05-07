@@ -1,0 +1,7 @@
+dataset:
+  key: RefCOCODataset
+  info:
+    img_dir: /scratch/generalvision/mscoco/images/train2014
+    anno_dir: /scratch/generalvision/refexp/annos/refcoco
+
+decoder_type: QueryType

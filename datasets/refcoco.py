@@ -6,9 +6,11 @@ from torch.utils.data import DataLoader, Dataset
 import utils.io as io
 from utils.refcoco_transforms import make_coco_transforms
 from utils.misc import collate_fn
+from .base import DATASET
 
 
-class RefcocoDataset(Dataset):
+@DATASET.register()
+class RefCOCODataset(Dataset):
     def __init__(self, dataset_name, info, subset, task):
         super().__init__()
         self.dataset_name = dataset_name
@@ -50,7 +52,7 @@ class RefcocoDataset(Dataset):
 
 @hydra.main(config_path='../config', config_name='phrase_grounding.yaml')
 def main(cfg):
-    dataset = RefcocoDataset('refcoco', cfg.dataset.refcoco, 'val', 'phrase_grounding')
+    dataset = RefCOCODataset('refcoco', cfg.dataset.refcoco, 'val', 'phrase_grounding')
     dataloader = dataset.get_dataloader(batch_size=8, shuffle=False)
     for data in dataloader:
         imgs, queries, targets, target_type, task_tag = data

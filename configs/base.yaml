@@ -1,0 +1,53 @@
+hydra:
+  run:
+    dir: output/ # ${exp_dir}
+
+defaults:
+  - _self_
+  - task: null
+  - backbone: null
+
+exp_name: default
+output_dir: /scratch/huangjiangyong/data/GVUE
+exp_dir: ${output_dir}/${exp_name}
+tb_dir: ${exp_dir}/tb_logs
+ckpt_dir: ${exp_dir}/ckpts
+
+gpu: 0
+num_nodes: 1
+ngpus_per_node: 4
+world_size: null
+rank: 0
+dist_backend: nccl
+dist_url: 'tcp://localhost:10001'
+multiprocessing_distributed: True
+
+model:
+  task: ${task}
+  hidden_dim: 512
+  v_backbone: ${backbone}
+  l_backbone:
+    cfg_dir: /scratch/huangjiangyong/data/roberta-base
+    hidden_dim: 768
+  decoder: ${task.decoder_type}
+
+training:
+  ckpt: ${exp_dir}/ckpts/model.pth
+  num_epochs: 40
+  batch_size: 128
+  num_workers: 32
+  lr: 1e-4
+  betas: [0.9, 0.99]
+  weight_decay: 0.01
+  lr_warmup: True
+  lr_linear_decay: True
+  lr_warmup_fraction: 0.02
+  log_step: 10
+  vis_step: 5000
+  clip_max_norm: 1.0
+  num_vis_samples: 15
+
+eval:
+  ckpt: ${exp_dir}/ckpts/model.pth
+  batch_size: 100
+  num_workers: 20

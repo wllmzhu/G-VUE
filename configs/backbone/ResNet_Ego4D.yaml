@@ -1,0 +1,3 @@
+key: ResNet_Ego4D
+fix: True
+hidden_dim: 2048

@@ -10,6 +10,8 @@ import numpy as np
 import os
 import pickle
 from PIL import Image
+from .base import DATASET
+
 
 class Dictionary(object):
 
@@ -130,6 +132,7 @@ def gqa_create_answers(gqa_q='data/GQA-Questions', cache='data/GQA-Cache'):
     return ans2label, label2ans
 
 
+@DATASET.register()
 class GQADataset(data.Dataset):
     """Dataloader for GQA Dataset"""
 
