@@ -62,7 +62,7 @@ def build(image_set, test_scale=-1):
 
 def main():
     dataset = build("test")
-    print(dataset[0])
+    print(dataset[0][1:])
 
 if __name__ == '__main__':
     main()
