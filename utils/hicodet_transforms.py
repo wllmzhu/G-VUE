@@ -177,7 +177,7 @@ coco_instance_ID_to_name = {
     90: "toothbrush",
 }
 
-@hydra.main(config_path='../config', config_name='hoi.yaml')
+@hydra.main(config_path='../configs/task', config_name='hoi.yaml')
 def get_hoi_interaction_names(cfg):
     return json.loads(
         open(os.path.join(cfg.hicodet.data_dir, 'hico_verb_names.json'),'r').readlines()[0])['verb_names']
@@ -252,7 +252,7 @@ def get_hoi_annotation_from_odgt(item, total_boxes, scale):
         object_box = x1 // scale, y1 // scale, x2 // scale, y2 // scale, cls_id
         if cls_id == -1 or x1 >= x2 or y1 >= y2:
             continue
-        hoi_id = get_hoi_interaction_names.index(hoi['interaction'])
+        hoi_id = get_hoi_interaction_names().index(hoi['interaction'])
         hoi_box = get_interaction_box(human_box=human_box, object_box=object_box, hoi_id=hoi_id)
 
         human_boxes.append(human_box[0:4])

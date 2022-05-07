@@ -1,0 +1,7 @@
+dataset:
+  key: HICODETDataset
+  info:
+    img_dir: null
+    anno_dir: null
+
+decoder_type: QueryType + LabelType
