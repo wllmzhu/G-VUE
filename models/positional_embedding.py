@@ -8,79 +8,71 @@ from torch import nn
 
 
 class PositionalEmbeddingSine(nn.Module):
-    """
-    This is a more standard version of the positional embedding, generalized to images.
-    """
-    def __init__(self, num_pos_feats=64, temperature=10000, normalize=False, scale=None):
+    def __init__(self, shape, num_pos_feats, temperature=10000):
         super().__init__()
-        self.num_pos_feats = num_pos_feats
-        self.temperature = temperature
-        self.normalize = normalize
-        if scale is not None and normalize is False:
-            raise ValueError("normalize should be True if scale is passed")
-        if scale is None:
-            scale = 2 * math.pi
-        self.scale = scale
+        h, w = shape
+        scale = 2 * math.pi
+        eps = 1e-6
 
-    def forward(self, tensor_list):
-        x = tensor_list.tensors
-        mask = tensor_list.mask
-        assert mask is not None
-        not_mask = ~mask
-        y_embed = not_mask.cumsum(1, dtype=torch.float32)
-        x_embed = not_mask.cumsum(2, dtype=torch.float32)
-        if self.normalize:
-            eps = 1e-6
-            y_embed = y_embed / (y_embed[:, -1:, :] + eps) * self.scale
-            x_embed = x_embed / (x_embed[:, :, -1:] + eps) * self.scale
+        y_embed = torch.arange(1, h+1).view(h, 1).repeat(1, w)
+        x_embed = torch.arange(1, w+1).view(1, w).repeat(h, 1)
 
-        dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=x.device)
-        dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+        y_embed = y_embed / (y_embed[-1:, :] + eps) * scale
+        x_embed = x_embed / (x_embed[:, -1:] + eps) * scale
 
+        dim_t = torch.arange(num_pos_feats, dtype=torch.float32)
+        dim_t = temperature ** (2 * (dim_t // 2) / num_pos_feats)
 
-        pos_x = x_embed[:, :, :, None] / dim_t
-        pos_y = y_embed[:, :, :, None] / dim_t
-        pos_x = torch.stack((pos_x[:, :, :, 0::2].sin(), pos_x[:, :, :, 1::2].cos()), dim=4).flatten(3)
-        pos_y = torch.stack((pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4).flatten(3)
-        pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
-        return pos
+        pos_x = x_embed[:, :, None] / dim_t
+        pos_y = y_embed[:, :, None] / dim_t
+        # [h, w, num_pos_feats]
+
+        pos_x = torch.stack((pos_x[:, :, 0::2].sin(), pos_x[:, :, 1::2].cos()), dim=3).flatten(2)
+        pos_y = torch.stack((pos_y[:, :, 0::2].sin(), pos_y[:, :, 1::2].cos()), dim=3).flatten(2)
+        # [h, w, num_pos_feats]
+
+        self.embed = torch.cat((pos_y, pos_x), dim=2).flatten(0, 1)   # [hw, 2*num_pos_feats]
+        self.embed.requires_grad_(False)
+
+    def forward(self, bs):
+        return self.embed.unsqueeze(0).repeat(bs, 1, 1)
 
 
 class PositionalEmbeddingLearned(nn.Module):
     """
     Absolute pos embedding, learned.
     """
-    def __init__(self, num_pos_feats=256):
+    def __init__(self, shape, num_pos_feats):
         super().__init__()
-        self.row_embed = nn.Embedding(50, num_pos_feats)
-        self.col_embed = nn.Embedding(50, num_pos_feats)
+        self.h, self.w = shape
+        self.row_embed = nn.Embedding(self.h, num_pos_feats)
+        self.col_embed = nn.Embedding(self.w, num_pos_feats)
         self.reset_parameters()
 
     def reset_parameters(self):
         nn.init.uniform_(self.row_embed.weight)
         nn.init.uniform_(self.col_embed.weight)
+        self.row_embed.requires_grad_(True)
+        self.col_embed.requires_grad_(True)
 
-    def forward(self, tensor_list: NestedTensor):
-        x = tensor_list.tensors
-        h, w = x.shape[-2:]
-        i = torch.arange(w, device=x.device)
-        j = torch.arange(h, device=x.device)
-        x_emb = self.col_embed(i)
-        y_emb = self.row_embed(j)
+    def forward(self, bs):
+        y_emb = self.row_embed
+        x_emb = self.col_embed
+
         pos = torch.cat([
-            x_emb.unsqueeze(0).repeat(h, 1, 1),
-            y_emb.unsqueeze(1).repeat(1, w, 1),
-        ], dim=-1).permute(2, 0, 1).unsqueeze(0).repeat(x.shape[0], 1, 1, 1)
+            y_emb.unsqueeze(1).repeat(1, self.w, 1),
+            x_emb.unsqueeze(0).repeat(self.h, 1, 1)
+        ], dim=-1).flatten(0, 1).unsqueeze(0).repeat(bs, 1, 1)
         return pos
 
 
-def build_positional_embedding(cfg):
-    N_steps = cfg.hidden_dim // 2
-    if cfg.type == 'sine':
-        pos_embed = PositionalEmbeddingSine(N_steps, normalize=True)
-    elif cfg.type == 'learned':
-        pos_embed = PositionalEmbeddingLearned(N_steps)
+def build_positional_embedding(type, shape, hidden_dim):
+    N_steps = hidden_dim // 2
+    if type == 'sine':
+        pos_embed = PositionalEmbeddingSine(shape, N_steps)
+    elif type == 'learned':
+        pos_embed = PositionalEmbeddingLearned(shape, N_steps)
     else:
-        raise ValueError(f"not supported {cfg.type}")
+        raise ValueError(f"not supported {type}")
 
     return pos_embed
