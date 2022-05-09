@@ -30,7 +30,7 @@ class JointModel(nn.Module):
             for p in self.v_backbone.parameters():
                 p.requires_grad_(False)
 
-    def forward(self, imgs, txts=None, train=True):
+    def forward(self, imgs, txts=None):
         """
         intermediate tensors are required to be inferred and stored in buffer_path offline
         buffer_names: stacked string-ids of data samples
@@ -44,7 +44,7 @@ class JointModel(nn.Module):
         
         v_feature_list = self.v_backbone(imgs)
 
-        return self.decoder(v_feature_list, txt_seqs, txt_pad_masks, train=train)
+        return self.decoder(v_feature_list, txt_seqs, txt_pad_masks)
 
     @torch.no_grad()
     def encode_txt(self, txts):
