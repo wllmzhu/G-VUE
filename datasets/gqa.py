@@ -1,217 +1,95 @@
-"""
-Dataloader for GQA
-Mostly copy-paste from Annotated-BUTD
-"""
-
-import torch
-import torch.utils.data as data
-import json
-import numpy as np
 import os
-import pickle
+import hydra
 from PIL import Image
-from .base import DATASET
-
-
-class Dictionary(object):
-
-    def __init__(self, word2idx=None, idx2word=None):
-        if word2idx is None:
-            word2idx = {}
-        if idx2word is None:
-            idx2word = []
-        self.word2idx, self.idx2word = word2idx, idx2word
-
-    @property
-    def ntoken(self):
-        return len(self.word2idx)
-
-    @property
-    def padding_idx(self):
-        return len(self.word2idx)
-
-    def tokenize(self, sentence, add_word):
-        sentence = sentence.lower().replace(',', '').replace('.', '').replace('?', '').replace('\'s', ' \'s')
-        words, tokens = sentence.split(), []
-
-        if add_word:
-            for w in words:
-                tokens.append(self.add_word(w))
-        else:
-            for w in words:
-                tokens.append(self.word2idx.get(w, self.padding_idx))
-
-        return tokens
-
-    def add_word(self, word):
-        if word not in self.word2idx:
-            self.idx2word.append(word)
-            self.word2idx[word] = len(self.idx2word) - 1
-        return self.word2idx[word]
-
-    def __len__(self):
-        return len(self.idx2word)
-
-
-def gqa_create_dictionary_glove(gqa_q='data/GQA-Questions', glove='data/GloVe/glove.6B.300d.txt',
-                                cache='data/GQA-Cache'):
-
-    dfile, gfile = os.path.join(cache, 'dictionary.pkl'), os.path.join(cache, 'glove.npy')
-    if os.path.exists(dfile) and os.path.exists(gfile):
-        with open(dfile, 'rb') as f:
-            dictionary = pickle.load(f)
-
-        weights = np.load(gfile)
-        return dictionary, weights
-
-    elif not os.path.exists(cache):
-        os.makedirs(cache)
-
-    dictionary = Dictionary()
-    questions = ['train_balanced_questions.json', 'val_balanced_questions.json', 'testdev_balanced_questions.json',
-                 'test_balanced_questions.json']
-
-    print('\t[*] Creating Dictionary from GQA Questions...')
-    for qfile in questions:
-        qpath = os.path.join(gqa_q, qfile)
-        with open(qpath, 'r') as f:
-            examples = json.load(f)
-
-        for ex_key in examples:
-            ex = examples[ex_key]
-            dictionary.tokenize(ex['question'], add_word=True)
-
-    print('\t[*] Loading GloVe Embeddings...')
-    with open(glove, 'r') as f:
-        entries = f.readlines()
-
-    assert len(entries[0].split()) - 1 == 300, 'ERROR - Not using 300-dimensional GloVe Embeddings!'
-
-    weights = np.zeros((len(dictionary.idx2word), 300), dtype=np.float32)
-
-    for entry in entries:
-        word_vec = entry.split()
-        word, vec = word_vec[0], list(map(float, word_vec[1:]))
-        if word in dictionary.word2idx:
-            weights[dictionary.word2idx[word]] = vec
-
-    with open(dfile, 'wb') as f:
-        pickle.dump(dictionary, f)
-    np.save(gfile, weights)
-
-    return dictionary, weights
-
-
-def gqa_create_answers(gqa_q='data/GQA-Questions', cache='data/GQA-Cache'):
-
-    dfile = os.path.join(cache, 'answers.pkl')
-    if os.path.exists(dfile):
-        with open(dfile, 'rb') as f:
-            ans2label, label2ans = pickle.load(f)
-
-        return ans2label, label2ans
-
-    ans2label, label2ans = {}, []
-    questions = ['train_balanced_questions.json', 'val_balanced_questions.json', 'testdev_balanced_questions.json']
-
-    print('\t[*] Creating Answer Labels from GQA Question/Answers...')
-    for qfile in questions:
-        qpath = os.path.join(gqa_q, qfile)
-        with open(qpath, 'r') as f:
-            examples = json.load(f)
-
-        for ex_key in examples:
-            ex = examples[ex_key]
-            if not ex['answer'].lower() in ans2label:
-                ans2label[ex['answer'].lower()] = len(ans2label)
-                label2ans.append(ex['answer'])
-
-    with open(dfile, 'wb') as f:
-        pickle.dump((ans2label, label2ans), f)
-
-    return ans2label, label2ans
+import torch
+from torch.utils.data import DataLoader, Dataset
+import utils.io as io
+from utils.misc import collate_fn
+from base import DATASET
+from utils.gqa_transforms import make_gqa_transforms
 
 
 @DATASET.register()
-class GQADataset(data.Dataset):
-    """Dataloader for GQA Dataset"""
+class GQADataset(Dataset):
+    def __init__(self, dataset_name, info, subset):
+        super().__init__()
+        self.dataset_name = dataset_name
+        self.info = info
+        self.subsets = ['train', 'val', 'testdev']
+        self.subset = subset
+        assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets} (test is not a valid split for GQA because it contains questions only)'
+        self.transform = make_gqa_transforms(subset, cautious=True)
+        self._load_dataset()
+        self._build_dict()
 
-    def __init__(self, dictionary, ans2label, label2ans, gqa_q='data/GQA-Questions', img_dir='data/GQA-Images',
-                 mode='train'):
-        super(GQADataset, self).__init__()
-        self.dictionary, self.ans2label, self.label2ans = dictionary, ans2label, label2ans
+    def _load_dataset(self):
+        self.samples = io.load_json_object(
+            os.path.join(self.info.anno_dir, f'{self.subset}_balanced_questions.json')
+        )
+        print(f'load {len(self.samples)} samples in {self.dataset_name}_{self.subset}')
 
-        self.entries = load_dataset(ans2label, gqa_q=gqa_q, img_dir=img_dir, mode=mode)
+        # i-th entry to entry key, e.g. 0 -> '201307251', 1 -> '201640614'
+        self.i_to_key = {}
+        cur_i = 0
+        for key, _ in self.samples.items():
+            # Record entry key mapping 
+            self.i_to_key[cur_i] = key
+            cur_i += 1
 
-        self.tokenize()
-        self.tensorize()
-
-    def tokenize(self, max_length=40):
-        for entry in self.entries:
-            tokens = self.dictionary.tokenize(entry['question'], False)
-            tokens = tokens[:max_length]
-            if len(tokens) < max_length:
-                padding = [self.dictionary.padding_idx] * (max_length - len(tokens))
-                tokens = padding + tokens
-            assert len(tokens) == max_length, "Tokenized & Padded Question != Max Length!"
-            entry['q_token'] = tokens
-
-    def tensorize(self):
-        for entry in self.entries:
-            question = torch.from_numpy(np.array(entry['q_token']))
-            entry['q_token'] = question
-
-    def __getitem__(self, index):
-        entry = self.entries[index]
-        question = entry['q_token']
-        target = entry['answer']
-        image = entry['image']
-
-        return image, question, target
-
+    def _build_dict(self):
+        # Answer to answer ID, e.g. 'yes' -> 0, 'cat' -> 1.
+        self.answer_to_idx = {}
+        cur_idx = 0
+        for subset in self.subsets:
+            if subset == self.subset:
+                split = self.samples
+            else:
+                continue
+                # split = io.load_json_object(
+                #     os.path.join(self.info.anno_dir, f'{subset}_balanced_questions.json')
+                # )
+                # print(f'(building answer ID dictionary) load {len(split)} samples in {self.dataset_name}_{subset}')
+            for _, sample in split.items():
+                answer = sample['answer']
+                if answer not in self.answer_to_idx:
+                    # Record answer ID mapping
+                    self.answer_to_idx[answer] = cur_idx
+                    cur_idx += 1
+                
     def __len__(self):
-        return len(self.entries)
+        return len(self.samples)
 
+    def read_image(self, img_name):
+        img = Image.open(os.path.join(self.info.img_dir, img_name)).convert('RGB')
+        return img
 
+    def __getitem__(self, i):
+        sample = self.samples[self.i_to_key[i]]
+        
+        img = self.read_image('{}.jpg'.format(sample['imageId']))
+        question = sample['question'].lower().replace(',', '').replace('.', '').replace('?', '').replace('\'s', ' \'s')
+        answer = sample['answer']
 
-def load_dataset(ans2label, gqa_q='data/GQA-Questions', img_dir='data/GQA-Images', mode='train'):
+        img, _ = self.transform(img, None)
 
-    question_path = os.path.join(gqa_q, '%s_balanced_questions.json' % mode)
-    with open(question_path, 'r') as f:
-        examples = json.load(f)
+        #image, question, answer(vocab id)
+        return img, question, self.answer_to_idx[answer]
 
-    print('\t[*] Creating GQA %s Entries...' % mode)
-    entries = []
-    for ex_key in sorted(examples):
-        entry = create_entry(examples[ex_key], ex_key, ans2label, img_dir)
-        entries.append(entry)
+    def get_dataloader(self, **kwargs):
+        return DataLoader(self, collate_fn=collate_fn, **kwargs)
 
-    return entries
-
-def create_entry(example, qid, ans2label, img_dir):
-    img_id = example['imageId']
-
-    entry = {
-        'question_id': qid,
-        'image_id': img_id,
-        'image': Image.open(os.path.join(img_dir, img_id)).convert("RGB"),
-        'question': example['question'],
-        'answer': ans2label[example['answer'].lower()]
-    }
-    return entry
-
-
-def main():
-    print('\n[*] Pre-processing GQA Questions...')
-    dictionary, emb = gqa_create_dictionary_glove(gqa_q='data/GQA-Questions', glove='data/GloVe/glove.6B.300d.txt', cache='data/GQA-Cache')
-
-    print('\n[*] Pre-processing GQA Answers...')
-    ans2label, label2ans = gqa_create_answers(gqa_q='data/GQA-Questions', cache='data/GQA-Cache')
-
-    print('\n[*] Building GQA Train and TestDev Datasets...')
-    train_dataset = GQADataset(dictionary, ans2label, label2ans, gqa_q='data/GQA-Questions', mode='train')
-
-    dev_dataset = GQADataset(dictionary, ans2label, label2ans, gqa_q='data/GQA-Questions', mode='testdev')
+@hydra.main(config_path='../configs/task', config_name='vqa.yaml')
+def main(cfg):
+    dataset = GQADataset('gqa', cfg.dataset.info, 'val')
+    dataloader = dataset.get_dataloader(batch_size=8, shuffle=False)
+    for data in dataloader:
+        imgs, queries, answer_id = data
+        print({
+            'image': imgs,
+            'text': queries,
+            'answer_id': answer_id
+        })
+        break
 
 if __name__ == '__main__':
     main()

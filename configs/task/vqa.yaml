@@ -1,0 +1,7 @@
+dataset:
+  key: GQADataset
+  info:
+    img_dir: /Users/williamzhu/GitHub/G-VUE/data/gqa/images
+    anno_dir: /Users/williamzhu/GitHub/G-VUE/data/gqa/annos
+
+decoder_type: LabelType
