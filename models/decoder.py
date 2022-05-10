@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from .transformer import build_transformer_encoder
-from .positional_embedding import build_positional_embedding
+from transformer import build_transformer_encoder
+from positional_embedding import build_positional_embedding
 from fvcore.common.registry import Registry
 from mmcv.cnn import ConvModule
-import utils.decoder_utils as decoder_utils
+from utils.decoder_utils import LabelMLP, DenseMLP, resize
+
 import hydra
 
 
@@ -22,6 +23,8 @@ class LabelType(nn.Module):
             self.v_proj.append(nn.Linear(input_dim, cfg.hidden_dim))
         
         self.block_1 = build_transformer_encoder(cfg.transformer_encoder)
+
+        # LabelMLP is a MLP written for the LabelType decoder
         self.output_head = LabelMLP(cfg.transformer_encoder.hidden_dim, cfg.num_classes)
 
         self.pos_embed = build_positional_embedding(
@@ -72,10 +75,11 @@ class DenseType(nn.Module):
         c1_in_channels, c2_in_channels, c3_in_channels, c4_in_channels = self.info.in_channels
         embed_dim = self.info.embed_dim
 
-        self.linear_c4 = decoder_utils.MLP(input_dim=c4_in_channels, embed_dim=embed_dim)
-        self.linear_c3 = decoder_utils.MLP(input_dim=c3_in_channels, embed_dim=embed_dim)
-        self.linear_c2 = decoder_utils.MLP(input_dim=c2_in_channels, embed_dim=embed_dim)
-        self.linear_c1 = decoder_utils.MLP(input_dim=c1_in_channels, embed_dim=embed_dim)
+        # Dense is a MLP written for the DenseType decoder
+        self.linear_c4 = DenseMLP(input_dim=c4_in_channels, embed_dim=embed_dim)
+        self.linear_c3 = DenseMLP(input_dim=c3_in_channels, embed_dim=embed_dim)
+        self.linear_c2 = DenseMLP(input_dim=c2_in_channels, embed_dim=embed_dim)
+        self.linear_c1 = DenseMLP(input_dim=c1_in_channels, embed_dim=embed_dim)
 
         self.linear_fuse = ConvModule(
             in_channels=embed_dim*4,
@@ -88,21 +92,20 @@ class DenseType(nn.Module):
         self.linear_pred = nn.Conv2d(embed_dim, self.info.num_classes, kernel_size=1)
 
 
-    def forward(self, inputs):
-        x = self._transform_inputs(inputs, self.info)  # len=4, 1/4,1/8,1/16,1/32
-        c1, c2, c3, c4 = x
+    def forward(self, v_feature_list):
+        c1, c2, c3, c4 = v_feature_list
 
         ############## MLP decoder on C1-C4 ###########
         n, _, _, _ = c4.shape
 
         _c4 = self.linear_c4(c4).permute(0,2,1).reshape(n, -1, c4.shape[2], c4.shape[3])
-        _c4 = decoder_utils.resize(_c4, size=c1.size()[2:],mode='bilinear')
+        _c4 = resize(_c4, size=c1.size()[2:],mode='bilinear')
 
         _c3 = self.linear_c3(c3).permute(0,2,1).reshape(n, -1, c3.shape[2], c3.shape[3])
-        _c3 = decoder_utils.resize(_c3, size=c1.size()[2:],mode='bilinear')
+        _c3 = resize(_c3, size=c1.size()[2:],mode='bilinear')
 
         _c2 = self.linear_c2(c2).permute(0,2,1).reshape(n, -1, c2.shape[2], c2.shape[3])
-        _c2 = decoder_utils.resize(_c2, size=c1.size()[2:],mode='bilinear')
+        _c2 = resize(_c2, size=c1.size()[2:],mode='bilinear')
 
         _c1 = self.linear_c1(c1).permute(0,2,1).reshape(n, -1, c1.shape[2], c1.shape[3])
 
@@ -111,33 +114,10 @@ class DenseType(nn.Module):
         x = self.dropout(_c)
         x = self.linear_pred(x)
         
-        x = decoder_utils.resize(x, size=self.info.output_resolution, mode='bilinear')
+        x = resize(x, size=self.info.output_resolution, mode='bilinear')
 
         return x
-    
 
-    def _transform_inputs(self, inputs, info):
-        """Transform inputs for decoder.
-        Args:
-            inputs (list[Tensor]): List of multi-level img features.
-        Returns:
-            Tensor: The transformed inputs
-        """
-        inputs = [inputs[i] for i in info.in_index]
-
-        return inputs
-
-
-class LabelMLP(nn.Module):
-    def __init__(self, in_channel, out_channel):
-        super().__init__()
-        self.layer1 = nn.Linear(in_channel, 2*in_channel)
-        self.activation = F.gelu
-        self.layernorm = nn.LayerNorm(2*in_channel)
-        self.layer2 = nn.Linear(2*in_channel, out_channel)
-
-    def forward(self, x):
-        return self.layer2(self.layernorm(self.activation(self.layer1(x))))
 
 
 def build_decoder(cfg):
@@ -194,7 +174,7 @@ def build_decoder(cfg):
 def main(cfg):
     dense = DenseType(cfg.info)
     in_channels = [256, 512, 1024, 2048]
-    r = [224/4, 224/8, 224/16, 224/32]
+    r = [int(224/4), int(224/8), int(224/16), int(224/32)]
     
     temp = [torch.randn((8,in_channels[0],r[0],r[0])),
             torch.randn((8,in_channels[1],r[1],r[1])),

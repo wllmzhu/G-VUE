@@ -1,13 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import warnings
 
 
-class MLP(nn.Module):
-    """
-    Linear Embedding
-    """
+class LabelMLP(nn.Module):
+    def __init__(self, in_channel, out_channel):
+        super().__init__()
+        self.layer1 = nn.Linear(in_channel, 2*in_channel)
+        self.activation = F.gelu
+        self.layernorm = nn.LayerNorm(2*in_channel)
+        self.layer2 = nn.Linear(2*in_channel, out_channel)
+
+    def forward(self, x):
+        return self.layer2(self.layernorm(self.activation(self.layer1(x))))
+
+
+class DenseMLP(nn.Module):
     def __init__(self, input_dim=2048, embed_dim=768):
         super().__init__()
         self.proj = nn.Linear(input_dim, embed_dim)
