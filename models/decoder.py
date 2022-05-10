@@ -181,6 +181,9 @@ def main(cfg):
             torch.randn((8,in_channels[2],r[2],r[2])),
             torch.randn((8,in_channels[3],r[3],r[3]))]
 
+    temp = [tmp.cuda() for tmp in temp]
+    dense.cuda()
+
     x = dense(temp)
     print(x.shape)
 
