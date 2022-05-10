@@ -4,4 +4,25 @@ dataset:
     img_dir: /scratch/generalvision/mscoco/images/train2014
     anno_dir: /scratch/generalvision/refexp/annos/refcoco
 
-decoder_type: QueryType
+decoder:
+  key: LabelType
+  params:
+    input_dim_list: [2048]
+    hidden_dim: 256
+    transformer_encoder:
+      num_layers: 6
+      hidden_dim: ${decoder.params.hidden_dim}
+      nheads: 8
+      dropout: 0.1
+    positional_embedding:
+      type: sine
+      hidden_dim: ${decoder.params.transformer_encoder.hidden_dim}
+    num_classes: 4
+
+loss:
+  key: CrossEntropyLoss
+
+metrics:
+  key: EvalBbox
+
+visualize: VisBbox
