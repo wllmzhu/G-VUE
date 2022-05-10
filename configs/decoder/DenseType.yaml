@@ -1,1 +1,8 @@
+info:
+  in_channels: [256, 512, 1024, 2048]
+  in_index: [0, 1, 2, 3]
+  dropout_ratio: 0.1
+  num_classes: 150
+  embed_dim: 256
+  output_resolution: 224
 

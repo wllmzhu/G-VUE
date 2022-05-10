@@ -266,9 +266,9 @@ def get_sha():
 
 def collate_fn(batch):
     batch = list(zip(*batch))
-    batch[0] = nested_tensor_from_tensor_list(batch[0])
-    batch[-2] = batch[-2][0]   # structure of ground truth
-    batch[-1] = batch[-1][0]   # task tag
+    for i in len(batch):
+        if isinstance(batch[i][0], torch.Tensor):
+            batch[i] = torch.stack(batch[i])
     return tuple(batch)
 
 
