@@ -65,14 +65,15 @@ class DenseType(nn.Module):
 
 
 class MLP(nn.Module):
-    def __init__(self, in_channel, hidden, out_channel):
+    def __init__(self, in_channel, out_channel):
         super().__init__()
-        self.layer1 = nn.Linear(in_channel, hidden)
-        self.activation = F.tanh
-        self.layer2 = nn.Linear(hidden, out_channel)
+        self.layer1 = nn.Linear(in_channel, 2*in_channel)
+        self.activation = F.gelu
+        self.layernorm = nn.LayerNorm(2*in_channel)
+        self.layer2 = nn.Linear(2*in_channel, out_channel)
 
     def forward(self, x):
-        return self.layer2(self.activation(self.layer1(x)))
+        return self.layer2(self.layernorm(self.activation(self.layer1(x))))
 
 
 def build_decoder(cfg):

@@ -8,6 +8,7 @@ import torch.distributed as dist
 import numpy as np
 import skimage.io as skio
 from torch.utils.data import DataLoader
+from models.metrics import build_evaluator
 from warmup_scheduler import GradualWarmupScheduler
 from pytorch_transformers.optimization import WarmupLinearSchedule
 
@@ -15,47 +16,8 @@ from models.base import JointModel
 from datasets.base import create_dataset
 from utils.html_writer import HtmlWriter
 from utils.misc import collate_fn
+from utils.visualize import visualize
 import utils.io as io
-
-
-def grad_norm(params):
-    total_norm = 0
-    for p in params:
-        param_norm = p.grad.data.norm(2)
-        total_norm += param_norm.item() ** 2
-    
-    return total_norm ** (1. / 2)
-    
-
-def visualize(model, dataloader, cfg, step, subset):
-    vis_dir = os.path.join(
-        cfg.exp_dir,
-        f'visualizations/{subset}_'+str(step).zfill(6))
-    io.mkdir_if_not_exists(vis_dir, recursive=True)
-
-    html_writer = HtmlWriter(os.path.join(vis_dir, 'index.html'))
-    html_writer.add_element({
-        0: 'query',
-        1: 'visualization',
-        2: 'prediction',
-        3: 'ground truth',
-        4: 'probabilities'
-    })
-    count = 0
-    finish_vis = False
-    model.eval()
-    for data in dataloader:
-        pass
-    
-    html_writer.close()
-
-
-def get_lrs(optimizer):
-    lrs = []
-    for param_group in optimizer.param_groups:
-        lrs.append(param_group['lr'])
-    
-    return lrs
 
 
 def train_worker(gpu, cfg):
@@ -99,16 +61,26 @@ def train_worker(gpu, cfg):
         model.to(device)
         sampler = {'train': None, 'val': None}
 
-    dataloaders = {}
-    for subset, dataset in datasets.items():
-        dataloaders[subset] = DataLoader(
-            dataset,
+    dataloaders = {
+        'train': DataLoader(
+            datasets['train'],
             batch_size=cfg.training.batch_size,
             collate_fn=collate_fn,
             num_workers=cfg.training.num_workers,
             pin_memory=True,
             shuffle=(sampler[subset] is None),
-            sampler=sampler[subset])
+            sampler=sampler[subset]
+        ),
+        'val': DataLoader(
+            datasets['val'],
+            batch_size=cfg.eval.batch_size,
+            collate_fn=collate_fn,
+            num_workers=cfg.eval.num_workers,
+            pin_memory=True,
+            shuffle=(sampler[subset] is None),
+            sampler=sampler[subset]
+        )
+    }
 
     if gpu == 0:
         writer = SummaryWriter(log_dir=cfg.tb_dir)
@@ -177,25 +149,27 @@ def train_worker(gpu, cfg):
         optimizer.zero_grad()
         optimizer.step()
 
-    training_epochs = cfg.training.num_epochs
+    evaluator = build_evaluator(cfg.task.metrics)
 
-    for epoch in range(last_epoch+1, training_epochs):
+    for epoch in range(last_epoch+1, cfg.training.num_epochs):
 
         if cfg.multiprocessing_distributed:
             sampler['train'].set_epoch(epoch)
 
         for it, data in enumerate(dataloaders['train']):
+            imgs, txts, targets = data
             model.train()
-            loss = model()
+            optimizer.zero_grad()
 
-            if loss is not None:
-                optimizer.zero_grad()
-                loss.backward()
-                if cfg.training.clip_max_norm > 0:
-                    torch.nn.utils.clip_grad_norm_(
-                        params, cfg.training.clip_max_norm
-                    )
-                optimizer.step()
+            outputs = model(imgs, txts)
+            loss = model.criterion(outputs, targets)
+            loss.backward()
+
+            if cfg.training.clip_max_norm > 0:
+                torch.nn.utils.clip_grad_norm_(
+                    params, cfg.training.clip_max_norm
+                )
+            optimizer.step()
             
             if gpu == 0 and step % cfg.training.log_step == 0:
                 loss_str = f'Epoch: {epoch} | Iter: {it} | Step: {step} | '
@@ -219,10 +193,9 @@ def train_worker(gpu, cfg):
                 print(loss_str)
 
             if gpu == 0 and step % cfg.training.vis_step == 0:
-                with torch.no_grad():
-                    for subset in ['train', 'val']:
-                        print(f'Visualizing {subset} ...')
-                        visualize(model, dataloaders[subset], cfg, step, subset)
+                for subset in ['train', 'val']:
+                    print(f'Visualizing {subset} ...')
+                    visualize(model, dataloaders[subset], cfg, step, subset)
 
             if gpu == 0 and step % (10*cfg.training.log_step) == 0:
                 print('Exp:', cfg.exp_name)
@@ -236,61 +209,25 @@ def train_worker(gpu, cfg):
         
         if gpu == 0:
             model_selection_metric = 0
-            # for eval_subset in ['train', 'val']:
             for eval_subset in ['val']:
-                for dataset_name in dataloaders[eval_subset].dataset.datasets:
-                    if 'refcoco' not in dataset_name:
-                        continue
-                    print(f'Evaluating on {dataset_name}')
-                    eval_dataset = dataloaders[eval_subset].dataset.datasets[dataset_name]
-                    eval_dataloader = DataLoader(
-                        eval_dataset,
-                        batch_size=cfg.eval.batch_size,
-                        num_workers=cfg.eval.num_workers,
-                        shuffle=True,
-                        collate_fn=collate_fn)
-                    
-                    with torch.no_grad():
-                        metrics = None
-                    
-                    eval_str = f'Dataset: {dataset_name} | Subset: {eval_subset} | Epoch: {epoch} | '
+                dataloader = dataloaders[eval_subset]
+                dataset_name = dataloader.dataset.dataset_name
+                print(f'Evaluating on {dataset_name}')
 
-                    react_rate = round(metrics['reaction_rate'], 4)
-                    eval_str += f'reaction rate: {react_rate} | '
-                    writer.add_scalar(f'{eval_subset}/{dataset_name}/reaction_rate', react_rate, step)
+                metrics = evaluator(model, dataloaders, cfg)
+                
+                eval_str = f'Dataset: {dataset_name} | Subset: {eval_subset} | Epoch: {epoch}'
 
-                    bbox_AP50 = 0 
-                    bbox_mAP = 0 
-                    mask_mIoU = 0
-                    mask_AP = [0, 0, 0]
-                    depth_l1_error = 0
-                    if metrics['bbox_AP@0.5'] is not None:
-                        bbox_AP50 = round(metrics['bbox_AP@0.5'], 4)
-                        bbox_mAP = round(metrics['bbox_mAP'], 4)
-                        eval_str += f'bbox AP@0.5: {bbox_AP50} | bbox mAP: {bbox_mAP}'
-                        writer.add_scalar(f'{eval_subset}/{dataset_name}/AP@0.5', bbox_AP50, step)
-                        writer.add_scalar(f'{eval_subset}/{dataset_name}/mAP', bbox_mAP, step)
-                    if metrics['mask_mIoU'] is not None:
-                        mask_mIoU = round(metrics['mask_mIoU'], 4)
-                        mask_AP = metrics['mask_AP']
-                        mask_AP = [round(x, 4) for x in mask_AP]
-                        eval_str += f'mask mIoU: {mask_mIoU} | mask AP: {mask_AP}'
-                        writer.add_scalar(f'{eval_subset}/{dataset_name}/mIoU', mask_mIoU, step)
-                        writer.add_scalar(f'{eval_subset}/{dataset_name}/AP@0.5', mask_AP[0], step)
-                        writer.add_scalar(f'{eval_subset}/{dataset_name}/AP@0.7', mask_AP[1], step)
-                        writer.add_scalar(f'{eval_subset}/{dataset_name}/AP@0.9', mask_AP[2], step)
-                    if metrics['depth_l1_error'] is not None:
-                        depth_l1_error = round(metrics['depth_l1_error'], 4)
-                        eval_str += f'depth l1 error: {depth_l1_error}'
-                        writer.add_scalar(f'{eval_subset}/{dataset_name}/l1_error', depth_l1_error, step)
-                    
-                    print(eval_str)
+                if len(metrics.keys()) > 0:
+                    for k, v in metrics.items():
+                        if eval_subset != 'train':
+                            model_selection_metric += v
+                        
+                        v = round(v, 4)
+                        eval_str += f' | {k}: {v}'
+                        writer.add_scalar(f'{eval_subset}/{dataset_name}/{k}', v, step)
 
-                    if eval_subset == 'val':
-                        model_selection_metric = model_selection_metric + \
-                                                 bbox_AP50 + bbox_mAP + mask_mIoU + \
-                                                 mask_AP[0] + mask_AP[1] + mask_AP[2] + \
-                                                 - depth_l1_error
+                print(eval_str)
 
             if model_selection_metric > best_metric:
                 print('Saving checkpoint ...')
@@ -307,7 +244,15 @@ def train_worker(gpu, cfg):
                 }, os.path.join(cfg.ckpt_dir, 'model.pth'))
 
 
-@hydra.main(config_path='./config', config_name='vito')
+def get_lrs(optimizer):
+    lrs = []
+    for param_group in optimizer.param_groups:
+        lrs.append(param_group['lr'])
+    
+    return lrs
+
+
+@hydra.main(config_path='./config', config_name='base')
 def main(cfg):
     io.mkdir_if_not_exists(cfg.ckpt_dir, recursive=True)
     io.mkdir_if_not_exists(cfg.tb_dir, recursive=True)

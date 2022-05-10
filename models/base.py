@@ -11,6 +11,7 @@ import numpy as np
 from .v_backbone import build_v_backbone
 from .l_backbone import RoBERTa
 from .decoder import build_decoder
+from .loss import build_loss
 
 
 class JointModel(nn.Module):
@@ -22,6 +23,8 @@ class JointModel(nn.Module):
         self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
         self.decoder = build_decoder(cfg.task.decoder)
         self.initialize(cfg.v_backbone.fix)
+
+        self.criterion = build_loss(cfg.task.loss)
     
     def initialize(self, fix_v_backbone=True):
         for p in self.l_backbone.parameters():

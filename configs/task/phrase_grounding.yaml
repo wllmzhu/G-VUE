@@ -21,5 +21,8 @@ decoder:
 
 loss:
   key: CrossEntropyLoss
-  params:
-    num_classes: ${decoder.params.num_classes}
+
+metrics:
+  key: EvalBbox
+
+visualize: VisBbox

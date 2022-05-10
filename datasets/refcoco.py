@@ -44,7 +44,7 @@ class RefCOCODataset(Dataset):
         img, target = self.transform(img, target)
 
         # image, text, ground truth, structure of ground truth, task tag
-        return img, target['query'], target['boxes'].squeeze(), 'bbox', self.task
+        return img, target['query'], target['boxes'].squeeze()
 
     def get_dataloader(self, **kwargs):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)
