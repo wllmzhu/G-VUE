@@ -85,7 +85,7 @@ class DenseType(nn.Module):
             in_channels=embed_dim*4,
             out_channels=embed_dim,
             kernel_size=1,
-            norm_cfg=dict(type='SyncBN', requires_grad=True)
+            norm_cfg=dict(type='BN', requires_grad=True)
         )
 
         self.dropout = nn.Dropout2d(self.info.dropout_ratio)
