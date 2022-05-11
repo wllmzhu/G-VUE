@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 import utils.io as io
 from utils.refcoco_transforms import make_coco_transforms
 from utils.misc import collate_fn
-from .base import DATASET
+from base import DATASET
 
 
 @DATASET.register()
