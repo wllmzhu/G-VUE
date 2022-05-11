@@ -1,12 +1,7 @@
 dataset:
   key: GQADataset
   info:
-<<<<<<< HEAD
-    img_dir: /Users/williamzhu/GitHub/G-VUE/data/gqa/images
-    anno_dir: /Users/williamzhu/GitHub/G-VUE/data/gqa/annos
-
-decoder_type: LabelType
-=======
+    name: GQA
     img_dir: /scratch/generalvision/GQA/images
     anno_dir: /scratch/generalvision/GQA/questions
 
@@ -29,4 +24,3 @@ loss:
   key: CrossEntropyLoss
   params:
     num_classes: ${decoder.params.num_classes}
->>>>>>> dev

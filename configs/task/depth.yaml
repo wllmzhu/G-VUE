@@ -1,3 +1,6 @@
 dataset:
-  nyuv2:
-    hdf5_path: null
+  key: NYUv2Dataset
+  info:
+    name: NYUv2
+    img_dir: 
+    filename_index: 

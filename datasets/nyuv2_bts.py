@@ -15,34 +15,42 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>
 
 import numpy as np
-import torch
-from torch.utils.data import Dataset, DataLoader
-import torch.utils.data.distributed
-from torchvision import transforms
+from torch.utils.data import Dataset
 from PIL import Image
 import os
 import random
+from utils.nyuv2_transforms import rotate_image, random_crop, train_preprocess, ToTensor
 
             
 class NYUv2Dataset(Dataset):
-    def __init__(self, args, mode, transform=None):
-        self.args = args
-        with open(args.filenames_file, 'r') as f:
-            self.filenames = f.readlines()
+    def __init__(self, info, subset):
+        self.info = info
+        self.subsets = ['train', 'test']
+        self.subset = subset
+        assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets}'
+        self.transform = make_nyuv2_transforms(subset)
+        self._load_dataset()
     
-        self.mode = mode
-        self.transform = transform
-        self.to_tensor = ToTensor
-    
-    def __getitem__(self, idx):
-        sample_path = self.filenames[idx]
+    def _load_datasets(self):
+        with open(self.info.filename_index, 'r') as f:
+            filename_index = f.readlines()
 
-        image_path = os.path.join(self.args.data_path, "./" + sample_path.split()[0])
-        depth_path = os.path.join(self.args.gt_path, "./" + sample_path.split()[1])
+        self.image_paths = []
+        self.depth_paths = []
+        for filename_pair in filename_index:
+            self.image_paths.append(os.path.join(self.args.data_path, "./" + filename_pair.split()[0]))
+            self.depth_paths.append(os.path.join(self.args.gt_path, "./" + filename_pair.split()[1]))
+
+    def __getitem__(self, i):
+        image_path, depth_path = self.image_paths[i], self.depth_paths[i]
 
         image = Image.open(image_path)
         depth_gt = Image.open(depth_path)
         
+        # To avoid blank boundaries due to pixel registration
+        depth_gt = depth_gt.crop((43, 45, 608, 472))
+        image = image.crop((43, 45, 608, 472))
+
         # if self.args.do_kb_crop is True:
         #     height = image.height
         #     width = image.width
@@ -50,15 +58,11 @@ class NYUv2Dataset(Dataset):
         #     left_margin = int((width - 1216) / 2)
         #     depth_gt = depth_gt.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
         #     image = image.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
-        
-        # To avoid blank boundaries due to pixel registration
-        depth_gt = depth_gt.crop((43, 45, 608, 472))
-        image = image.crop((43, 45, 608, 472))
 
-        if self.args.do_random_rotate is True:
-            random_angle = (random.random() - 0.5) * 2 * self.args.degree
-            image = self.rotate_image(image, random_angle)
-            depth_gt = self.rotate_image(depth_gt, random_angle, flag=Image.NEAREST)
+        # if self.args.do_random_rotate is True:
+        #     random_angle = (random.random() - 0.5) * 2 * self.args.degree
+        #     image = rotate_image(image, random_angle)
+        #     depth_gt = rotate_image(depth_gt, random_angle, flag=Image.NEAREST)
         
         image = np.asarray(image, dtype=np.float32) / 255.0
         depth_gt = np.asarray(depth_gt, dtype=np.float32)
@@ -66,106 +70,15 @@ class NYUv2Dataset(Dataset):
 
         depth_gt = depth_gt / 1000.0
 
-        image, depth_gt = self.random_crop(image, depth_gt, self.args.input_height, self.args.input_width)
-        image, depth_gt = self.train_preprocess(image, depth_gt)
+        image, depth_gt = random_crop(image, depth_gt, self.args.input_height, self.args.input_width)
+        image, depth_gt = train_preprocess(image, depth_gt)
         sample = {'image': image, 'depth': depth_gt}
         
-        if self.transform:
-            sample = self.transform(sample)
+        sample = self.transform(sample)
         
         return sample
     
-    def rotate_image(self, image, angle, flag=Image.BILINEAR):
-        result = image.rotate(angle, resample=flag)
-        return result
 
-    def random_crop(self, img, depth, height, width):
-        assert img.shape[0] >= height
-        assert img.shape[1] >= width
-        assert img.shape[0] == depth.shape[0]
-        assert img.shape[1] == depth.shape[1]
-        x = random.randint(0, img.shape[1] - width)
-        y = random.randint(0, img.shape[0] - height)
-        img = img[y:y + height, x:x + width, :]
-        depth = depth[y:y + height, x:x + width, :]
-        return img, depth
-
-    def train_preprocess(self, image, depth_gt):
-        # Random flipping
-        do_flip = random.random()
-        if do_flip > 0.5:
-            image = (image[:, ::-1, :]).copy()
-            depth_gt = (depth_gt[:, ::-1, :]).copy()
-    
-        # Random gamma, brightness, color augmentation
-        do_augment = random.random()
-        if do_augment > 0.5:
-            image = self.augment_image(image)
-    
-        return image, depth_gt
-    
-    def augment_image(self, image):
-        # gamma augmentation
-        gamma = random.uniform(0.9, 1.1)
-        image_aug = image ** gamma
-
-        # brightness augmentation
-        if self.args.dataset == 'nyu':
-            brightness = random.uniform(0.75, 1.25)
-        else:
-            brightness = random.uniform(0.9, 1.1)
-        image_aug = image_aug * brightness
-
-        # color augmentation
-        colors = np.random.uniform(0.9, 1.1, size=3)
-        white = np.ones((image.shape[0], image.shape[1]))
-        color_image = np.stack([white * colors[i] for i in range(3)], axis=2)
-        image_aug *= color_image
-        image_aug = np.clip(image_aug, 0, 1)
-
-        return image_aug
-    
     def __len__(self):
-        return len(self.filenames)
+        return len(self.image_paths)
 
-
-class ToTensor(object):
-    def __init__(self, mode):
-        self.mode = mode
-        self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    
-    def __call__(self, sample):
-        image = sample['image']
-        image = self.to_tensor(image)
-        image = self.normalize(image)
-
-        depth = sample['depth']
-        depth = self.to_tensor(depth)
-        return {'image': image, 'depth': depth}
-    
-    def to_tensor(self, pic):
-        if isinstance(pic, np.ndarray):
-            img = torch.from_numpy(pic.transpose((2, 0, 1)))
-            return img
-        
-        # handle PIL Image
-        if pic.mode == 'I':
-            img = torch.from_numpy(np.array(pic, np.int32, copy=False))
-        elif pic.mode == 'I;16':
-            img = torch.from_numpy(np.array(pic, np.int16, copy=False))
-        else:
-            img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-        # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
-        if pic.mode == 'YCbCr':
-            nchannel = 3
-        elif pic.mode == 'I;16':
-            nchannel = 1
-        else:
-            nchannel = len(pic.mode)
-        img = img.view(pic.size[1], pic.size[0], nchannel)
-        
-        img = img.transpose(0, 1).transpose(0, 2).contiguous()
-        if isinstance(img, torch.ByteTensor):
-            return img.float()
-        else:
-            return img

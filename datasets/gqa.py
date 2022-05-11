@@ -11,14 +11,13 @@ from utils.gqa_transforms import make_gqa_transforms
 
 @DATASET.register()
 class GQADataset(Dataset):
-    def __init__(self, dataset_name, info, subset):
+    def __init__(self, info, subset):
         super().__init__()
-        self.dataset_name = dataset_name
         self.info = info
         self.subsets = ['train', 'val', 'testdev']
         self.subset = subset
         assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets} (test is not a valid split for GQA because it contains questions only)'
-        self.transform = make_gqa_transforms(subset, cautious=True)
+        self.transform = make_gqa_transforms()
         self._load_dataset()
         self._build_dict()
 
@@ -26,7 +25,7 @@ class GQADataset(Dataset):
         self.samples = io.load_json_object(
             os.path.join(self.info.anno_dir, f'{self.subset}_balanced_questions.json')
         )
-        print(f'load {len(self.samples)} samples in {self.dataset_name}_{self.subset}')
+        print(f'load {len(self.samples)} samples in {self.info.name} {self.subset}')
 
         # i-th entry to entry key, e.g. 0 -> '201307251', 1 -> '201640614'
         self.i_to_key = {}
