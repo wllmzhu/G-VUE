@@ -1,6 +1,7 @@
 # G-VUE
 General *Vision* Understanding Evaluation
 
+# Tasks
 
 **Category 1: Perceive** 
 
@@ -33,3 +34,10 @@ General *Vision* Understanding Evaluation
 * **Task 4.1:** Navigation (PointGoal)
 * **Task 4.2:** Manipulation (CLIPort)
 
+
+# Setup
+Run 
+```
+pip install -e .
+```
+in the top-level directory ("G-VUE") to register packages.
