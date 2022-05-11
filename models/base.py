@@ -8,10 +8,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from .v_backbone import build_v_backbone
-from .l_backbone import RoBERTa
-from .decoder import build_decoder
-from .loss import build_loss
+from v_backbone import build_v_backbone
+from l_backbone import RoBERTa
+from decoder import build_decoder
+from loss import build_loss
 
 
 class JointModel(nn.Module):
