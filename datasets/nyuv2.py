@@ -1,67 +1,85 @@
-import os
-import hydra
+# Copyright (C) 2019 Jin Han Lee
+#
+# This file is a part of BTS.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>
+
 import numpy as np
+from torch.utils.data import Dataset
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset
-import utils.io as io
-from transforms.nyuv2_transforms import make_nyuv2_transforms
-from utils.misc import collate_fn
+import os
+import random
+from transforms.nyuv2_transforms import rotate_image, random_crop, train_preprocess, ToTensor
 
-
+            
 class NYUv2Dataset(Dataset):
-    def __init__(self, dataset_name, info, subset, task):
-        super().__init__()
-        self.dataset_name = dataset_name
+    def __init__(self, info, subset):
         self.info = info
-        self.task = task
-        self.file = io.load_hdf5_object(info['hdf5_path'])
-        self.color_maps = self.file['images']
-        self.depth_maps = self.file['depths']
-        print(f'load {len(self.images)} samples in {self.dataset_name}')
+        self.subsets = ['train', 'test']
+        self.subset = subset
+        assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets}'
         self.transform = make_nyuv2_transforms(subset)
+        self._load_dataset()
     
-    def __len__(self):
-        return len(self.samples)
+    def _load_datasets(self):
+        with open(self.info.index_file, 'r') as f:
+            index_nyuv2 = f.readlines()
 
-    def rotate_image(image):
-        return image.rotate(-90, expand=True)
+        self.image_paths = []
+        self.depth_paths = []
+        for filename_pair in index_nyuv2:
+            self.image_paths.append(os.path.join(self.args.data_path, "./" + filename_pair.split()[0]))
+            self.depth_paths.append(os.path.join(self.args.gt_path, "./" + filename_pair.split()[1]))
+        
 
     def __getitem__(self, i):
-        color_map = self.color_maps[i]
-        color_map = np.moveaxis(color_map, 0, -1)
-        color_image = Image.fromarray(color_map, mode='RGB')
-        color_image = self.rotate_image(color_image)
+        image_path, depth_path = self.image_paths[i], self.depth_paths[i]
 
-        depth_map = self.depth_maps[i]
-        depth_image = Image.fromarray(depth_map, mode='F')
-        depth_image = self.rotate_image(depth_image)
+        image = Image.open(image_path)
+        depth_gt = Image.open(depth_path)
+        
+        # To avoid blank boundaries due to pixel registration
+        depth_gt = depth_gt.crop((43, 45, 608, 472))
+        image = image.crop((43, 45, 608, 472))
 
-        target = {
-                'mask': depth_image,
-            }
-        img, target = self.transform(color_image, target)
+        # if self.args.do_kb_crop is True:
+        #     height = image.height
+        #     width = image.width
+        #     top_margin = int(height - 352)
+        #     left_margin = int((width - 1216) / 2)
+        #     depth_gt = depth_gt.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
+        #     image = image.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
 
-        # image, text, ground truth, structure of ground truth, task tag
-        return img, target['mask'], target['boxes'].squeeze(), 'image', self.task
+        # if self.args.do_random_rotate is True:
+        #     random_angle = (random.random() - 0.5) * 2 * self.args.degree
+        #     image = rotate_image(image, random_angle)
+        #     depth_gt = rotate_image(depth_gt, random_angle, flag=Image.NEAREST)
+        
+        image = np.asarray(image, dtype=np.float32) / 255.0
+        depth_gt = np.asarray(depth_gt, dtype=np.float32)
+        depth_gt = np.expand_dims(depth_gt, axis=2)
 
-    def get_dataloader(self, **kwargs):
-        return DataLoader(self, collate_fn=collate_fn, **kwargs)
+        depth_gt = depth_gt / 1000.0
 
+        image, depth_gt = random_crop(image, depth_gt, self.args.input_height, self.args.input_width)
+        image, depth_gt = train_preprocess(image, depth_gt)
+        sample = {'image': image, 'depth': depth_gt}
+        
+        sample = self.transform(sample)
+        
+        return sample
+    
 
-@hydra.main(config_path='../config', config_name='depth.yaml')
-def main(cfg):
-    dataset = NYUv2Dataset('nyuv2', cfg.dataset.nyuv2, 'val', 'depth')
-    dataloader = dataset.get_dataloader(batch_size=8, shuffle=False)
-    for data in dataloader:
-        imgs, targets, target_type, task_tag = data
-        print({
-            'image': imgs,
-            'target': targets,
-            'target_type': target_type,
-            'task': task_tag
-        })
-        break
+    def __len__(self):
+        return len(self.image_paths)
 
-
-if __name__=='__main__':
-    main()

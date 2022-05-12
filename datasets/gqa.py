@@ -43,11 +43,10 @@ class GQADataset(Dataset):
             if subset == self.subset:
                 split = self.samples
             else:
-                continue
-                # split = io.load_json_object(
-                #     os.path.join(self.info.anno_dir, f'{subset}_balanced_questions.json')
-                # )
-                # print(f'(building answer ID dictionary) load {len(split)} samples in {self.dataset_name}_{subset}')
+                split = io.load_json_object(
+                    os.path.join(self.info.anno_dir, f'{subset}_balanced_questions.json')
+                )
+                print(f'(building answer ID dictionary) load {len(split)} samples in {self.dataset_name}_{subset}')
             for _, sample in split.items():
                 answer = sample['answer']
                 if answer not in self.answer_to_idx:

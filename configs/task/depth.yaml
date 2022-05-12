@@ -3,4 +3,4 @@ dataset:
   info:
     name: NYUv2
     img_dir: 
-    filename_index: 
+    index_file: 

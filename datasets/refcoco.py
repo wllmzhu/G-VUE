@@ -11,17 +11,18 @@ from base import DATASET
 
 @DATASET.register()
 class RefCOCODataset(Dataset):
-    def __init__(self, dataset_name, info, subset, task):
+    def __init__(self, info, subset):
         super().__init__()
-        self.dataset_name = dataset_name
         self.info = info
         self.subset = subset
-        self.task = task
+        self.transform = make_coco_transforms(subset, cautious=True)
+        self._load_dataset()
+
+    def _load_dataset(self):
         self.samples = io.load_json_object(
             os.path.join(info.anno_dir, f'{subset}.json')
         )
-        print(f'load {len(self.samples)} samples in {self.dataset_name}_{self.subset}')
-        self.transform = make_coco_transforms(subset, cautious=True)
+        print(f'load {len(self.samples)} samples in {info.name} {self.subset}')
     
     def __len__(self):
         return len(self.samples)
