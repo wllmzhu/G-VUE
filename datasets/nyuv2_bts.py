@@ -19,7 +19,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import os
 import random
-from utils.nyuv2_transforms import rotate_image, random_crop, train_preprocess, ToTensor
+from transforms.nyuv2_transforms import rotate_image, random_crop, train_preprocess, ToTensor
 
             
 class NYUv2Dataset(Dataset):

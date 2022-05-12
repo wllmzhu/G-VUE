@@ -4,7 +4,7 @@ from PIL import Image
 import torch
 from torch.utils.data import DataLoader, Dataset
 import utils.io as io
-from utils.refcoco_transforms import make_coco_transforms
+from transforms.refcoco_transforms import make_coco_transforms
 from utils.misc import collate_fn
 from base import DATASET
 

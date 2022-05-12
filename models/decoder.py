@@ -5,7 +5,7 @@ from transformer import build_transformer_encoder
 from positional_embedding import build_positional_embedding
 from fvcore.common.registry import Registry
 from mmcv.cnn import ConvModule
-from utils.decoder_utils import LabelMLP, DenseMLP, resize
+from models.decoder_utils import LabelMLP, DenseMLP, resize
 
 import hydra
 

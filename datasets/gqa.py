@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 import utils.io as io
 from utils.misc import collate_fn
 from base import DATASET
-from utils.gqa_transforms import make_gqa_transforms
+from transforms.gqa_transforms import make_gqa_transforms
 
 
 @DATASET.register()
