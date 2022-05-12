@@ -5,7 +5,6 @@ import yaml
 import numpy as np
 import gzip
 import scipy.io
-import h5py
 
 
 def load_pickle_object(file_name, compress=True):
@@ -53,10 +52,6 @@ def load_mat_object(file_name):
 
 def load_yaml_object(file_name):
     return yaml.load(read(file_name, 'r'))
-
-
-def load_hdf5_object(file_name):
-    return h5py.File(file_name, mode='r')
 
 
 def read(file_name, mode='rb'):

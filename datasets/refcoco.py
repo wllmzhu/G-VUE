@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 import utils.io as io
 from utils.refcoco_transforms import make_coco_transforms
 from utils.misc import collate_fn
-from base import DATASET
+from .base import DATASET
 
 
 @DATASET.register()
@@ -43,7 +43,7 @@ class RefCOCODataset(Dataset):
             }
         img, target = self.transform(img, target)
 
-        # image, text, ground truth, structure of ground truth, task tag
+        # image, text, ground truth
         return img, target['query'], target['boxes'].squeeze()
 
     def get_dataloader(self, **kwargs):
@@ -55,13 +55,11 @@ def main(cfg):
     dataset = RefCOCODataset('refcoco', cfg.dataset.refcoco, 'val', 'phrase_grounding')
     dataloader = dataset.get_dataloader(batch_size=8, shuffle=False)
     for data in dataloader:
-        imgs, queries, targets, target_type, task_tag = data
+        imgs, queries, targets = data
         print({
             'image': imgs,
             'text': queries,
-            'target': targets,
-            'target_type': target_type,
-            'task': task_tag
+            'target': targets
         })
         break
 

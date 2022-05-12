@@ -22,8 +22,16 @@ class BboxLoss(nn.Module):
         super().__init__()
         self.smooth_l1_loss = nn.SmoothL1Loss()
     
-    def forward(self, pred, gt):
-        return GIoU_loss(pred, gt) + self.smooth_l1_loss(pred, gt)
+    def forward(self, outputs, gts):
+        outputs = outputs.sigmoid()
+        preds = torch.stack([
+            outputs[:, 0]-outputs[:, 2]/2,
+            outputs[:, 1]-outputs[:, 3]/2,
+            outputs[:, 0]+outputs[:, 2]/2,
+            outputs[:, 1]+outputs[:, 3]/2
+        ], dim=1)
+        gts = gts.to(preds.device)
+        return 2 * GIoU_loss(preds, gts) + 5 * self.smooth_l1_loss(preds, gts)
 
 
 def GIoU_loss(pred, gt, reduction='mean'):
@@ -63,4 +71,4 @@ def GIoU_loss(pred, gt, reduction='mean'):
 
 def build_loss(cfg):
     assert cfg.key in ['CrossEntropyLoss', 'MSELoss', 'BboxLoss']
-    return LOSS.get(cfg.key)
+    return LOSS.get(cfg.key)()

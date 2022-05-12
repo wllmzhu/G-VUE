@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from transformer import build_transformer_encoder
-from positional_embedding import build_positional_embedding
+from .transformer import build_transformer_encoder
+from .positional_embedding import build_positional_embedding
 from fvcore.common.registry import Registry
 from mmcv.cnn import ConvModule
 from utils.decoder_utils import LabelMLP, DenseMLP, resize
@@ -18,9 +18,7 @@ class LabelType(nn.Module):
     def __init__(self, cfg):
         super().__init__()
 
-        self.v_proj = []
-        for input_dim in cfg.input_dim_list:
-            self.v_proj.append(nn.Linear(input_dim, cfg.hidden_dim))
+        self.v_proj = nn.Linear(cfg.input_dim_list[-1], cfg.hidden_dim)
         
         self.block_1 = build_transformer_encoder(cfg.transformer_encoder)
 
@@ -28,7 +26,9 @@ class LabelType(nn.Module):
         self.output_head = LabelMLP(cfg.transformer_encoder.hidden_dim, cfg.num_classes)
 
         self.pos_embed = build_positional_embedding(
-            cfg.positional_embedding.type, shape=None, hidden_dim=cfg.positional_embedding.hidden_dim
+            type=cfg.positional_embedding.type,
+            shape=(224//cfg.reduction[-1], 224//cfg.reduction[-1]),
+            hidden_dim=cfg.positional_embedding.hidden_dim
         )
         self.label_token = nn.Parameter(0.1*torch.randn(cfg.hidden_dim))
     
@@ -38,13 +38,13 @@ class LabelType(nn.Module):
         
         # [B, C, h, w] -> [hw, B, C]
         img_seqs = img_seqs.flatten(2).permute(2, 0, 1)
-        img_seqs = self.v_proj[-1](img_seqs)
+        img_seqs = self.v_proj(img_seqs)
 
         label_token = self.label_token.reshape(1, 1, -1).repeat(1, B, 1)
         img_seqs = torch.cat([label_token, img_seqs], dim=0)
 
-        img_masks = torch.zeros((B, 1+h*w), dtype=int)
-        pos_embed = self.pos_embed(B).permute(1, 0, 2)
+        img_masks = torch.zeros((B, 1+h*w), dtype=int).to(self.label_token.device)
+        pos_embed = self.pos_embed(B).permute(1, 0, 2).to(self.label_token.device)
         pos_embed = torch.cat([
             torch.zeros_like(self.label_token).view(1, 1, -1).repeat(1, B, 1), pos_embed
         ], dim=0)

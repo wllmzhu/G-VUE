@@ -8,18 +8,18 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from v_backbone import build_v_backbone
-from l_backbone import RoBERTa
-from decoder import build_decoder
-from loss import build_loss
+from .v_backbone import build_v_backbone
+from .l_backbone import RoBERTa
+from .decoder import build_decoder
+from .loss import build_loss
 
 
 class JointModel(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
-        self.v_backbone = build_v_backbone(cfg.backbone_key)
-        self.l_backbone = RoBERTa()
+        self.v_backbone = build_v_backbone(cfg.v_backbone)
+        self.l_backbone = RoBERTa(cache_dir=cfg.l_backbone.cfg_dir)
         self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
         self.decoder = build_decoder(cfg.task.decoder)
         self.initialize(cfg.v_backbone.fix)
@@ -34,11 +34,8 @@ class JointModel(nn.Module):
                 p.requires_grad_(False)
 
     def forward(self, imgs, txts=None):
-        """
-        intermediate tensors are required to be inferred and stored in buffer_path offline
-        buffer_names: stacked string-ids of data samples
-        """
         self.device = next(self.parameters()).device
+        imgs = imgs.to(self.device)
         
         if txts is not None:
             txt_seqs, txt_pad_masks = self.encode_txt(txts)

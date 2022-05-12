@@ -1,6 +1,6 @@
 hydra:
   run:
-    dir: outputs/ # ${exp_dir}
+    dir: ${exp_dir}
 
 defaults:
   - _self_
@@ -24,7 +24,7 @@ multiprocessing_distributed: True
 
 model:
   task: ${task}
-  hidden_dim: 512
+  hidden_dim: 256
   v_backbone: ${backbone}
   l_backbone:
     cfg_dir: /scratch/huangjiangyong/data/roberta-base
@@ -33,7 +33,7 @@ model:
 
 training:
   ckpt: ${exp_dir}/ckpts/model.pth
-  num_epochs: 40
+  num_epochs: 50
   batch_size: 128
   num_workers: 32
   lr: 1e-4

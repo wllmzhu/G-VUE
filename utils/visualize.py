@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 import skimage.io as skio
-import skimage.draw as skdraw
+import cv2
 from . import io
 from .html_writer import HtmlWriter
 from torch.nn.functional import interpolate
@@ -26,7 +26,13 @@ def VisBbox(html_writer, model, dataloader, cfg, step, vis_dir):
     model.eval()
     for data in dataloader:
         imgs, txts, targets = data
-        outputs = model(imgs, txts)
+        outputs = model(imgs, txts).sigmoid()
+        preds = torch.stack([
+            outputs[:, 0]-outputs[:, 2]/2,
+            outputs[:, 1]-outputs[:, 3]/2,
+            outputs[:, 0]+outputs[:, 2]/2,
+            outputs[:, 1]+outputs[:, 3]/2
+        ], dim=1)
 
         B = len(targets)
         for i in range(B):
@@ -39,9 +45,9 @@ def VisBbox(html_writer, model, dataloader, cfg, step, vis_dir):
             vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
 
             gt = targets[i].detach().cpu().numpy()
-            vis_bbox(gt, vis_img, color=(0, 255, 0), modify=True)
-            pred = outputs[i].detach().cpu().numpy()
-            vis_bbox(pred, vis_img, color=(0, 0, 255), modify=True)
+            vis_img = vis_bbox(gt, vis_img, color=(0, 255, 0))
+            pred = preds[i].detach().cpu().numpy()
+            vis_img = vis_bbox(pred, vis_img, color=(0, 0, 255))
 
             vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
             skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
@@ -59,7 +65,7 @@ def VisBbox(html_writer, model, dataloader, cfg, step, vis_dir):
         count += B
 
 
-def vis_bbox(bbox, img, color=(255, 0, 0), modify=False):
+def vis_bbox(bbox, img, color=(255, 0, 0)):
     # format: x1, y1, x2, y2
     im_h, im_w = img.shape[:2]
 
@@ -68,26 +74,12 @@ def vis_bbox(bbox, img, color=(255, 0, 0), modify=False):
     x2 = max(x1, min(x2, im_w-1))
     y1 = max(0, min(y1, im_h-1))
     y2 = max(y1, min(y2, im_h-1))
-    r = [y1, y1, y2, y2]
-    c = [x1, x2, x2, x1]
-
-    if modify == True:
-        img_ = img
-    else:
-        img_ = np.copy(img)
-
-    if len(img.shape) == 2:
-        color = (color[0],)
-
-    rr, cc = skdraw.polygon_perimeter(r, c, img.shape[:2])   # curve
     
-    if len(img.shape) == 3:
-        for k in range(3):
-            img_[rr, cc, k] = color[k]
-    elif len(img.shape) == 2:
-        img_[rr, cc] = color[0]
+    img = np.ascontiguousarray(img)
 
-    return img_
+    cv2.rectangle(img, [int(x1),int(y1)], [int(x2),int(y2)], color, 2)
+
+    return img
 
 
 def vis_mask(mask, img, color=(255, 0, 0), modify=False, alpha=0.2):

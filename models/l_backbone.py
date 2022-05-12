@@ -3,11 +3,14 @@ from transformers import RobertaTokenizer, RobertaModel
 
 
 class RoBERTa(nn.Module):
-    def __init__(self, cfg=None):
+    def __init__(self, cache_dir=None):
         super().__init__()
-        cache_dir = cfg.cfg_dir
-        self.tokenizer = RobertaTokenizer.from_pretrained(cache_dir)
-        self.model = RobertaModel.from_pretrained(cache_dir)
+        if cache_dir is None:
+            self.tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
+            self.model = RobertaModel.from_pretrained('roberta-base')
+        else:
+            self.tokenizer = RobertaTokenizer.from_pretrained(cache_dir)
+            self.model = RobertaModel.from_pretrained(cache_dir)
 
     def forward(self, sentences, device=None):
         token_inputs = self.tokenizer(

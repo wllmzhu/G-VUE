@@ -9,7 +9,7 @@ BACKBONE = Registry('Backbone')
 @BACKBONE.register()
 class ResNet_ImageNet(nn.Module):
     """
-    return five 
+    return five levels of features
     """
     def __init__(self):
         super().__init__()
@@ -52,14 +52,14 @@ class Customized(nn.Module):
         pass
 
 
-def build_v_backbone(backbone_key):
-    assert backbone_key in [
+def build_v_backbone(cfg):
+    assert cfg.key in [
         'ResNet_ImageNet',
         'ResNet_Ego4D',
         'ViT_CLIP',
         'Customized'
     ]
-    return BACKBONE.get(backbone_key)
+    return BACKBONE.get(cfg.key)()
 
 
 # def inference(imgs):

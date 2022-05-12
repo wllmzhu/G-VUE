@@ -86,10 +86,10 @@ def train_worker(gpu, cfg):
         writer = SummaryWriter(log_dir=cfg.tb_dir)
 
     params = []
-    for p in model.parameters():
+    for n, p in model.named_parameters():
         if p.requires_grad:
             params.append(p)
-
+            print(f'add {n} {p.shape} for optimization')
     print(f'collect {len(params)} parameters for optimization')
 
     optimizer = torch.optim.AdamW(params, lr=cfg.training.lr, betas=cfg.training.betas)
@@ -214,7 +214,7 @@ def train_worker(gpu, cfg):
                 dataset_name = dataloader.dataset.dataset_name
                 print(f'Evaluating on {dataset_name}')
 
-                metrics = evaluator(model, dataloaders, cfg)
+                metrics = evaluator(model, dataloader, cfg)
                 
                 eval_str = f'Dataset: {dataset_name} | Subset: {eval_subset} | Epoch: {epoch}'
 
@@ -252,7 +252,7 @@ def get_lrs(optimizer):
     return lrs
 
 
-@hydra.main(config_path='./config', config_name='base')
+@hydra.main(config_path='./configs', config_name='base')
 def main(cfg):
     io.mkdir_if_not_exists(cfg.ckpt_dir, recursive=True)
     io.mkdir_if_not_exists(cfg.tb_dir, recursive=True)
