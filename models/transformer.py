@@ -152,18 +152,18 @@ def _get_activation_fn(activation):
 
 
 def build_transformer_encoder(cfg):
-    encoder_layer = nn.TransformerEncoderLayer(
+    encoder_layer = TransformerEncoderLayer(
         d_model=cfg.hidden_dim,
         dropout=cfg.dropout,
         nhead=cfg.nheads)
 
-    return nn.TransformerEncoder(encoder_layer, cfg.num_layers)
+    return TransformerEncoder(encoder_layer, cfg.num_layers)
 
 
 def build_transformer_decoder(cfg):
-    decoder_layer = nn.TransformerDecoderLayer(
+    decoder_layer = TransformerDecoderLayer(
         d_model=cfg.hidden_dim,
         dropout=cfg.dropout,
         nhead=cfg.nheads)
 
-    return nn.TransformerDecoder(decoder_layer, cfg.num_layers)
+    return TransformerDecoder(decoder_layer, cfg.num_layers)

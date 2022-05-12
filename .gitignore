@@ -11,3 +11,7 @@ outputs/
 temp.py
 
 myproject.egg-info/
+
+*.slurm
+*.log
+*.out

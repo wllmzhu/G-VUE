@@ -16,20 +16,26 @@ def EvalBbox(model, dataloader, cfg):
         imgs, txts, targets = data
         B = len(targets)
 
-        outputs = model(imgs, txts)
-        iou = box_iou(outputs, targets)
+        outputs = model(imgs, txts).sigmoid()
+        preds = torch.stack([
+            outputs[:, 0]-outputs[:, 2]/2,
+            outputs[:, 1]-outputs[:, 3]/2,
+            outputs[:, 0]+outputs[:, 2]/2,
+            outputs[:, 1]+outputs[:, 3]/2
+        ], dim=1)
+        iou = box_iou(preds, targets)
         
         acc += (iou >= 0.5).sum()
         total += B
         if total >= cfg.eval.num_val_samples:
             break
 
-    return {'Bbox Acc@0.5': acc/total}
+    return {'Bbox Acc@0.5': (acc/total).item()}
 
 
 def box_iou(a, b):
     a = a.view(-1, 4)
-    b = b.view(-1, 4)
+    b = b.view(-1, 4).to(a.device)
 
     a_area = (a[:, 2]-a[:, 0]) * (a[:, 3]-a[:, 1])
     b_area = (b[:, 2]-b[:, 0]) * (b[:, 3]-b[:, 1])

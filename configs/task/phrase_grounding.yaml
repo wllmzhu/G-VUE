@@ -7,20 +7,21 @@ dataset:
 decoder:
   key: LabelType
   params:
-    input_dim_list: [2048]
-    hidden_dim: 256
+    reduction: ${backbone.reduction}
+    input_dim_list: ${backbone.hidden_dim}
+    hidden_dim: ${model.hidden_dim}
     transformer_encoder:
       num_layers: 6
-      hidden_dim: ${decoder.params.hidden_dim}
+      hidden_dim: ${task.decoder.params.hidden_dim}
       nheads: 8
       dropout: 0.1
     positional_embedding:
       type: sine
-      hidden_dim: ${decoder.params.transformer_encoder.hidden_dim}
+      hidden_dim: ${task.decoder.params.transformer_encoder.hidden_dim}
     num_classes: 4
 
 loss:
-  key: CrossEntropyLoss
+  key: BboxLoss
 
 metrics:
   key: EvalBbox
