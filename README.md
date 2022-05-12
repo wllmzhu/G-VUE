@@ -1,6 +1,15 @@
 # G-VUE
 General *Vision* Understanding Evaluation
 
+
+# Setup
+Run 
+```
+pip install -e .
+```
+in the top-level directory ("G-VUE") to register packages in this repo.
+
+
 # Tasks
 
 **Category 1: Perceive** 
@@ -51,9 +60,3 @@ General *Vision* Understanding Evaluation
   * `image` → ` `
   * 
 
-# Setup
-Run 
-```
-pip install -e .
-```
-in the top-level directory ("G-VUE") to register packages in this repo.
