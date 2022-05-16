@@ -17,7 +17,14 @@ def EvalQA(model, dataloader, cfg):
         B = len(targets)
 
         outputs = model(imgs, txts)
-        # TO BE IMPLEMENTED
+        _, preds = outputs.topk(k=1, dim=1)
+
+        acc += (preds==targets).sum()
+        total += B
+        if total >= cfg.eval.num_val_samples:
+            break
+
+    return {'Answer Acc': (acc/total).item()}
 
 
 @METRICS.register()
