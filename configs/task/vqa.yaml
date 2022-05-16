@@ -1,26 +1,35 @@
 dataset:
   key: GQADataset
   info:
-    name: GQA
     img_dir: /scratch/generalvision/GQA/images
     anno_dir: /scratch/generalvision/GQA/questions
 
 decoder:
   key: LabelType
   params:
-    input_dim_list: [2048]
-    hidden_dim: 256
+    image_size: ${model.image_size}
+    reduction: ${backbone.reduction}
+    input_dim_list: ${backbone.hidden_dim}
+    hidden_dim: ${model.hidden_dim}
     transformer_encoder:
       num_layers: 6
-      hidden_dim: ${decoder.params.hidden_dim}
+      hidden_dim: ${task.decoder.params.hidden_dim}
       nheads: 8
       dropout: 0.1
     positional_embedding:
       type: sine
-      hidden_dim: ${decoder.params.transformer_encoder.hidden_dim}
+      hidden_dim: ${task.decoder.params.transformer_encoder.hidden_dim}
     num_classes: 1800
 
 loss:
   key: CrossEntropyLoss
+<<<<<<< HEAD
   params:
     num_classes: ${decoder.params.num_classes}
+=======
+
+metrics:
+  key: EvalQA
+
+visualize: VisQA
+>>>>>>> dev

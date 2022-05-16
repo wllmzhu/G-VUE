@@ -7,6 +7,21 @@ METRICS = Registry('Metrics')
 
 @METRICS.register()
 @torch.no_grad()
+def EvalQA(model, dataloader, cfg):
+    model.eval()
+    acc = 0
+    total = 0
+
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        B = len(targets)
+
+        outputs = model(imgs, txts)
+        # TO BE IMPLEMENTED
+
+
+@METRICS.register()
+@torch.no_grad()
 def EvalBbox(model, dataloader, cfg):
     model.eval()
     acc = 0 

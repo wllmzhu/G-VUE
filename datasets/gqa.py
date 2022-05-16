@@ -25,7 +25,7 @@ class GQADataset(Dataset):
         self.samples = io.load_json_object(
             os.path.join(self.info.anno_dir, f'{self.subset}_balanced_questions.json')
         )
-        print(f'load {len(self.samples)} samples in {self.info.name} {self.subset}')
+        print(f'load {len(self.samples)} samples in GQA {self.subset}')
 
         # i-th entry to entry key, e.g. 0 -> '201307251', 1 -> '201640614'
         self.i_to_key = {}

@@ -23,7 +23,7 @@ class ADE20kDataset(Dataset):
         with open(self.info.index_file, 'rb') as f:
             self.index_ade20k = pkl.load(f)
 
-        print(f'load {len(self.index_ade20k["filename"])} samples in {self.info.name} {self.subset}')
+        print(f'load {len(self.index_ade20k["filename"])} samples in ADE20k {self.subset}')
 
     def __len__(self):
         return len(self.samples)

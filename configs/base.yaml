@@ -4,8 +4,8 @@ hydra:
 
 defaults:
   - _self_
-  - task: null
   - backbone: null
+  - task: null
 
 exp_name: default
 output_dir: /scratch/huangjiangyong/data/GVUE
@@ -24,6 +24,7 @@ multiprocessing_distributed: True
 
 model:
   task: ${task}
+  image_size: 224
   hidden_dim: 256
   v_backbone: ${backbone}
   l_backbone:

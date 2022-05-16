@@ -27,7 +27,7 @@ class LabelType(nn.Module):
 
         self.pos_embed = build_positional_embedding(
             type=cfg.positional_embedding.type,
-            shape=(224//cfg.reduction[-1], 224//cfg.reduction[-1]),
+            shape=(cfg.image_size//cfg.reduction[-1], cfg.image_size//cfg.reduction[-1]),
             hidden_dim=cfg.positional_embedding.hidden_dim
         )
         self.label_token = nn.Parameter(0.1*torch.randn(cfg.hidden_dim))

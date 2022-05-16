@@ -20,9 +20,9 @@ class RefCOCODataset(Dataset):
 
     def _load_dataset(self):
         self.samples = io.load_json_object(
-            os.path.join(info.anno_dir, f'{subset}.json')
+            os.path.join(self.info.anno_dir, f'{self.subset}.json')
         )
-        print(f'load {len(self.samples)} samples in {info.name} {self.subset}')
+        print(f'load {len(self.samples)} samples in RefCOCO {self.subset}')
     
     def __len__(self):
         return len(self.samples)

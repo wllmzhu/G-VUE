@@ -1,4 +1,6 @@
-python train_distr.py exp_name=22.5.12-phrase_grounding-Res_IN \
+DATE=$1
+BACKBONE=$2
+python train_distr.py exp_name=${DATE}-${BACKBONE}-phrase_grounding \
                       task=phrase_grounding \
-                      backbone=ResNet_ImageNet \
+                      backbone=${BACKBONE} \
                       multiprocessing_distributed=False

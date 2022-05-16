@@ -14,6 +14,24 @@ norm_stds = torch.as_tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
 
 @VISUALIZE.register()
 @torch.no_grad()
+def VisQA(html_writer, model, dataloader, cfg, step, vis_dir):
+    html_writer.add_element({
+        0: 'query',
+        1: 'visualization',
+        2: 'prediction',
+        3: 'ground truth'
+    })
+    count = 0
+    finish_vis = False
+    model.eval()
+    for data in dataloader:
+        imgs, txts, targets = data
+        outputs = model(imgs, txts)
+        # TO BE IMPLEMENTED
+
+
+@VISUALIZE.register()
+@torch.no_grad()
 def VisBbox(html_writer, model, dataloader, cfg, step, vis_dir):
     html_writer.add_element({
         0: 'query',
