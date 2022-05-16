@@ -20,7 +20,7 @@ from PIL import Image
 import os
 import random
 from transforms.nyuv2_transforms import rotate_image, random_crop, train_preprocess, ToTensor
-
+from transforms.nyuv2_transforms import make_nyuv2_transforms
             
 class NYUv2Dataset(Dataset):
     def __init__(self, info, subset):
@@ -45,39 +45,25 @@ class NYUv2Dataset(Dataset):
     def __getitem__(self, i):
         image_path, depth_path = self.image_paths[i], self.depth_paths[i]
 
-        image = Image.open(image_path)
+        img = Image.open(image_path)
         depth_gt = Image.open(depth_path)
         
         # To avoid blank boundaries due to pixel registration
         depth_gt = depth_gt.crop((43, 45, 608, 472))
-        image = image.crop((43, 45, 608, 472))
+        img = img.crop((43, 45, 608, 472))
 
-        # if self.args.do_kb_crop is True:
-        #     height = image.height
-        #     width = image.width
-        #     top_margin = int(height - 352)
-        #     left_margin = int((width - 1216) / 2)
-        #     depth_gt = depth_gt.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
-        #     image = image.crop((left_margin, top_margin, left_margin + 1216, top_margin + 352))
-
-        # if self.args.do_random_rotate is True:
-        #     random_angle = (random.random() - 0.5) * 2 * self.args.degree
-        #     image = rotate_image(image, random_angle)
-        #     depth_gt = rotate_image(depth_gt, random_angle, flag=Image.NEAREST)
-        
-        image = np.asarray(image, dtype=np.float32) / 255.0
+        img = np.asarray(img, dtype=np.float32) / 255.0
         depth_gt = np.asarray(depth_gt, dtype=np.float32)
         depth_gt = np.expand_dims(depth_gt, axis=2)
-
         depth_gt = depth_gt / 1000.0
 
-        image, depth_gt = random_crop(image, depth_gt, self.args.input_height, self.args.input_width)
-        image, depth_gt = train_preprocess(image, depth_gt)
-        sample = {'image': image, 'depth': depth_gt}
-        
-        sample = self.transform(sample)
-        
-        return sample
+        target = {
+                'depth': depth_gt,
+            }
+        img, target = self.transform(img, target)
+
+        # image, text, ground truth
+        return img, target['depth']
     
 
     def __len__(self):
