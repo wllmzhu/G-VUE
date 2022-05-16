@@ -28,6 +28,37 @@ def VisQA(html_writer, model, dataloader, cfg, step, vis_dir):
         imgs, txts, targets = data
         outputs = model(imgs, txts)
         # TO BE IMPLEMENTED
+        preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()
+
+        B = len(targets)
+        for i in range(B):
+            if count+i >= cfg.training.num_vis_samples:
+                finish_vis = True
+                break
+            
+            vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
+            vis_img = vis_img.detach().cpu().numpy() * 255
+            vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
+
+            gt = dataloader.dataset.idx_to_answer[targets[i]]
+            pred = dataloader.dataset.idx_to_answer[
+                preds[i].item() if isinstance(preds[i], torch.Tensor) else preds[i]
+            ]
+
+            vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
+            skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+
+            html_writer.add_element({
+                0: txts[i],
+                1: html_writer.image_tag(vis_name),
+                2: pred,
+                3: gt
+            })
+        
+        if finish_vis is True:
+            break
+        
+        count += B
 
 
 @VISUALIZE.register()

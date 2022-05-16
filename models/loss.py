@@ -1,37 +1,32 @@
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 from fvcore.common.registry import Registry
 LOSS = Registry('Loss')
 
 
 @LOSS.register()
-class CrossEntropyLoss(nn.CrossEntropyLoss):
-    def __init__(self):
-        super().__init__()
+def CrossEntropyLoss(outputs, gts):
+    gts = gts.to(outputs.device)
+    return F.cross_entropy(outputs, gts)
 
 
 @LOSS.register()
-class MSELoss(nn.MSELoss):
-    def __init__(self):
-        super().__init__()
+def MSELoss(outputs, gts):
+    gts = gts.to(outputs.device)
+    return F.mse_loss(outputs, gts)
 
 
 @LOSS.register()
-class BboxLoss(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.smooth_l1_loss = nn.SmoothL1Loss()
-    
-    def forward(self, outputs, gts):
-        outputs = outputs.sigmoid()
-        preds = torch.stack([
-            outputs[:, 0]-outputs[:, 2]/2,
-            outputs[:, 1]-outputs[:, 3]/2,
-            outputs[:, 0]+outputs[:, 2]/2,
-            outputs[:, 1]+outputs[:, 3]/2
-        ], dim=1)
-        gts = gts.to(preds.device)
-        return 2 * GIoU_loss(preds, gts) + 5 * self.smooth_l1_loss(preds, gts)
+def BboxLoss(outputs, gts):
+    outputs = outputs.sigmoid()
+    preds = torch.stack([
+        outputs[:, 0]-outputs[:, 2]/2,
+        outputs[:, 1]-outputs[:, 3]/2,
+        outputs[:, 0]+outputs[:, 2]/2,
+        outputs[:, 1]+outputs[:, 3]/2
+    ], dim=1)
+    gts = gts.to(preds.device)
+    return 2 * GIoU_loss(preds, gts) + 5 * F.smooth_l1_loss(preds, gts)
 
 
 def GIoU_loss(pred, gt, reduction='mean'):
@@ -71,4 +66,4 @@ def GIoU_loss(pred, gt, reduction='mean'):
 
 def build_loss(cfg):
     assert cfg.key in ['CrossEntropyLoss', 'MSELoss', 'BboxLoss']
-    return LOSS.get(cfg.key)()
+    return LOSS.get(cfg.key)
