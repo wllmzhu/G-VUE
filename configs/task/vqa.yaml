@@ -19,7 +19,7 @@ decoder:
     positional_embedding:
       type: sine
       hidden_dim: ${task.decoder.params.transformer_encoder.hidden_dim}
-    num_classes: 1800
+    num_classes: 1843
 
 loss:
   key: CrossEntropyLoss

@@ -162,6 +162,8 @@ def train_worker(gpu, cfg):
             optimizer.zero_grad()
 
             outputs = model(imgs, txts)
+            if not isinstance(targets, torch.Tensor):
+                targets = torch.as_tensor(targets)
             loss = model.criterion(outputs, targets)
             loss.backward()
 

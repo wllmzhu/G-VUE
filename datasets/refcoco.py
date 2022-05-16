@@ -11,12 +11,11 @@ from .base import DATASET
 
 @DATASET.register()
 class RefCOCODataset(Dataset):
-    def __init__(self, dataset_name, info, subset, task):
+    def __init__(self, dataset_name, info, subset):
         super().__init__()
         self.dataset_name = dataset_name
         self.info = info
         self.subset = subset
-        self.task = task
         self.samples = io.load_json_object(
             os.path.join(info.anno_dir, f'{subset}.json')
         )

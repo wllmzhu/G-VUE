@@ -39,21 +39,22 @@ class GQADataset(Dataset):
     def _build_dict(self):
         # Answer to answer ID, e.g. 'yes' -> 0, 'cat' -> 1.
         self.answer_to_idx = {}
+        self.idx_to_answer = {}
         cur_idx = 0
         for subset in self.subsets:
             if subset == self.subset:
                 split = self.samples
             else:
-                continue
-                # split = io.load_json_object(
-                #     os.path.join(self.info.anno_dir, f'{subset}_balanced_questions.json')
-                # )
-                # print(f'(building answer ID dictionary) load {len(split)} samples in {self.dataset_name}_{subset}')
+                split = io.load_json_object(
+                    os.path.join(self.info.anno_dir, f'{subset}_balanced_questions.json')
+                )
+                print(f'(building answer ID dictionary) load {len(split)} samples in {self.dataset_name}_{subset}')
             for _, sample in split.items():
                 answer = sample['answer']
                 if answer not in self.answer_to_idx:
                     # Record answer ID mapping
                     self.answer_to_idx[answer] = cur_idx
+                    self.idx_to_answer[cur_idx] = answer
                     cur_idx += 1
                 
     def __len__(self):

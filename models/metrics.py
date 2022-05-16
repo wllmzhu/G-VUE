@@ -17,7 +17,18 @@ def EvalQA(model, dataloader, cfg):
         B = len(targets)
 
         outputs = model(imgs, txts)
-        # TO BE IMPLEMENTED
+        preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()
+
+        if not isinstance(targets, torch.Tensor):
+            targets = torch.as_tensor(targets)
+        targets = targets.to(preds.device)
+
+        acc += (preds==targets).sum()
+        total += B
+        if total >= cfg.eval.num_val_samples:
+            break
+
+    return {'Answer Acc': (acc/total).item()}
 
 
 @METRICS.register()
@@ -38,6 +49,7 @@ def EvalBbox(model, dataloader, cfg):
             outputs[:, 0]+outputs[:, 2]/2,
             outputs[:, 1]+outputs[:, 3]/2
         ], dim=1)
+        targets = targets.to(preds.device)
         iou = box_iou(preds, targets)
         
         acc += (iou >= 0.5).sum()
@@ -50,7 +62,7 @@ def EvalBbox(model, dataloader, cfg):
 
 def box_iou(a, b):
     a = a.view(-1, 4)
-    b = b.view(-1, 4).to(a.device)
+    b = b.view(-1, 4)
 
     a_area = (a[:, 2]-a[:, 0]) * (a[:, 3]-a[:, 1])
     b_area = (b[:, 2]-b[:, 0]) * (b[:, 3]-b[:, 1])
@@ -68,5 +80,5 @@ def box_iou(a, b):
 
 
 def build_evaluator(cfg):
-    assert cfg.key in ['EvalBbox']
+    assert cfg.key in ['EvalBbox', 'EvalQA']
     return METRICS.get(cfg.key)
