@@ -1,0 +1,5 @@
+dataset:
+  key: GQADataset
+  info:
+    img_dir: /home/wllmzhu/data/vcr/vcr1images
+    anno_dir: /home/wllmzhu/data/vcr
