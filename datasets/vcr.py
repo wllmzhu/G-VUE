@@ -7,8 +7,7 @@ from torch.utils.data import DataLoader, Dataset
 import utils.io as io
 from utils.misc import collate_fn
 from base import DATASET
-from transforms.vcr_transforms import color_list, OPACITY
-#from transforms.vcr_transforms import make_vcr_transforms
+from transforms.vcr_transforms import color_list, OPACITY, make_vcr_transforms
 
 
 @DATASET.register()
@@ -19,7 +18,7 @@ class VCRDataset(Dataset):
         self.subsets = ['train', 'val', 'test']
         self.subset = subset
         assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets} (test is not a valid split for GQA because it contains questions only)'
-        #self.transform = make_vcr_transforms()
+        self.transform = make_vcr_transforms()
         self._load_dataset()
 
     def _load_dataset(self):
@@ -80,7 +79,7 @@ class VCRDataset(Dataset):
 
         img = self.overlay_bbox(img, bboxes, names)
 
-        #img, _ = self.transform(img, None)
+        img, _ = self.transform(img, None)
 
         #image, question + 4 candidate choices, answer(choice id)
         return img, question, answer_index
@@ -98,7 +97,7 @@ def main(cfg):
             'text': queries,
             'answer_id': answer_id
         })
-        imgs[0].show()
+        #imgs[0].show()
         break
 
 if __name__ == '__main__':

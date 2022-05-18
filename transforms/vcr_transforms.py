@@ -1,4 +1,14 @@
 import numpy as np
+from .base_transforms import Compose, ToTensor, Normalize, RandomResize
+def make_vcr_transforms():
+    normalize = Compose([ToTensor(), Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+    scales = [(224, 224)]
+    return Compose(
+        [
+            RandomResize(scales),
+            normalize,
+        ]
+    )
 
 # Overlay parameters
 TRANSPARENCY = .15
