@@ -19,7 +19,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as F
 from transforms.nyuv2_transforms import make_nyuv2_transforms
-from base import DATASET
+from .base import DATASET
 
 
 @DATASET.register()

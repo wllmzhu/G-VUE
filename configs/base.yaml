@@ -30,7 +30,6 @@ model:
   l_backbone:
     cfg_dir: /scratch/huangjiangyong/data/roberta-base
     hidden_dim: 768
-  decoder: ${task.decoder_type}
 
 training:
   ckpt: ${exp_dir}/ckpts/model.pth

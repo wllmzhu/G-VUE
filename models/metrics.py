@@ -9,17 +9,32 @@ METRICS = Registry('Metrics')
 @torch.no_grad()
 def EvalDepth(model, dataloader, cfg):
     model.eval()
-    # TO BE IMPLEMENTED
+    min_depth, max_depth = 1e-3, 10
+    keys = ['d1', 'd2', 'd3', 'abs_rel', 'sq_rel', 'rms', 'log_rms', 'log10']
+    errors_all = np.array((0, 8))
     for data in tqdm(dataloader):
         imgs, txts, targets = data
         B = len(targets)
+        if not isinstance(targets, torch.Tensor):
+            targets = torch.as_tensor(targets)
 
         outputs = model(imgs, txts)
-        # TO BE IMPLEMENTED
+        preds = (outputs.sigmoid().squeeze() * max_depth).clip(min_depth, max_depth)
+        targets = targets.squeeze().to(preds.device)
+
+        valid_mask = torch.logical_and(targets>min_depth, targets<max_depth)
+        errors = compute_depth_errors(preds[valid_mask], targets[valid_mask])
+        errors_all = np.concatenate([errors_all, errors.reshape(-1, 8)], axis=0)
 
         total += B
         if total >= cfg.eval.num_val_samples:
             break
+    
+    errors_all = errors_all.mean(0)
+    error_dict = {}
+    for i, k in enumerate(keys):
+        error_dict.update({k: errors_all[i]})
+    return error_dict
 
 
 @METRICS.register()
@@ -94,6 +109,26 @@ def box_iou(a, b):
     iou = inter / union
     # [B]
     return iou
+
+
+def compute_depth_errors(pred, gt):
+    delta = torch.maximum((pred / gt), (gt / pred))
+    d1 = (delta < 1.25).mean()
+    d2 = (delta < 1.25 ** 2).mean()
+    d3 = (delta < 1.25 ** 3).mean()
+
+    rms = (pred - gt) ** 2
+    rms = torch.sqrt(rms.mean())
+
+    log_rms = (torch.log(pred/gt)) ** 2
+    log_rms = torch.sqrt(log_rms.mean())
+
+    abs_rel = torch.mean(torch.abs(pred - gt) / gt)
+    sq_rel = torch.mean(((pred - gt) ** 2) / gt)
+
+    log10 = torch.log10(pred/gt).abs().mean()
+
+    return [d1, d2, d3, abs_rel, sq_rel, rms, log_rms, log10]
 
 
 def build_evaluator(eval_type):

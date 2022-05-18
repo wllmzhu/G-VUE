@@ -3,6 +3,6 @@ fix: True
 image_size: ${model.image_size}
 reduction: [4, 8, 16, 32]
 hidden_dim: [96, 192, 384, 768]
-extract_layer: [2, 5, 8]
+extract_layer: [2, 5, 8, 11]
 nheads: 8
 positional_embedding: sine

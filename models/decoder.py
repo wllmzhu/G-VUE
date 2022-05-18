@@ -88,7 +88,7 @@ class DenseType(nn.Module):
             norm_cfg=dict(type='BN', requires_grad=True)
         )
 
-        self.dropout = nn.Dropout2d(cfg.dropout_ratio)
+        self.dropout = nn.Dropout2d(cfg.dropout)
         self.linear_pred = nn.Conv2d(embed_dim, cfg.num_classes, kernel_size=1)
 
     def forward(self, v_feature_list, txt_seqs=None, txt_pad_masks=None):

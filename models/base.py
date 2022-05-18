@@ -12,6 +12,7 @@ from .v_backbone import build_v_backbone
 from .l_backbone import RoBERTa
 from .decoder import build_decoder
 from .loss import build_loss
+from .decoder_utils import ViTPyramid
 
 
 class JointModel(nn.Module):
@@ -22,6 +23,16 @@ class JointModel(nn.Module):
         self.l_backbone = RoBERTa(cache_dir=cfg.l_backbone.cfg_dir)
         self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
         self.decoder = build_decoder(cfg.task.decoder)
+
+        if 'ViT' in cfg.v_backbone.key and cfg.task.decoder.key == 'DenseType':
+            self.vit_pyramid = ViTPyramid(
+                reductions=cfg.v_backbone.reduction,
+                hidden_dims=cfg.v_backbone.hidden_dim,
+                num_cross=len(cfg.v_backbone.extract_layer)-1
+            )
+        else:
+            self.vit_pyramid = None
+
         self.initialize(cfg.v_backbone.fix)
 
         self.criterion = build_loss(cfg.task.loss)
@@ -41,8 +52,15 @@ class JointModel(nn.Module):
             txt_seqs, txt_pad_masks = self.encode_txt(txts)
             txt_seqs = self.l_proj(txt_seqs)
         #  [B, T, D],  [B, T]
+        else:
+            txt_seqs = None
+            txt_pad_masks = None
         
         v_feature_list = self.v_backbone(imgs)
+
+        if self.vit_pyramid is not None:
+            v_feature_list = self.vit_pyramid(imgs, v_feature_list)
+
         # assume 'channel lies ahead of shape' in visual features
         # [B, C, h, w] for CNNs, as well as for ViTs
         return self.decoder(v_feature_list, txt_seqs, txt_pad_masks)

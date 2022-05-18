@@ -18,7 +18,12 @@ def MSELoss(outputs, gts):
 
 @LOSS.register()
 def DepthLoss(outputs, gts):
-    pass
+    min_depth, max_depth, var_val = 1e-3, 10, 0.85
+    preds = outputs.sigmoid().squeeze() * max_depth
+    gts = gts.squeeze().to(preds.device)
+    valid_mask = torch.logical_and(gts>min_depth, gts<max_depth)
+    d = torch.log(preds[valid_mask]/gts[valid_mask])
+    return torch.sqrt((d ** 2).mean() - var_val * (d.mean() ** 2)) * 10.0
 
 
 @LOSS.register()

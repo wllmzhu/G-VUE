@@ -2,8 +2,6 @@ import torch
 import timm
 import clip
 import torch.nn as nn
-from .transformer import TransformerDecoderLayer
-from .positional_embedding import build_positional_embedding
 from r3m import load_r3m
 from fvcore.common.registry import Registry
 BACKBONE = Registry('Backbone')
@@ -43,73 +41,39 @@ class ViT_CLIP(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.backbone = clip.load('ViT-B/32')[0].visual
-        # need to register hooks
 
-        reductions = cfg.reduction
-        hidden_dims = cfg.hidden_dim
-        num_extractions = len(cfg.extract_layer)
-
-        self.patch_embeds = []
-        self.cross_blocks = []
-        self.pos_embeds = []
-        for i in range(num_extractions):
-            self.patch_embeds.append(nn.Sequential(
-                nn.Conv2d(in_channels=3, out_channels=hidden_dims[i],
-                        kernel_size=reductions[i], stride=reductions[i]),
-                nn.LayerNorm(hidden_dims[i])
-            ))
-
-            self.cross_blocks.append(CrossBlock(
-                q_dim=hidden_dims[i], kv_dim=hidden_dims[-1], nheads=cfg.nheads
-            ))
-
-            self.pos_embeds.append(build_positional_embedding(
-                type=cfg.positional_embedding,
-                shape=(cfg.image_size//reductions[i], cfg.image_size//reductions[i]),
-                hidden_dim=hidden_dims[i]
-            ))
+        self.extract_fs = []
+        self._register_hooks(cfg.extract_layer)
 
         self.eval()
     
+    def _register_hooks(self, layers):
+        for block_idx, block in enumerate(self.backbone.transformer.resblocks):
+            if block_idx in layers:
+                block.register_forward_hook(self._feature_hook())
+    
+    def _feature_hook(self):
+        def _hook(model, input, output):
+            self.extract_fs.append(output)
+        return _hook
+    
+    @property
+    def dtype(self):
+        return self.backbone.conv1.weight.dtype
+
     @torch.no_grad()
     def forward(self, imgs):
-        f, c_last = self.backbone(imgs)
-        v_feature_list = []
-        for i in range(len(self.patch_embeds)):
-            c = self.patch_embeds[i](imgs)
-            c = self.cross_blocks[i](
-                q=c, kv=f[i],
-                pos_embed_q=self.pos_embeds[i](imgs.shape[0]),
-                pos_embed_kv=None   # kv already containing positional features
-            )
-            v_feature_list.append(c)
-        v_feature_list.append(c_last)
-        return v_feature_list
+        B, h, w = imgs.shape[0], imgs.shape[-2]//32, imgs.shape[-1]//32
+        imgs_ori_type = imgs.dtype
+        imgs = imgs.type(self.dtype)   # HalfTensor
 
+        self.extract_fs = []
+        _ = self.backbone(imgs)
 
-class CrossBlock(nn.Module):
-    def __init__(self, q_dim, kv_dim, nheads):
-        super().__init__()
-        self.cross_attn = TransformerDecoderLayer(
-            d_model=q_dim, nhead=nheads, dim_feedforward=4*q_dim, activation='gelu'
-        )
-        if q_dim == kv_dim:
-            self.proj = None
-        else:
-            self.proj = nn.Linear(kv_dim, q_dim)
-
-    def forward(self, q, kv, pos_embed_q, pos_embed_kv):
-        """
-        q & kv: [B, C, h, w]
-        pos_embed_q & pos_embed_kv: [B, hw, C]
-        """
-        if self.proj is not None:
-            kv = self.proj(kv)
-        return self.cross_attn(
-            tgt=q.flatten(2).permute(2, 0, 1), memory=kv.flatten(2).permute(2, 0, 1),
-            query_pos=pos_embed_q.permute(2, 0, 1) if pos_embed_q is not None else None,
-            pos=pos_embed_kv.permute(2, 0, 1) if pos_embed_kv is not None else None
-        )
+        imgs = imgs.type(imgs_ori_type)
+        # [1+hw, B, C] -> [B, C, h, w]
+        return [f[1:, ...].permute(1, 2, 0).view(B, -1, h, w).type(imgs_ori_type) 
+                for f in self.extract_fs]
 
 
 @BACKBONE.register()

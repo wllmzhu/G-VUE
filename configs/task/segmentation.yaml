@@ -15,6 +15,6 @@ decoder:
 
 loss: CrossEntropyLoss
 
-metrics: EvalDense
+metrics: EvalMask
 
-visualize: VisDense
+visualize: VisMask
