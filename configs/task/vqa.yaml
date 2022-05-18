@@ -11,25 +11,18 @@ decoder:
     reduction: ${backbone.reduction}
     input_dim_list: ${backbone.hidden_dim}
     hidden_dim: ${model.hidden_dim}
-    transformer_encoder:
+    transformer:
       num_layers: 6
       hidden_dim: ${task.decoder.params.hidden_dim}
       nheads: 8
       dropout: 0.1
     positional_embedding:
       type: sine
-      hidden_dim: ${task.decoder.params.transformer_encoder.hidden_dim}
+      hidden_dim: ${task.decoder.params.transformer.hidden_dim}
     num_classes: 1843
 
-loss:
-  key: CrossEntropyLoss
-<<<<<<< HEAD
-  params:
-    num_classes: ${decoder.params.num_classes}
-=======
+loss: CrossEntropyLoss
 
-metrics:
-  key: EvalQA
+metrics: EvalQA
 
 visualize: VisQA
->>>>>>> dev

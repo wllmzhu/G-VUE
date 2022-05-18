@@ -21,9 +21,9 @@ class DenseMLP(nn.Module):
         self.proj = nn.Linear(input_dim, embed_dim)
 
     def forward(self, x):
-        #[B C H W] -> [B HW C]
+        # [B C H W] -> [B HW C]
         x = x.flatten(2).transpose(1, 2)
-        #[B HW C] -> [B HW C_emb]
+        # [B HW C] -> [B HW C_emb]
         x = self.proj(x)
         return x
 
@@ -35,4 +35,6 @@ def resize(input,
            align_corners=None):
     if isinstance(size, torch.Size):
         size = tuple(int(x) for x in size)
+    elif isinstance(size, int):
+        size = tuple([size, size])
     return F.interpolate(input, size, scale_factor, mode, align_corners)

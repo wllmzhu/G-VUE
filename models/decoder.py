@@ -5,7 +5,7 @@ from .transformer import build_transformer_encoder
 from .positional_embedding import build_positional_embedding
 from fvcore.common.registry import Registry
 from mmcv.cnn import ConvModule
-from models.decoder_utils import LabelMLP, DenseMLP, resize
+from .decoder_utils import LabelMLP, DenseMLP, resize
 
 import hydra
 
@@ -20,10 +20,10 @@ class LabelType(nn.Module):
 
         self.v_proj = nn.Linear(cfg.input_dim_list[-1], cfg.hidden_dim)
         
-        self.block_1 = build_transformer_encoder(cfg.transformer_encoder)
+        self.block_1 = build_transformer_encoder(cfg.transformer)
 
         # LabelMLP is a MLP written for the LabelType decoder
-        self.output_head = LabelMLP(cfg.transformer_encoder.hidden_dim, cfg.num_classes)
+        self.output_head = LabelMLP(cfg.transformer.hidden_dim, cfg.num_classes)
 
         self.pos_embed = build_positional_embedding(
             type=cfg.positional_embedding.type,
@@ -68,14 +68,14 @@ class DenseType(nn.Module):
     """
     SegFormer Decoder
     """
-    def __init__(self, info):
+    def __init__(self, cfg):
         super().__init__()
 
-        self.info = info
-        c1_in_channels, c2_in_channels, c3_in_channels, c4_in_channels = self.info.in_channels
-        embed_dim = self.info.embed_dim
+        self.output_size = cfg.image_size
+        c1_in_channels, c2_in_channels, c3_in_channels, c4_in_channels = cfg.input_dim_list[-4:]
+        embed_dim = cfg.hidden_dim
 
-        # Dense is a MLP written for the DenseType decoder
+        # DenseMLP is a MLP written for the DenseType decoder
         self.linear_c4 = DenseMLP(input_dim=c4_in_channels, embed_dim=embed_dim)
         self.linear_c3 = DenseMLP(input_dim=c3_in_channels, embed_dim=embed_dim)
         self.linear_c2 = DenseMLP(input_dim=c2_in_channels, embed_dim=embed_dim)
@@ -88,36 +88,34 @@ class DenseType(nn.Module):
             norm_cfg=dict(type='BN', requires_grad=True)
         )
 
-        self.dropout = nn.Dropout2d(self.info.dropout_ratio)
-        self.linear_pred = nn.Conv2d(embed_dim, self.info.num_classes, kernel_size=1)
+        self.dropout = nn.Dropout2d(cfg.dropout_ratio)
+        self.linear_pred = nn.Conv2d(embed_dim, cfg.num_classes, kernel_size=1)
 
-
-    def forward(self, v_feature_list):
-        c1, c2, c3, c4 = v_feature_list
+    def forward(self, v_feature_list, txt_seqs=None, txt_pad_masks=None):
+        c1, c2, c3, c4 = v_feature_list[-4:]
 
         ############## MLP decoder on C1-C4 ###########
-        n, _, _, _ = c4.shape
+        B = c4.shape[0]
 
-        _c4 = self.linear_c4(c4).permute(0,2,1).reshape(n, -1, c4.shape[2], c4.shape[3])
-        _c4 = resize(_c4, size=c1.size()[2:],mode='bilinear')
+        _c4 = self.linear_c4(c4).permute(0, 2, 1).reshape(B, -1, c4.shape[2], c4.shape[3])
+        _c4 = resize(_c4, size=c1.size()[2:], mode='bilinear')
 
-        _c3 = self.linear_c3(c3).permute(0,2,1).reshape(n, -1, c3.shape[2], c3.shape[3])
-        _c3 = resize(_c3, size=c1.size()[2:],mode='bilinear')
+        _c3 = self.linear_c3(c3).permute(0, 2, 1).reshape(B, -1, c3.shape[2], c3.shape[3])
+        _c3 = resize(_c3, size=c1.size()[2:], mode='bilinear')
 
-        _c2 = self.linear_c2(c2).permute(0,2,1).reshape(n, -1, c2.shape[2], c2.shape[3])
-        _c2 = resize(_c2, size=c1.size()[2:],mode='bilinear')
+        _c2 = self.linear_c2(c2).permute(0, 2, 1).reshape(B, -1, c2.shape[2], c2.shape[3])
+        _c2 = resize(_c2, size=c1.size()[2:], mode='bilinear')
 
-        _c1 = self.linear_c1(c1).permute(0,2,1).reshape(n, -1, c1.shape[2], c1.shape[3])
+        _c1 = self.linear_c1(c1).permute(0, 2, 1).reshape(B, -1, c1.shape[2], c1.shape[3])
 
         _c = self.linear_fuse(torch.cat([_c4, _c3, _c2, _c1], dim=1))
 
         x = self.dropout(_c)
         x = self.linear_pred(x)
         
-        x = resize(x, size=self.info.output_resolution, mode='bilinear')
-
+        x = resize(x, size=self.output_size, mode='bilinear')
+        # [B, C, H, W]
         return x
-
 
 
 def build_decoder(cfg):

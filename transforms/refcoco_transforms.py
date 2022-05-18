@@ -1,9 +1,4 @@
-# Copyright (c) Aishwarya Kamath & Nicolas Carion. Licensed under the Apache License 2.0. All Rights Reserved
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-"""
-Transforms and data augmentation for image, bbox and mask.
-"""
-from .base_transforms import Compose, ToTensor, Normalize, RandomHorizontalFlip, RandomResize, RandomSizeCrop
+from .base import *
 
 
 def make_coco_transforms(image_set, cautious):
@@ -33,6 +28,3 @@ def make_coco_transforms(image_set, cautious):
                 normalize,
             ]
         )
-
-
-

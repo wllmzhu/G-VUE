@@ -7,27 +7,14 @@ dataset:
 decoder:
   key: DenseType
   params:
-    in_channels: [256, 512, 1024, 2048]
-    in_index: [0, 1, 2, 3]
     image_size: ${model.image_size}
-    reduction: ${backbone.reduction}
     input_dim_list: ${backbone.hidden_dim}
     hidden_dim: ${model.hidden_dim}
-    transformer_encoder:
-      num_layers: 6
-      hidden_dim: ${task.decoder.params.hidden_dim}
-      nheads: 8
-      dropout: 0.1
-    positional_embedding:
-      type: sine
-      hidden_dim: ${task.decoder.params.transformer_encoder.hidden_dim}
+    dropout: 0.1
     num_classes: 150
-    output_resolution: ${model.image_size}
 
-loss:
-  key: CrossEntropyLoss
+loss: CrossEntropyLoss
 
-metrics:
-  key: EvalDense
+metrics: EvalDense
 
 visualize: VisDense

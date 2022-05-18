@@ -1,6 +1,21 @@
 dataset:
   key: NYUv2Dataset
   info:
-    name: NYUv2
-    img_dir: 
-    index_file: 
+    img_dir: /scratch/generalvision/NYUv2/sync
+    train_index: /scratch/generalvision/NYUv2/sync/index_train.txt
+    test_index: /scratch/generalvision/NYUv2/sync/index_test.txt
+
+decoder:
+  key: DenseType
+  params:
+    image_size: ${model.image_size}
+    input_dim_list: ${backbone.hidden_dim}
+    hidden_dim: ${model.hidden_dim}
+    dropout: 0.1
+    num_classes: 1
+
+loss: DepthLoss
+
+metrics: EvalDepth
+
+visualize: VisDepth

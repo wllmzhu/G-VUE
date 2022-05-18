@@ -43,7 +43,8 @@ class JointModel(nn.Module):
         #  [B, T, D],  [B, T]
         
         v_feature_list = self.v_backbone(imgs)
-
+        # assume 'channel lies ahead of shape' in visual features
+        # [B, C, h, w] for CNNs, as well as for ViTs
         return self.decoder(v_feature_list, txt_seqs, txt_pad_masks)
 
     @torch.no_grad()

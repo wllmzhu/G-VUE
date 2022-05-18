@@ -14,7 +14,7 @@ norm_stds = torch.as_tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
 
 @VISUALIZE.register()
 @torch.no_grad()
-def VisQA(html_writer, model, dataloader, cfg, step, vis_dir):
+def VisDepth(html_writer, model, dataloader, cfg, step, vis_dir):
     html_writer.add_element({
         0: 'query',
         1: 'visualization',
@@ -28,6 +28,48 @@ def VisQA(html_writer, model, dataloader, cfg, step, vis_dir):
         imgs, txts, targets = data
         outputs = model(imgs, txts)
         # TO BE IMPLEMENTED
+
+        B = len(targets)
+        for i in range(B):
+            if count+i >= cfg.training.num_vis_samples:
+                finish_vis = True
+                break
+            
+            vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
+            vis_img = vis_img.detach().cpu().numpy() * 255
+            vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
+
+            vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
+            skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+
+            html_writer.add_element({
+                0: txts[i],
+                1: html_writer.image_tag(vis_name),
+                2: pred,
+                3: gt
+            })
+        
+        if finish_vis is True:
+            break
+        
+        count += B
+
+
+@VISUALIZE.register()
+@torch.no_grad()
+def VisQA(html_writer, model, dataloader, cfg, step, vis_dir):
+    html_writer.add_element({
+        0: 'query',
+        1: 'visualization',
+        2: 'prediction',
+        3: 'ground truth'
+    })
+    count = 0
+    finish_vis = False
+    model.eval()
+    for data in dataloader:
+        imgs, txts, targets = data
+        outputs = model(imgs, txts)
         preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()
 
         B = len(targets)

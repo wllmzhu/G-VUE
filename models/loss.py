@@ -17,6 +17,11 @@ def MSELoss(outputs, gts):
 
 
 @LOSS.register()
+def DepthLoss(outputs, gts):
+    pass
+
+
+@LOSS.register()
 def BboxLoss(outputs, gts):
     outputs = outputs.sigmoid()
     preds = torch.stack([
@@ -64,6 +69,6 @@ def GIoU_loss(pred, gt, reduction='mean'):
     return loss
 
 
-def build_loss(cfg):
-    assert cfg.key in ['CrossEntropyLoss', 'MSELoss', 'BboxLoss']
-    return LOSS.get(cfg.key)
+def build_loss(loss_type):
+    assert loss_type in ['CrossEntropyLoss', 'MSELoss', 'BboxLoss', 'DepthLoss']
+    return LOSS.get(loss_type)

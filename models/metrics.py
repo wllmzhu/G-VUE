@@ -7,6 +7,23 @@ METRICS = Registry('Metrics')
 
 @METRICS.register()
 @torch.no_grad()
+def EvalDepth(model, dataloader, cfg):
+    model.eval()
+    # TO BE IMPLEMENTED
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        B = len(targets)
+
+        outputs = model(imgs, txts)
+        # TO BE IMPLEMENTED
+
+        total += B
+        if total >= cfg.eval.num_val_samples:
+            break
+
+
+@METRICS.register()
+@torch.no_grad()
 def EvalQA(model, dataloader, cfg):
     model.eval()
     acc = 0
@@ -79,6 +96,6 @@ def box_iou(a, b):
     return iou
 
 
-def build_evaluator(cfg):
-    assert cfg.key in ['EvalBbox', 'EvalQA']
-    return METRICS.get(cfg.key)
+def build_evaluator(eval_type):
+    assert eval_type in ['EvalBbox', 'EvalQA']
+    return METRICS.get(eval_type)
