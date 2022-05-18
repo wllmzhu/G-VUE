@@ -132,5 +132,4 @@ def compute_depth_errors(pred, gt):
 
 
 def build_evaluator(eval_type):
-    assert eval_type in ['EvalBbox', 'EvalQA']
     return METRICS.get(eval_type)

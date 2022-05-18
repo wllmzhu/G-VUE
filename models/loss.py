@@ -75,5 +75,4 @@ def GIoU_loss(pred, gt, reduction='mean'):
 
 
 def build_loss(loss_type):
-    assert loss_type in ['CrossEntropyLoss', 'MSELoss', 'BboxLoss', 'DepthLoss']
     return LOSS.get(loss_type)
