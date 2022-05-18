@@ -21,13 +21,15 @@ def VisDepth(html_writer, model, dataloader, cfg, step, vis_dir):
         2: 'prediction',
         3: 'ground truth'
     })
+    min_depth, max_depth = 1e-3, 10
     count = 0
     finish_vis = False
     model.eval()
     for data in dataloader:
         imgs, txts, targets = data
         outputs = model(imgs, txts)
-        # TO BE IMPLEMENTED
+        preds = (outputs.sigmoid().squeeze() * max_depth).clip(min_depth, max_depth)
+        targets = targets.squeeze().clip(min_depth, max_depth)
 
         B = len(targets)
         for i in range(B):
@@ -38,15 +40,26 @@ def VisDepth(html_writer, model, dataloader, cfg, step, vis_dir):
             vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
             vis_img = vis_img.detach().cpu().numpy() * 255
             vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
-
             vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
             skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+
+            depth_pred = preds[i] / max_depth
+            depth_pred = depth_pred.detach().cpu().numpy() * 255
+            depth_pred = depth_pred.astype(np.uint8)
+            pred_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_pred.png'
+            skio.imsave(os.path.join(vis_dir, pred_name), depth_pred)
+
+            depth_gt = targets[i] / max_depth
+            depth_gt = depth_gt.detach().cpu().numpy() * 255
+            depth_gt = depth_gt.astype(np.uint8)
+            gt_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_gt.png'
+            skio.imsave(os.path.join(vis_dir, gt_name), depth_gt)
 
             html_writer.add_element({
                 0: txts[i],
                 1: html_writer.image_tag(vis_name),
-                2: pred,
-                3: gt
+                2: html_writer.image_tag(pred_name),
+                3: html_writer.image_tag(gt_name)
             })
         
         if finish_vis is True:

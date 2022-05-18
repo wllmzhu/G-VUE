@@ -97,7 +97,7 @@ def train_worker(gpu, cfg):
     step = 0
     last_epoch = -1
     model_selection_metric = 0
-    best_metric = 0
+    best_metric = -100
     best_epoch = -1
     if os.path.exists(cfg.training.ckpt):
         ckpt = torch.load(cfg.training.ckpt, map_location=device)
@@ -223,7 +223,10 @@ def train_worker(gpu, cfg):
                 if len(metrics.keys()) > 0:
                     for k, v in metrics.items():
                         if eval_subset != 'train':
-                            model_selection_metric += v
+                            if k not in cfg.eval.lower_better:
+                                model_selection_metric += v
+                            else:
+                                model_selection_metric -= v
                         
                         v = round(v, 4)
                         eval_str += f' | {k}: {v}'
