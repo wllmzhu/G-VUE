@@ -5,6 +5,7 @@ import hydra
 from PIL import Image
 import torch
 from torch.utils.data import DataLoader, Dataset
+from torchvision.transforms import functional as F
 import utils.io as io
 from transforms.ade20k_transforms import make_ade20k_transforms
 from utils.misc import collate_fn
@@ -17,6 +18,7 @@ class ADE20kDataset(Dataset):
         super().__init__()
         self.info = info
         self.subset = subset
+        assert self.subset in self.info.subsets, f'subset {self.subset} not in {self.info.subsets}'
         self.transform = make_ade20k_transforms()
         self._load_dataset()
     
@@ -24,13 +26,27 @@ class ADE20kDataset(Dataset):
         with open(self.info.index_file, 'rb') as f:
             self.index_ade20k = pkl.load(f)
 
+        self.train_idx = []
+        self.val_idx = []
+        for idx, filename in enumerate(self.index_ade20k['filename']):
+            if 'train' in filename:
+                self.train_idx.append(idx)
+            elif 'val' in filename:
+                self.val_idx.append(idx)
+        # Data also contains "frame" data like ADE_frame_00000001.jpg, ignored
+
         print(f'load {len(self.index_ade20k["filename"])} samples in ADE20k {self.subset}')
 
     def __len__(self):
         return len(self.index_ade20k["filename"])
 
     def __getitem__(self, i):
-        filename = self.index_ade20k['filename'][i]  
+        if self.subset == 'train':
+            i = self.train_idx[i]
+        else:
+            i = self.val_idx[i]
+
+        filename = os.path.join(self.info.top_dir, self.index_ade20k['folder'][i], self.index_ade20k['filename'][i])
         fileseg = filename.replace('.jpg', '_seg.png')
 
         img = Image.open(filename)
@@ -40,6 +56,7 @@ class ADE20kDataset(Dataset):
         r = seg[:,:,0]
         g = seg[:,:,1]
         category = (r/10).astype(np.int32)*256+(g.astype(np.int32))
+        category = F.to_tensor(category)
 
         target = {
                 'depth': category}
@@ -59,9 +76,14 @@ def main(cfg):
     for data in dataloader:
         imgs, targets = data
         print({
-            'image': imgs,
-            'target': targets,
+            'image': imgs[0],
+            'target': targets[0],
         })
+        
+        import matplotlib.pyplot as plt
+        plt.imshow(targets[0].permute(1, 2, 0))
+        plt.show()
+
         break
 
 

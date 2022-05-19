@@ -1,9 +1,9 @@
 dataset:
   key: null
   info:
-    img_dir: /scratch/generalvision/ADE20k
-    anno_dir: /scratch/generalvision/null
-    index_file: None
+    subsets: [train, val]
+    top_dir: /home/wllmzhu/data/ade20k
+    index_file: /home/wllmzhu/data/ade20k/ADE20K_2021_17_01/index_ade20k.pkl
 
 decoder:
   key: DenseType
