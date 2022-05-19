@@ -13,6 +13,7 @@ decoder:
     dropout: 0.1
     num_classes: 150
 
+num_epochs: 100
 loss: CrossEntropyLoss
 
 metrics: EvalMask

@@ -1,6 +1,7 @@
 dataset:
   key: RefCOCODataset
   info:
+    subsets: [train, val, testA, testB]
     img_dir: /scratch/generalvision/mscoco/images/train2014
     anno_dir: /scratch/generalvision/refexp/annos/refcoco
 
@@ -21,6 +22,7 @@ decoder:
       hidden_dim: ${task.decoder.params.transformer.hidden_dim}
     num_classes: 4
 
+num_epochs: 100
 loss: BboxLoss
 
 metrics: EvalBbox

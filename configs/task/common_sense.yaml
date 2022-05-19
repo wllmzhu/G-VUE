@@ -1,0 +1,30 @@
+dataset:
+  key: VCRDataset
+  info:
+    subsets: [train, val, test]
+    img_dir: /scratch/generalvision/vcr/??
+    anno_dir: /scratch/generalvision/vcr/??
+
+decoder:
+  key: LabelType
+  params:
+    image_size: ${model.image_size}
+    reduction: ${backbone.reduction}
+    input_dim_list: ${backbone.hidden_dim}
+    hidden_dim: ${model.hidden_dim}
+    transformer:
+      num_layers: 6
+      hidden_dim: ${task.decoder.params.hidden_dim}
+      nheads: 8
+      dropout: 0.1
+    positional_embedding:
+      type: sine
+      hidden_dim: ${task.decoder.params.transformer.hidden_dim}
+    num_classes: ??
+
+num_epochs: 100
+loss: CrossEntropyLoss
+
+metrics: EvalQA
+
+visualize: VisQA

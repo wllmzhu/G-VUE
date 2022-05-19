@@ -1,6 +1,7 @@
 dataset:
   key: GQADataset
   info:
+    subsets: [train, val, testdev]
     img_dir: /scratch/generalvision/GQA/images
     anno_dir: /scratch/generalvision/GQA/questions
 
@@ -21,6 +22,7 @@ decoder:
       hidden_dim: ${task.decoder.params.transformer.hidden_dim}
     num_classes: 1843
 
+num_epochs: 30
 loss: CrossEntropyLoss
 
 metrics: EvalQA

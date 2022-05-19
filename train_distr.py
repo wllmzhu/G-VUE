@@ -158,6 +158,9 @@ def train_worker(gpu, cfg):
 
         for it, data in enumerate(dataloaders['train']):
             imgs, txts, targets = data
+            if txts[0] is None:
+                txts = None
+            
             model.train()
             optimizer.zero_grad()
 
@@ -213,7 +216,7 @@ def train_worker(gpu, cfg):
             model_selection_metric = 0
             for eval_subset in ['val']:
                 dataloader = dataloaders[eval_subset]
-                dataset_name = dataloader.dataset.dataset_name
+                dataset_name = cfg.task.dataset.key
                 print(f'Evaluating on {dataset_name}')
 
                 metrics = evaluator(model, dataloader, cfg)

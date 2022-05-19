@@ -16,9 +16,8 @@ def eval_non_train_full(cfg):
 
     datasets = {}
     max_size = 0
-    for fname in os.listdir(cfg.task.dataset.info.anno_dir):
-        if fname.endswith('json') and 'train' not in fname:
-            subset = fname.replace('.json', '')
+    for subset in cfg.task.dataset.info.subsets:
+        if subset != 'train':
             datasets.update({
                 subset: create_dataset(cfg, subset)
             })
@@ -50,7 +49,7 @@ def eval_non_train_full(cfg):
             num_workers=cfg.eval.num_workers,
             pin_memory=True
         )
-        dataset_name = dataset.dataset_name
+        dataset_name = cfg.task.dataset.key
         print(f'Evaluating on {dataset_name}')
 
         metrics = evaluator(model, dataloader, cfg)

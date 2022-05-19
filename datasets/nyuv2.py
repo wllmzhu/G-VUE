@@ -27,14 +27,16 @@ class NYUv2Dataset(Dataset):
     def __init__(self, info, subset):
         self.info = info
         self.subset = subset
-        self.transform = make_nyuv2_transforms(subset)
+        self.transform = make_nyuv2_transforms(subset, cautious=False)
         self._load_dataset()
     
-    def _load_datasets(self):
+    def _load_dataset(self):
         if self.subset == 'train':
+            img_dir = self.info.train_img_dir
             with open(self.info.train_index, 'r') as f:
                 index_nyuv2 = f.readlines()
         else:
+            img_dir = self.info.test_img_dir
             with open(self.info.test_index, 'r') as f:
                 index_nyuv2 = f.readlines()
 
@@ -42,8 +44,8 @@ class NYUv2Dataset(Dataset):
         self.depth_paths = []
         for filename_pair in index_nyuv2:
             image_name, depth_name = filename_pair.split()[:2]
-            self.image_paths.append(os.path.join(self.info.img_dir, image_name))
-            self.depth_paths.append(os.path.join(self.info.img_dir, depth_name))
+            self.image_paths.append(os.path.join(img_dir, image_name))
+            self.depth_paths.append(os.path.join(img_dir, depth_name))
 
     def __getitem__(self, i):
         image_path, depth_path = self.image_paths[i], self.depth_paths[i]

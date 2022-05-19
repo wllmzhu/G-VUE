@@ -33,7 +33,7 @@ model:
 
 training:
   ckpt: ${exp_dir}/ckpts/model.pth
-  num_epochs: 50
+  num_epochs: ${task.num_epochs}
   batch_size: 128
   num_workers: 20
   lr: 1e-4

@@ -1,7 +1,9 @@
 dataset:
   key: NYUv2Dataset
   info:
-    img_dir: /scratch/generalvision/NYUv2/sync
+    subsets: [train, test]
+    train_img_dir: /scratch/generalvision/NYUv2/sync
+    test_img_dir: /scratch/generalvision/NYUv2/labelled
     train_index: /scratch/generalvision/NYUv2/sync/index_train.txt
     test_index: /scratch/generalvision/NYUv2/sync/index_test.txt
 
@@ -14,6 +16,7 @@ decoder:
     dropout: 0.1
     num_classes: 1
 
+num_epochs: 100
 loss: DepthLoss
 
 metrics: EvalDepth

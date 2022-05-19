@@ -14,7 +14,7 @@ class GQADataset(Dataset):
     def __init__(self, info, subset):
         super().__init__()
         self.info = info
-        self.subsets = ['train', 'val', 'testdev']
+        self.subsets = info.subsets
         self.subset = subset
         assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets} (test is not a valid split for GQA because it contains questions only)'
         self.transform = make_gqa_transforms()
@@ -47,7 +47,7 @@ class GQADataset(Dataset):
                 split = io.load_json_object(
                     os.path.join(self.info.anno_dir, f'{subset}_balanced_questions.json')
                 )
-                print(f'(building answer ID dictionary) load {len(split)} samples in {self.dataset_name}_{subset}')
+                print(f'(building answer ID dictionary) load {len(split)} samples in {subset}')
             for _, sample in split.items():
                 answer = sample['answer']
                 if answer not in self.answer_to_idx:

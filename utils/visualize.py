@@ -27,7 +27,7 @@ def VisDepth(html_writer, model, dataloader, cfg, step, vis_dir):
     model.eval()
     for data in dataloader:
         imgs, txts, targets = data
-        outputs = model(imgs, txts)
+        outputs = model(imgs, txts=None)
         preds = (outputs.sigmoid().squeeze() * max_depth).clip(min_depth, max_depth)
         targets = targets.squeeze().clip(min_depth, max_depth)
 

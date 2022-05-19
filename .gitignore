@@ -16,3 +16,4 @@ myproject.egg-info/
 *.log
 *.out
 logs/
+*.nfs*
