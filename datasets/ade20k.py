@@ -6,7 +6,7 @@ from PIL import Image
 import torch
 from torch.utils.data import DataLoader, Dataset
 import utils.io as io
-from transforms.refcoco_transforms import make_ade20k_transforms
+from transforms.ade20k_transforms import make_ade20k_transforms
 from utils.misc import collate_fn
 from base import DATASET
 
@@ -17,7 +17,8 @@ class ADE20kDataset(Dataset):
         super().__init__()
         self.info = info
         self.subset = subset
-        self.transform = make_ade20k_transforms(subset, cautious=True)
+        self.transform = make_ade20k_transforms()
+        self._load_dataset()
     
     def _load_dataset(self):
         with open(self.info.index_file, 'rb') as f:
@@ -26,7 +27,7 @@ class ADE20kDataset(Dataset):
         print(f'load {len(self.index_ade20k["filename"])} samples in ADE20k {self.subset}')
 
     def __len__(self):
-        return len(self.samples)
+        return len(self.index_ade20k["filename"])
 
     def __getitem__(self, i):
         filename = self.index_ade20k['filename'][i]  
@@ -38,10 +39,10 @@ class ADE20kDataset(Dataset):
             seg = np.array(io)
         r = seg[:,:,0]
         g = seg[:,:,1]
-        depth = (r/10).astype(np.int32)*256+(g.astype(np.int32))
+        category = (r/10).astype(np.int32)*256+(g.astype(np.int32))
 
         target = {
-                'depth': depth}
+                'depth': category}
         img, target = self.transform(img, target)
 
         # image, segmentation
@@ -51,9 +52,9 @@ class ADE20kDataset(Dataset):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)
 
 
-@hydra.main(config_path='../config', config_name='segmentation.yaml')
+@hydra.main(config_path='../configs/task', config_name='segmentation.yaml')
 def main(cfg):
-    dataset = ADE20kDataset('refcoco', cfg.dataset.info, 'val', 'segmentation')
+    dataset = ADE20kDataset(cfg.dataset.info, 'val')
     dataloader = dataset.get_dataloader(batch_size=8, shuffle=False)
     for data in dataloader:
         imgs, targets = data

@@ -65,9 +65,9 @@ class VCRDataset(Dataset):
         sample = json.loads(self.samples[i])
 
         choices = [self.item_to_str(choice) for choice in sample["answer_choices"]]
-        choices = ' [SEP] '.join([' '.join(choice) for choice in choices])
+        choices = ' <SEP> '.join([' '.join(choice) for choice in choices])
         question = ' '.join(self.item_to_str(sample['question']))
-        question += ' [SEP] ' + choices
+        question += ' <SEP> ' + choices
 
         answer_index = sample['answer_label']
 

@@ -3,6 +3,7 @@ dataset:
   info:
     img_dir: /scratch/generalvision/ADE20k
     anno_dir: /scratch/generalvision/null
+    index_file: None
 
 decoder:
   key: DenseType
