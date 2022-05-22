@@ -2,9 +2,9 @@ dataset:
   key: ADE20kDataset
   info:
     subsets: [train, val]
-    top_dir: /mnt/huangjiangyong
-    index_file: /mnt/huangjiangyong/ADE20K_2021_17_01/index_ade20k.pkl
-    class_dict: /mnt/huangjiangyong/ADE20K_2021_17_01/class_index.txt
+    index_dir: /home/wllmzhu/data/mit/ADEChallengeData2016/
+    img_dir: /home/wllmzhu/data/mit/ADEChallengeData2016/images
+    anno_dir: /home/wllmzhu/data/mit/ADEChallengeData2016/annotations
 
 decoder:
   key: DenseType
