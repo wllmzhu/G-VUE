@@ -7,6 +7,41 @@ METRICS = Registry('Metrics')
 
 @METRICS.register()
 @torch.no_grad()
+def EvalSeg(model, dataloader, cfg):
+    model.eval()
+    num_classes = cfg.task.num_classes
+    intersections = np.zeros(num_classes-1)   # 151-1, ignore 0
+    unions = np.zeros(num_classes-1)
+    total = 0
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        B = len(targets)
+        if not isinstance(targets, torch.Tensor):
+            targets = torch.as_tensor(targets)
+
+        outputs = model(imgs, txts=None)
+        targets = targets.to(outputs.device)
+
+        preds = outputs.argmax(1)
+        appear_classes = (torch.cat([preds.unique(), targets.unique()])).unique()
+        for i in appear_classes:
+            if i > 0:
+                iou, intersection, union = compute_iou_mask(preds==i, targets==i)
+                intersections[i-1] += intersection
+                unions[i-1] += union
+
+        total += B
+        if total >= cfg.eval.num_val_samples:
+            break
+    
+    valid_classes = (unions > 0)
+    ious = intersections[valid_classes] / unions[valid_classes]
+    # mean IoU
+    return {'mean IoU': ious.mean()}
+
+
+@METRICS.register()
+@torch.no_grad()
 def EvalDepth(model, dataloader, cfg):
     model.eval()
     min_depth, max_depth = 1e-3, 10
@@ -131,6 +166,16 @@ def compute_depth_errors(pred, gt):
 
     errors = [d1, d2, d3, abs_rel, sq_rel, rms, log_rms, log10]
     return np.array([v.detach().cpu().numpy() for v in errors])
+
+
+def compute_iou_mask(pred_mask, gt_mask):
+    """
+    masks are both bool type
+    """
+    inter = torch.logical_and(pred_mask, gt_mask).sum()
+    union = torch.logical_or(pred_mask, gt_mask).sum()
+    iou = inter / (union+1e-6)
+    return iou, inter, union
 
 
 def build_evaluator(eval_type):

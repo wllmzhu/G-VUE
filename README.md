@@ -3,12 +3,30 @@ General *Vision* Understanding Evaluation
 
 
 # Setup
-Run 
-```
-pip install -e .
-```
-in the top-level directory ("G-VUE") to register packages in this repo.
+- Register: run command below in the top-level directory ("G-VUE") to register packages in this repo.
 
+  ```bash
+  pip install -e .
+  ```
+
+- Create environment from "environment.yaml".
+
+  ```bash
+  conda env create -f environment.yml
+  ```
+
+- Install API of [CLIP](https://github.com/openai/CLIP) for initializing baseline backbones.
+
+  ```bash
+  pip install ftfy regex tqdm
+  pip install git+https://github.com/openai/CLIP.git
+  ```
+
+- Specify your pytorch version and cuda version to Install mmcv package. Take our versions for example.
+
+  ```bash
+  pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
+  ```
 
 # Tasks
 

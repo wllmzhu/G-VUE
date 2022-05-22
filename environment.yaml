@@ -1,0 +1,22 @@
+name: GVUE
+channels:
+  - defaults
+dependencies:
+  - python=3.8
+  - pytorch
+  - cudatoolkit=11.3
+  - torchaudio
+  - torchvision
+  - pip:
+    - numpy
+    - opencv-python
+    - pillow
+    - scikit-image
+    - scipy
+    - timm
+    - transformers
+    - hydra-core
+    - omegaconf
+    - fvcore
+    - pytorch_transformers
+    - matplotlib

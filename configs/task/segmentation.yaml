@@ -2,9 +2,9 @@ dataset:
   key: ADE20kDataset
   info:
     subsets: [train, val]
-    index_dir: /home/wllmzhu/data/mit/ADEChallengeData2016/
-    img_dir: /home/wllmzhu/data/mit/ADEChallengeData2016/images
-    anno_dir: /home/wllmzhu/data/mit/ADEChallengeData2016/annotations
+    index_dir: /scratch/generalvision/ADE20k
+    img_dir: /scratch/generalvision/ADE20k/images
+    anno_dir: /scratch/generalvision/ADE20k/annotations
 
 decoder:
   key: DenseType
@@ -13,11 +13,12 @@ decoder:
     input_dim_list: ${backbone.hidden_dim}
     hidden_dim: ${model.hidden_dim}
     dropout: 0.1
-    num_classes: 150
+    num_classes: ${task.num_classes}
 
+num_classes: 151
 num_epochs: 50
-loss: CrossEntropyLoss
+loss: CrossEntropyLossWithIgnore
 
-metrics: EvalMask
+metrics: EvalSeg
 
-visualize: VisMask
+visualize: VisSeg

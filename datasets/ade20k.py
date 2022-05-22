@@ -10,7 +10,7 @@ from torchvision.transforms import functional as F
 import utils.io as io
 from transforms.ade20k_transforms import make_ade20k_transforms
 from utils.misc import collate_fn
-from base import DATASET
+from .base import DATASET
 
 
 @DATASET.register()
@@ -39,15 +39,16 @@ class ADE20kDataset(Dataset):
         img = Image.open(img_filename).convert('RGB')
         seg = Image.open(seg_filename)
 
-        seg = F.to_tensor(seg) - 1
+        seg = F.to_tensor(seg)
+        # note: here uint8 is converted to [0, 1] automatically
 
-        target = {
-                'depth': seg}
+        target = {'depth': seg}
 
         img, target = self.transform(img, target)
-
+        # [0, 1] back to [0, 255], loss computing requires dtype long
+        seg = (target['depth'] * 255).squeeze().to(torch.long)
         # image, segmentation
-        return img, None, target['depth']
+        return img, None, seg
 
     def get_dataloader(self, **kwargs):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)

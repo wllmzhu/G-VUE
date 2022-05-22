@@ -11,6 +11,12 @@ def CrossEntropyLoss(outputs, gts):
 
 
 @LOSS.register()
+def CrossEntropyLossWithIgnore(outputs, gts):
+    gts = gts.to(outputs.device)
+    return F.cross_entropy(outputs, gts, ignore_index=0)
+
+
+@LOSS.register()
 def MSELoss(outputs, gts):
     gts = gts.to(outputs.device)
     return F.mse_loss(outputs, gts)
