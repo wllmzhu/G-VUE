@@ -1,0 +1,4 @@
+key: ResNet_CLIP
+fix: True
+reduction: [4, 8, 16, 32]
+hidden_dim: [256, 512, 1024, 2048]

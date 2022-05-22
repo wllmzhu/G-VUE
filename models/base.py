@@ -24,14 +24,27 @@ class JointModel(nn.Module):
         self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
         self.decoder = build_decoder(cfg.task.decoder)
 
-        if 'ViT' in cfg.v_backbone.key and cfg.task.decoder.key == 'DenseType':
-            self.vit_pyramid = ViTPyramid(
-                reductions=cfg.v_backbone.reduction,
-                hidden_dims=cfg.v_backbone.hidden_dim,
-                num_cross=len(cfg.v_backbone.extract_layer)-1
-            )
-        else:
-            self.vit_pyramid = None
+        # if 'ViT' in cfg.v_backbone.key and cfg.task.decoder.key == 'DenseType':
+        #     # self.vit_pyramid = ViTPyramid(
+        #     #     reductions=cfg.v_backbone.reduction,
+        #     #     hidden_dims=cfg.v_backbone.hidden_dim,
+        #     #     num_cross=len(cfg.v_backbone.extract_layer)-1
+        #     # )
+        #     self.vit_pyramid = nn.ModuleList(
+        #         [
+        #             nn.Sequential(
+        #                 nn.ConvTranspose2d(cfg.v_backbone.hidden_dim[0], cfg.v_backbone.hidden_dim[0], 2, 2),
+        #                 nn.GroupNorm(32, cfg.v_backbone.hidden_dim[0]),
+        #                 nn.GELU(),
+        #                 nn.ConvTranspose2d(cfg.v_backbone.hidden_dim[0], cfg.v_backbone.hidden_dim[0], 2, 2),
+        #             ),
+        #             nn.ConvTranspose2d(cfg.v_backbone.hidden_dim[1], cfg.v_backbone.hidden_dim[1], 2, 2),
+        #             nn.Identity(),
+        #             nn.MaxPool2d(2),
+        #         ]
+        #     )
+        # else:
+        #     self.vit_pyramid = None
 
         self.initialize(cfg.v_backbone.fix)
 
@@ -58,10 +71,11 @@ class JointModel(nn.Module):
         
         v_feature_list = self.v_backbone(imgs)
 
-        if self.vit_pyramid is not None:
-            v_feature_list = self.vit_pyramid(imgs, v_feature_list)
+        # if self.vit_pyramid is not None:
+        #     # v_feature_list = self.vit_pyramid(imgs, v_feature_list)
+        #     v_feature_list = [self.vit_pyramid[i](f) for i, f in enumerate(v_feature_list)]
 
-        # assume 'channel lies ahead of shape' in visual features
+        # assume 'channel' lies ahead of 'shape' in visual features
         # [B, C, h, w] for CNNs, as well as for ViTs
         return self.decoder(v_feature_list, txt_seqs, txt_pad_masks)
 

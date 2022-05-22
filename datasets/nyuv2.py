@@ -27,7 +27,7 @@ class NYUv2Dataset(Dataset):
     def __init__(self, info, subset):
         self.info = info
         self.subset = subset
-        self.transform = make_nyuv2_transforms(subset, cautious=False)
+        self.transform = make_nyuv2_transforms(subset)
         self._load_dataset()
     
     def _load_dataset(self):

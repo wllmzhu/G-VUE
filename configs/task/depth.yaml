@@ -16,7 +16,7 @@ decoder:
     dropout: 0.1
     num_classes: 1
 
-num_epochs: 100
+num_epochs: 50
 loss: DepthLoss
 
 metrics: EvalDepth

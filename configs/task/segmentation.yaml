@@ -1,9 +1,10 @@
 dataset:
-  key: null
+  key: ADE20kDataset
   info:
     subsets: [train, val]
-    top_dir: /home/wllmzhu/data/ade20k
-    index_file: /home/wllmzhu/data/ade20k/ADE20K_2021_17_01/index_ade20k.pkl
+    top_dir: /mnt/huangjiangyong
+    index_file: /mnt/huangjiangyong/ADE20K_2021_17_01/index_ade20k.pkl
+    class_dict: /mnt/huangjiangyong/ADE20K_2021_17_01/class_index.txt
 
 decoder:
   key: DenseType
@@ -14,7 +15,7 @@ decoder:
     dropout: 0.1
     num_classes: 150
 
-num_epochs: 100
+num_epochs: 50
 loss: CrossEntropyLoss
 
 metrics: EvalMask
