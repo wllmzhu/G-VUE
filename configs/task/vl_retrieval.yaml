@@ -1,0 +1,6 @@
+dataset:
+  key: GQADataset
+  info:
+    subsets: [train, val, test]
+    img_dir: /home/wllmzhu/data/flickr30k/flickr30k-images
+    anno_dir: /home/wllmzhu/data/flickr30k
