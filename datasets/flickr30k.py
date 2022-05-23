@@ -3,6 +3,7 @@ import hydra
 from PIL import Image
 import torch
 from torch.utils.data import DataLoader, Dataset
+import re
 import utils.io as io
 from utils.misc import collate_fn
 from base import DATASET
@@ -15,13 +16,13 @@ class Flickr30kDataset(Dataset):
         super().__init__()
         self.info = info
         self.subset = subset
-        assert self.subset in self.subsets, f'subset {self.subset} not in {self.info.subsets}'
+        assert self.subset in self.info.subsets, f'subset {self.subset} not in {self.info.subsets}'
         self.transform = make_flickr30k_transforms()
         self._load_dataset()
 
     def _load_dataset(self):
         self.samples = io.load_json_object(
-            os.path.join(self.info.anno_dir, f'flickr30_{self.subset}.json')
+            os.path.join(self.info.anno_dir, f'flickr30k_{self.subset}.json')
         )
         print(f'load {len(self.samples)} samples in Flickr30k {self.subset}')
 
@@ -33,7 +34,7 @@ class Flickr30kDataset(Dataset):
         for img_id, ann in enumerate(self.samples):
             self.img2txt[img_id] = []
             for caption in ann['caption']:
-                self.texts.append(self.pre_caption(caption) + '<SEP>')
+                self.texts.append(self.pre_caption(caption) + ' <SEP> ')
                 self.img2txt[img_id].append(txt_id)
                 self.txt2img[txt_id] = img_id
                 txt_id += 1 
@@ -41,7 +42,7 @@ class Flickr30kDataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
-    def pre_caption(caption):
+    def pre_caption(self, caption):
         caption = re.sub(
             r"([,.'!?\"()*#:;~])",
             '',
