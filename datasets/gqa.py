@@ -15,7 +15,8 @@ class GQADataset(Dataset):
         super().__init__()
         self.info = info
         self.subset = subset
-        assert self.subset in self.subsets, f'subset {self.subset} not in {self.info.subsets} (test is not a valid split for GQA because it contains questions only)'
+        self.subsets = info.subsets
+        assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets} (test is not a valid split for GQA because it contains questions only)'
         self.transform = make_gqa_transforms()
         self._load_dataset()
         self._build_dict()

@@ -17,6 +17,13 @@ def CrossEntropyLossWithIgnore(outputs, gts):
 
 
 @LOSS.register()
+def VLMatchingLoss(outputs, gts):
+    outputs = outputs.view(gts.shape[0], -1)
+    gts = gts.to(outputs.device)
+    return F.cross_entropy(outputs, gts)
+
+
+@LOSS.register()
 def MSELoss(outputs, gts):
     gts = gts.to(outputs.device)
     return F.mse_loss(outputs, gts)

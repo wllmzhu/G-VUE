@@ -149,6 +149,8 @@ def train_worker(gpu, cfg):
         optimizer.zero_grad()
         optimizer.step()
 
+    expand_batch = (cfg.task.key in ['vl_retrieval', 'common_sense'])
+    add_special_token = (cfg.task.key == 'common_sense')
     evaluator = build_evaluator(cfg.task.metrics)
 
     for epoch in range(last_epoch+1, cfg.training.num_epochs):
@@ -164,7 +166,8 @@ def train_worker(gpu, cfg):
             model.train()
             optimizer.zero_grad()
 
-            outputs = model(imgs, txts)
+            outputs = model(imgs, txts, expand_batch=expand_batch, add_special_token=add_special_token)
+
             if not isinstance(targets, torch.Tensor):
                 targets = torch.as_tensor(targets)
             loss = model.criterion(outputs, targets)
@@ -242,14 +245,26 @@ def train_worker(gpu, cfg):
                 best_metric = model_selection_metric
                 best_epoch = epoch
                 writer.add_scalar('Best Epoch', best_epoch, step)
-                torch.save({
-                    'model': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'epoch': best_epoch,
-                    'step': step,
-                    'model_selection_metric': model_selection_metric,
-                    'warmup_scheduler': warmup_scheduler.state_dict() if cfg.training.lr_linear_decay else None,
-                }, os.path.join(cfg.ckpt_dir, 'model.pth'))
+                save_ckpt(
+                    model=model, optimizer=optimizer.state_dict(), epoch=best_epoch, step=step,
+                    metrics=model_selection_metric,
+                    scheduler=warmup_scheduler.state_dict() if cfg.training.lr_linear_decay else None,
+                    path=os.path.join(cfg.ckpt_dir, 'model.pth'), fix_backbone=cfg.backbone.fix
+                )
+
+
+def save_ckpt(model, optimizer, epoch, step, metrics, scheduler, path, fix_backbone=True):
+    sd = model.state_dict()
+    for k in list(sd.keys()):
+        if 'l_backbone' in k:
+            del sd[k]
+        elif fix_backbone and 'v_backbone' in k:
+            del sd[k]
+
+    torch.save({
+        'model': sd, 'optimizer': optimizer, 'epoch': epoch, 'step': step,
+        'model_selection_metric': metrics, 'warmup_scheduler': scheduler
+    }, path)
 
 
 def get_lrs(optimizer):

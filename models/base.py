@@ -7,6 +7,7 @@ task_decoder is supposed to be trained, from which we evaluate visual represenat
 import torch
 import torch.nn as nn
 import numpy as np
+from einops import rearrange
 
 from .v_backbone import build_v_backbone
 from .l_backbone import RoBERTa
@@ -57,14 +58,19 @@ class JointModel(nn.Module):
             for p in self.v_backbone.parameters():
                 p.requires_grad_(False)
 
-    def forward(self, imgs, txts=None):
+    def forward(self, imgs, txts=None, expand_batch=False, add_special_token=False):
         self.device = next(self.parameters()).device
         imgs = imgs.to(self.device)
         
         if txts is not None:
-            txt_seqs, txt_pad_masks = self.encode_txt(txts)
+            txt_seqs, txt_pad_masks = self.encode_txt(txts, expand_batch, add_special_token)
+            #  [B, T, D],  [B, T]
+            if expand_batch:
+                r = txt_seqs.shape[0] // imgs.shape[0]
+                imgs = imgs.unsqueeze(1).repeat(1, r, 1, 1, 1)
+                imgs = rearrange(imgs, 'B r C H W -> (B r) C H W', r=r)
+            
             txt_seqs = self.l_proj(txt_seqs)
-        #  [B, T, D],  [B, T]
         else:
             txt_seqs = None
             txt_pad_masks = None
@@ -80,9 +86,65 @@ class JointModel(nn.Module):
         return self.decoder(v_feature_list, txt_seqs, txt_pad_masks)
 
     @torch.no_grad()
-    def encode_txt(self, txts):
-        txt_seqs, token_inputs = self.l_backbone(txts, device=self.device)
-        txt_pad_masks = token_inputs['attention_mask'].to(torch.bool)   # 0(False) for pad
+    def encode_txt(self, txts, expand_batch=False, add_special_token=False):
+        if expand_batch:
+            # for VL-Matching tasks
+            pairs_batch = []
+            attn_masks = []
+            # type_ids = []   # RoBERTa removes NSP task, so type_ids are unnecessary
+            max_len = 0
+            if add_special_token:
+                # for VCR dual-sentences
+                for txt in txts:
+                    # Q*1 + A*4
+                    question, answers = txt[0], txt[1:]
+                    question = self.l_backbone.tokenizer.convert_tokens_to_ids(
+                        self.l_backbone.tokenizer.tokenize(question)
+                    )
+                    for answer in answers:
+                        answer = self.l_backbone.tokenizer.convert_tokens_to_ids(
+                            self.l_backbone.tokenizer.tokenize(answer)
+                        )
+                        pair = self.l_backbone.tokenizer.build_inputs_with_special_tokens(
+                            question, answer
+                        )
+                        curr_len = len(pair)
+                        pairs_batch.append(pair)
+                        attn_masks.append([1]*curr_len)
+                        # type_ids.append([0]*(len(question)+2) + [1]*(len(answer)+2))
+                        max_len = max(max_len, curr_len)
+            else:
+                # for Flickr retrieval
+                for txt in txts:
+                    pair = self.l_backbone.tokenizer.encode(txt)   # <s> and </s> automatically added
+                    curr_len = len(pair)
+                    pairs_batch.append(pair)
+                    attn_masks.append([1]*curr_len)
+                    # type_ids.append([0]*(curr_len))   # single type
+                    max_len = max(max_len, curr_len)
+            
+            # pad to same length
+            for i in range(len(pairs_batch)):
+                pairs_batch[i] = pairs_batch[i] + [0]*(max_len-len(pairs_batch[i]))
+                attn_masks[i] = attn_masks[i] + [0]*(max_len-len(attn_masks[i]))
+                # type_ids[i] = type_ids[i] + [0]*(max_len-len(type_ids[i]))
+
+            pairs_batch_input = torch.as_tensor(pairs_batch, dtype=torch.int64, device=self.device)
+            pairs_batch_mask = torch.as_tensor(attn_masks, dtype=torch.int64, device=self.device)
+            # pairs_batch_segment = torch.as_tensor(type_ids, dtype=torch.int64, device=self.device)
+
+            txt_seqs = self.l_backbone.model(
+                input_ids=pairs_batch_input,
+                attention_mask=pairs_batch_mask,
+                # token_type_ids=pairs_batch_segment
+            )[0]
+            txt_pad_masks = pairs_batch_mask.to(torch.bool)   # 0(False) for pad
+
+        else:
+            # for a single sentence, <s> and </s> are automatically added when calling roberta
+            txt_seqs, token_inputs = self.l_backbone(txts, device=self.device)
+            txt_pad_masks = token_inputs['attention_mask'].to(torch.bool)   # 0(False) for pad
+        
         # txt_seqs: [B, T, D]
         # txt_pad_masks: [B, T]
         return txt_seqs, txt_pad_masks

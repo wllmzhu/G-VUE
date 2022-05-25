@@ -1,3 +1,5 @@
+key: depth
+
 dataset:
   key: NYUv2Dataset
   info:

@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 import re
 import utils.io as io
 from utils.misc import collate_fn
-from base import DATASET
+from .base import DATASET
 from transforms.flickr30k_transforms import make_flickr30k_transforms
 
 

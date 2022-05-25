@@ -1,3 +1,5 @@
+key: segmentation
+
 dataset:
   key: ADE20kDataset
   info:

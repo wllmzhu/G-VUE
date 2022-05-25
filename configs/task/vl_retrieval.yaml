@@ -1,6 +1,32 @@
+key: vl_retrieval
+
 dataset:
-  key: GQADataset
+  key: Flickr30kDataset
   info:
     subsets: [train, val, test]
-    img_dir: /home/wllmzhu/data/flickr30k/flickr30k-images
-    anno_dir: /home/wllmzhu/data/flickr30k
+    img_dir: /scratch/generalvision/flickr30k/flickr30k-images
+    anno_dir: /scratch/generalvision/flickr30k
+
+decoder:
+  key: LabelType
+  params:
+    image_size: ${model.image_size}
+    reduction: ${backbone.reduction}
+    input_dim_list: ${backbone.hidden_dim}
+    hidden_dim: ${model.hidden_dim}
+    transformer:
+      num_layers: 6
+      hidden_dim: ${task.decoder.params.hidden_dim}
+      nheads: 8
+      dropout: 0.1
+    positional_embedding:
+      type: sine
+      hidden_dim: ${task.decoder.params.transformer.hidden_dim}
+    num_classes: 1
+
+num_epochs: 30
+loss: VLMatchingLoss
+
+metrics: EvalRetrieval
+
+visualize: VisVLMatching

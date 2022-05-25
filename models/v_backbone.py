@@ -97,10 +97,59 @@ class ResNet_CLIP(nn.Module):
 
 
 @BACKBONE.register()
-class ViT_CLIP(nn.Module):
+class ViT_CLIP_32(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.backbone = clip.load('ViT-B/32')[0].visual
+        self.image_size = cfg.image_size
+        self.patch_size = cfg.patch_size
+        self.reductions = cfg.reduction
+
+        self.extract_fs = []
+        self._register_hooks(cfg.extract_layer)
+
+        self.eval()
+    
+    def _register_hooks(self, layers):
+        for block_idx, block in enumerate(self.backbone.transformer.resblocks):
+            if block_idx in layers:
+                block.register_forward_hook(self._feature_hook())
+    
+    def _feature_hook(self):
+        def _hook(model, input, output):
+            self.extract_fs.append(output)
+        return _hook
+    
+    @property
+    def dtype(self):
+        return self.backbone.conv1.weight.dtype
+
+    @torch.no_grad()
+    def forward(self, imgs):
+        B, h, w = imgs.shape[0], imgs.shape[-2]//self.patch_size, imgs.shape[-1]//self.patch_size
+        imgs_ori_type = imgs.dtype
+        imgs = imgs.type(self.dtype)   # HalfTensor
+
+        self.extract_fs = []
+        _ = self.backbone(imgs)
+
+        # [1+hw, B, C] -> [B, C, h, w]
+        fs = [f[1:, ...].permute(1, 2, 0).view(B, -1, h, w).type(imgs_ori_type) 
+              for f in self.extract_fs]
+        # create different resolutions
+        for i in range(len(self.reductions)):
+            if self.reductions[i] != self.patch_size:
+                fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
+        
+        imgs = imgs.type(imgs_ori_type)
+        return fs
+
+
+@BACKBONE.register()
+class ViT_CLIP_16(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.backbone = clip.load('ViT-B/16')[0].visual
         self.image_size = cfg.image_size
         self.patch_size = cfg.patch_size
         self.reductions = cfg.reduction

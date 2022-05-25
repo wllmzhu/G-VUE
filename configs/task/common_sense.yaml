@@ -1,9 +1,11 @@
+key: common_sense
+
 dataset:
   key: VCRDataset
   info:
-    subsets: [train, val, test]
-    img_dir: /scratch/generalvision/vcr/??
-    anno_dir: /scratch/generalvision/vcr/??
+    subsets: [train, val]
+    img_dir: /scratch/generalvision/vcr/vcr1images
+    anno_dir: /scratch/generalvision/vcr
 
 decoder:
   key: LabelType
@@ -20,11 +22,11 @@ decoder:
     positional_embedding:
       type: sine
       hidden_dim: ${task.decoder.params.transformer.hidden_dim}
-    num_classes: ??
+    num_classes: 1
 
-num_epochs: 100
-loss: CrossEntropyLoss
+num_epochs: 30
+loss: VLMatchingLoss
 
-metrics: EvalQA
+metrics: EvalVCR
 
-visualize: VisQA
+visualize: VisVLMatching
