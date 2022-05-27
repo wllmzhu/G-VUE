@@ -1,4 +1,5 @@
 import os
+from random import randint, choice
 import hydra
 from PIL import Image
 import torch
@@ -31,10 +32,18 @@ class Flickr30kDataset(Dataset):
         self.img2txt = {}
         txt_id = 0
 
-        for img_id, ann in enumerate(self.samples):
-            self.img2txt[img_id] = []
-            for caption in ann['caption']:
-                self.texts.append(self.pre_caption(caption) + ' <SEP> ')
+        for i, ann in enumerate(self.samples):
+            if 'image_id' in ann:
+                img_id = ann['image_id']
+            else:
+                img_id = i
+            
+            if img_id not in self.img2txt:
+                self.img2txt[img_id] = []
+            
+            cands = ann['caption'] if isinstance(ann['caption'], list) else [ann['caption']]
+            for caption in cands:
+                self.texts.append(self.pre_caption(caption))
                 self.img2txt[img_id].append(txt_id)
                 self.txt2img[txt_id] = img_id
                 txt_id += 1 
@@ -60,20 +69,63 @@ class Flickr30kDataset(Dataset):
         return caption
 
     def read_image(self, img_name):
-        img = Image.open(os.path.join(self.info.img_dir, img_name)).convert('RGB')
+        img = Image.open(os.path.join(self.info.anno_dir, img_name)).convert('RGB')
         return img
 
     def __getitem__(self, i):
+        if self.subset == 'train':
+            return self.get_learn_samples(i)
+        else:
+            return self.get_eval_samples(i)
+    
+    def get_learn_samples(self, i):
+        """
+        return [
+            [positive image, positive caption],
+            [negative image, positive caption],
+            [positive image, negative caption 1],
+            [positive image, negative caption 2]
+        ]
+        """
         sample = self.samples[i]
-        
-        img = self.read_image(os.path.join('..', sample['image']))
-        query = self.texts
-        answer = self.img2txt[i]
+        img = self.read_image(sample['image'])
+        caption = sample['caption']
+        img_id = sample['image_id']
+
+        neg_img_i = i
+        while self.samples[neg_img_i]['image_id'] == img_id:
+            neg_img_i = randint(0, len(self.samples)-1)
+        neg_img = self.read_image(self.samples[neg_img_i]['image'])
+
+        neg_txt1_i = i
+        while self.txt2img[neg_txt1_i] == img_id:
+            neg_txt1_i = randint(0, len(self.texts)-1)
+        neg_txt1 = self.texts[neg_txt1_i]
+
+        neg_txt2_i = i
+        while self.txt2img[neg_txt2_i] == img_id:
+            neg_txt2_i = randint(0, len(self.texts)-1)
+        neg_txt2 = self.texts[neg_txt2_i]
 
         img, _ = self.transform(img, None)
+        neg_img, _ = self.transform(neg_img, None)
+        
+        # return tensor [4, 3, H, W] for image
+        return torch.stack([img, neg_img, img, img]), [caption, caption, neg_txt1, neg_txt2], 0
+    
+    def get_eval_samples(self, i):
+        # return one image, all captions, and ground truth index
+        sample = self.samples[i]
+        img = self.read_image(sample['image'])
+        img, _ = self.transform(img, None)
 
-        #image, list of all texts, answer(caption id)
-        return img, query, answer
+        # sample 1 caption out of 5 candidates
+        query = []
+        for j in range(len(self.img2txt)):
+            cands = self.img2txt[j]
+            query.append(self.texts[choice(cands)])
+
+        return img, query, i
 
     def get_dataloader(self, **kwargs):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)

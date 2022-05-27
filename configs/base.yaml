@@ -24,7 +24,7 @@ multiprocessing_distributed: True
 
 model:
   task: ${task}
-  image_size: 224
+  image_size: 640
   hidden_dim: 256
   v_backbone: ${backbone}
   l_backbone:
@@ -34,9 +34,10 @@ model:
 training:
   ckpt: ${exp_dir}/ckpts/model.pth
   num_epochs: ${task.num_epochs}
-  batch_size: 128
+  batch_size: 16
   num_workers: 20
   lr: 1e-4
+  lr_backbone: 1e-5
   betas: [0.9, 0.99]
   weight_decay: 0.01
   lr_warmup: True
@@ -49,7 +50,7 @@ training:
 
 eval:
   ckpt: ${exp_dir}/ckpts/model.pth
-  batch_size: 100
+  batch_size: 30
   num_workers: 20
   num_val_samples: 1000
   lower_better: ['abs_rel', 'sq_rel', 'rms', 'log_rms', 'log10']

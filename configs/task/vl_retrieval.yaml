@@ -4,7 +4,6 @@ dataset:
   key: Flickr30kDataset
   info:
     subsets: [train, val, test]
-    img_dir: /scratch/generalvision/flickr30k/flickr30k-images
     anno_dir: /scratch/generalvision/flickr30k
 
 decoder:

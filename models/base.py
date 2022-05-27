@@ -47,14 +47,14 @@ class JointModel(nn.Module):
         # else:
         #     self.vit_pyramid = None
 
-        self.initialize(cfg.v_backbone.fix)
+        self.initialize()
 
         self.criterion = build_loss(cfg.task.loss)
     
-    def initialize(self, fix_v_backbone=True):
+    def initialize(self):
         for p in self.l_backbone.parameters():
             p.requires_grad_(False)
-        if fix_v_backbone:
+        if self.v_backbone.fix:
             for p in self.v_backbone.parameters():
                 p.requires_grad_(False)
 
@@ -65,15 +65,18 @@ class JointModel(nn.Module):
         if txts is not None:
             txt_seqs, txt_pad_masks = self.encode_txt(txts, expand_batch, add_special_token)
             #  [B, T, D],  [B, T]
-            if expand_batch:
-                r = txt_seqs.shape[0] // imgs.shape[0]
-                imgs = imgs.unsqueeze(1).repeat(1, r, 1, 1, 1)
-                imgs = rearrange(imgs, 'B r C H W -> (B r) C H W', r=r)
-            
             txt_seqs = self.l_proj(txt_seqs)
         else:
             txt_seqs = None
             txt_pad_masks = None
+        
+        if expand_batch:
+            if imgs.ndim == 4:
+                r = txt_seqs.shape[0] // imgs.shape[0]
+                imgs = imgs.unsqueeze(1).repeat(1, r, 1, 1, 1)
+                imgs = rearrange(imgs, 'B r C H W -> (B r) C H W')
+            elif imgs.ndim == 5:
+                imgs = rearrange(imgs, 'B r C H W -> (B r) C H W')
         
         v_feature_list = self.v_backbone(imgs)
 
@@ -116,12 +119,14 @@ class JointModel(nn.Module):
             else:
                 # for Flickr retrieval
                 for txt in txts:
-                    pair = self.l_backbone.tokenizer.encode(txt)   # <s> and </s> automatically added
-                    curr_len = len(pair)
-                    pairs_batch.append(pair)
-                    attn_masks.append([1]*curr_len)
-                    # type_ids.append([0]*(curr_len))   # single type
-                    max_len = max(max_len, curr_len)
+                    # 4 captions
+                    for cap in txt:
+                        pair = self.l_backbone.tokenizer.encode(cap)   # <s> and </s> automatically added
+                        curr_len = len(pair)
+                        pairs_batch.append(pair)
+                        attn_masks.append([1]*curr_len)
+                        # type_ids.append([0]*(curr_len))   # single type
+                        max_len = max(max_len, curr_len)
             
             # pad to same length
             for i in range(len(pairs_batch)):
@@ -148,3 +153,17 @@ class JointModel(nn.Module):
         # txt_seqs: [B, T, D]
         # txt_pad_masks: [B, T]
         return txt_seqs, txt_pad_masks
+    
+    def train(self):
+        for module in self.children():
+            module.train()
+
+        self.l_backbone.eval()
+        if self.v_backbone.fix:
+            self.v_backbone.eval()
+        
+        return self
+    
+    def eval(self):
+        for module in self.children():
+            module.eval()

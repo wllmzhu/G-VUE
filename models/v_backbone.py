@@ -16,11 +16,16 @@ class ResNet_ImageNet(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.backbone = timm.create_model('resnet50', pretrained=True, features_only=True)
-        self.backbone.eval()
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
     
-    @torch.no_grad()
     def forward(self, imgs):
-        return self.backbone(imgs)
+        if self.fix:
+            with torch.no_grad():
+                return self.backbone(imgs)
+        else:
+            return self.backbone(imgs)
 
 
 @BACKBONE.register()
@@ -37,11 +42,17 @@ class ResNet_MoCov3(nn.Module):
                     curr_sd[curr_k] = load_sd[k]
 
         self.backbone.load_state_dict(curr_sd)
-        self.backbone.eval()
+
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
     
-    @torch.no_grad()
     def forward(self, imgs):
-        return self.backbone(imgs)
+        if self.fix:
+            with torch.no_grad():
+                return self.backbone(imgs)
+        else:
+            return self.backbone(imgs)
 
 
 @BACKBONE.register()
@@ -51,11 +62,17 @@ class ResNet_Ego4D(nn.Module):
         self.backbone = timm.create_model('resnet50', pretrained=False, features_only=True)
         ego4d_weights = load_r3m('resnet50').module.convnet.state_dict()
         self.backbone.load_state_dict(ego4d_weights)
-        self.backbone.eval()
+
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
     
-    @torch.no_grad()
     def forward(self, imgs):
-        return self.backbone(imgs)
+        if self.fix:
+            with torch.no_grad():
+                return self.backbone(imgs)
+        else:
+            return self.backbone(imgs)
 
 
 @BACKBONE.register()
@@ -67,7 +84,9 @@ class ResNet_CLIP(nn.Module):
         self.extract_fs = []
         self._register_hooks()
 
-        self.eval()
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
     
     def _register_hooks(self):
         self.backbone.layer1.register_forward_hook(self._feature_hook())
@@ -84,8 +103,7 @@ class ResNet_CLIP(nn.Module):
     def dtype(self):
         return self.backbone.conv1.weight.dtype
 
-    @torch.no_grad()
-    def forward(self, imgs):
+    def extract_features(self, imgs):
         imgs_ori_type = imgs.dtype
         imgs = imgs.type(self.dtype)   # HalfTensor
 
@@ -94,6 +112,13 @@ class ResNet_CLIP(nn.Module):
 
         imgs = imgs.type(imgs_ori_type)
         return [f.type(imgs_ori_type) for f in self.extract_fs]
+    
+    def forward(self, imgs):
+        if self.fix:
+            with torch.no_grad():
+                return self.extract_features(imgs)
+        else:
+            return self.extract_features(imgs)
 
 
 @BACKBONE.register()
@@ -108,7 +133,9 @@ class ViT_CLIP_32(nn.Module):
         self.extract_fs = []
         self._register_hooks(cfg.extract_layer)
 
-        self.eval()
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
     
     def _register_hooks(self, layers):
         for block_idx, block in enumerate(self.backbone.transformer.resblocks):
@@ -124,8 +151,7 @@ class ViT_CLIP_32(nn.Module):
     def dtype(self):
         return self.backbone.conv1.weight.dtype
 
-    @torch.no_grad()
-    def forward(self, imgs):
+    def extract_features(self, imgs):
         B, h, w = imgs.shape[0], imgs.shape[-2]//self.patch_size, imgs.shape[-1]//self.patch_size
         imgs_ori_type = imgs.dtype
         imgs = imgs.type(self.dtype)   # HalfTensor
@@ -143,6 +169,13 @@ class ViT_CLIP_32(nn.Module):
         
         imgs = imgs.type(imgs_ori_type)
         return fs
+    
+    def forward(self, imgs):
+        if self.fix:
+            with torch.no_grad():
+                return self.extract_features(imgs)
+        else:
+            return self.extract_features(imgs)
 
 
 @BACKBONE.register()
@@ -157,7 +190,9 @@ class ViT_CLIP_16(nn.Module):
         self.extract_fs = []
         self._register_hooks(cfg.extract_layer)
 
-        self.eval()
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
     
     def _register_hooks(self, layers):
         for block_idx, block in enumerate(self.backbone.transformer.resblocks):
@@ -173,8 +208,7 @@ class ViT_CLIP_16(nn.Module):
     def dtype(self):
         return self.backbone.conv1.weight.dtype
 
-    @torch.no_grad()
-    def forward(self, imgs):
+    def extract_features(self, imgs):
         B, h, w = imgs.shape[0], imgs.shape[-2]//self.patch_size, imgs.shape[-1]//self.patch_size
         imgs_ori_type = imgs.dtype
         imgs = imgs.type(self.dtype)   # HalfTensor
@@ -192,24 +226,38 @@ class ViT_CLIP_16(nn.Module):
         
         imgs = imgs.type(imgs_ori_type)
         return fs
+    
+    def forward(self, imgs):
+        if self.fix:
+            with torch.no_grad():
+                return self.extract_features(imgs)
+        else:
+            return self.extract_features(imgs)
 
 
 @BACKBONE.register()
 class ViT_MAE(nn.Module):
     def __init__(self, cfg):
         super().__init__()
-        self.backbone = timm.create_model('vit_base_patch16_224', pretrained=False, num_classes=0)
+        self.backbone = timm.create_model('vit_base_patch16_224', pretrained=False, num_classes=0, img_size=640)
         self.image_size = cfg.image_size
         self.patch_size = cfg.patch_size
         self.reductions = cfg.reduction
 
         load_sd = torch.load(cfg.ckpt_path)['model']
-        self.backbone.load_state_dict(load_sd)
+        curr_sd = self.backbone.state_dict()
+        for k in load_sd.keys():
+            if k in curr_sd and curr_sd[k].shape == load_sd[k].shape:
+                curr_sd[k] = load_sd[k]
+        self.backbone.load_state_dict(curr_sd)
+        # self.backbone.load_state_dict(load_sd)
 
         self.extract_fs = []
         self._register_hooks(cfg.extract_layer)
 
-        self.eval()
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
     
     def _register_hooks(self, layers):
         for block_idx, block in enumerate(self.backbone.blocks):
@@ -221,8 +269,7 @@ class ViT_MAE(nn.Module):
             self.extract_fs.append(output)
         return _hook
 
-    @torch.no_grad()
-    def forward(self, imgs):
+    def extract_features(self, imgs):
         B, h, w = imgs.shape[0], imgs.shape[-2]//self.patch_size, imgs.shape[-1]//self.patch_size
 
         self.extract_fs = []
@@ -236,6 +283,13 @@ class ViT_MAE(nn.Module):
                 fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
         
         return fs
+    
+    def forward(self, imgs):
+        if self.fix:
+            with torch.no_grad():
+                return self.extract_features(imgs)
+        else:
+            return self.extract_features(imgs)
 
 
 @BACKBONE.register()

@@ -85,14 +85,32 @@ def train_worker(gpu, cfg):
     if gpu == 0:
         writer = SummaryWriter(log_dir=cfg.tb_dir)
 
-    params = []
-    for n, p in model.named_parameters():
-        if p.requires_grad:
-            params.append(p)
-            print(f'add {n} {p.shape} for optimization')
-    print(f'collect {len(params)} parameters for optimization')
+    if cfg.backbone.fix:
+        params = []
+        for n, p in model.named_parameters():
+            if p.requires_grad:
+                params.append(p)
+                print(f'add {n} {p.shape} for optimization')
+        print(f'collect {len(params)} parameters for optimization')
 
-    optimizer = torch.optim.AdamW(params, lr=cfg.training.lr, betas=cfg.training.betas)
+        optimizer = torch.optim.AdamW(params, lr=cfg.training.lr, betas=cfg.training.betas)
+    else:
+        params1 = []
+        params2 = []
+        for n, p in model.named_parameters():
+            if p.requires_grad:
+                if 'v_backbone' in n:
+                    params2.append(p)
+                    print(f'add {n} {p.shape} for type 2 optimization')
+                else:
+                    params1.append(p)
+                    print(f'add {n} {p.shape} for type 1 optimization')
+        print(f'collect {len(params1)} + {len(params2)} parameters for optimization')
+        param_group = [
+            {'params': params1, 'lr': cfg.training.lr},
+            {'params': params2, 'lr': cfg.training.lr_backbone}
+        ]
+        optimizer = torch.optim.AdamW(param_group, betas=cfg.training.betas)
 
     step = 0
     last_epoch = -1
@@ -175,7 +193,7 @@ def train_worker(gpu, cfg):
 
             if cfg.training.clip_max_norm > 0:
                 torch.nn.utils.clip_grad_norm_(
-                    params, cfg.training.clip_max_norm
+                    params if cfg.backbone.fix else params1+params2, cfg.training.clip_max_norm
                 )
             optimizer.step()
             
@@ -249,17 +267,15 @@ def train_worker(gpu, cfg):
                     model=model, optimizer=optimizer.state_dict(), epoch=best_epoch, step=step,
                     metrics=model_selection_metric,
                     scheduler=warmup_scheduler.state_dict() if cfg.training.lr_linear_decay else None,
-                    path=os.path.join(cfg.ckpt_dir, 'model.pth'), fix_backbone=cfg.backbone.fix
+                    path=os.path.join(cfg.ckpt_dir, 'model.pth')
                 )
 
 
-def save_ckpt(model, optimizer, epoch, step, metrics, scheduler, path, fix_backbone=True):
+def save_ckpt(model, optimizer, epoch, step, metrics, scheduler, path):
     sd = model.state_dict()
-    for k in list(sd.keys()):
-        if 'l_backbone' in k:
-            del sd[k]
-        elif fix_backbone and 'v_backbone' in k:
-            del sd[k]
+    for n, p in model.named_parameters():
+        if not p.requires_grad and n in sd:
+            del sd[n]
 
     torch.save({
         'model': sd, 'optimizer': optimizer, 'epoch': epoch, 'step': step,
