@@ -120,12 +120,12 @@ class Flickr30kDataset(Dataset):
         img, _ = self.transform(img, None)
 
         # sample 1 caption out of 5 candidates
-        query = []
+        queries = []
         for j in range(len(self.img2txt)):
             cands = self.img2txt[j]
-            query.append(self.texts[choice(cands)])
+            queries.append(self.texts[choice(cands)])
 
-        return img, query, i
+        return img, queries, i
 
     def get_dataloader(self, **kwargs):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)

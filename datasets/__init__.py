@@ -4,3 +4,4 @@ from .refcoco import RefCOCODataset
 from .ade20k import ADE20kDataset
 from .vcr import VCRDataset
 from .flickr30k import Flickr30kDataset
+from .bongard import BongardHOIDataset

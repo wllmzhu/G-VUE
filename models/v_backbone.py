@@ -239,8 +239,10 @@ class ViT_CLIP_16(nn.Module):
 class ViT_MAE(nn.Module):
     def __init__(self, cfg):
         super().__init__()
-        self.backbone = timm.create_model('vit_base_patch16_224', pretrained=False, num_classes=0, img_size=640)
         self.image_size = cfg.image_size
+        self.backbone = timm.create_model(
+            'vit_base_patch16_224', pretrained=False, num_classes=0, img_size=self.image_size
+        )
         self.patch_size = cfg.patch_size
         self.reductions = cfg.reduction
 

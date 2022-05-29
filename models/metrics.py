@@ -7,7 +7,7 @@ METRICS = Registry('Metrics')
 
 @METRICS.register()
 @torch.no_grad()
-def EvalRetrieval(model, dataloader, cfg):
+def EvalBongard(model, dataloader, cfg):
     model.eval()
     acc = 0
     total = 0
@@ -17,15 +17,53 @@ def EvalRetrieval(model, dataloader, cfg):
         B = len(targets)
 
         outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
-        # TO BE IMPLEMENTED
-        for k in [1, 5, 10]:
-            preds = torch.topk(outputs, k=k, dim=-1).indices
+        # [2B, 2] -> [2B]
+        preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()
+
+        targets = targets.flatten().to(preds.device)   # [B, 2] -> [2B]
+
+        acc += (preds==targets).sum()
+        total += 2*B
+        if total >= cfg.eval.num_val_samples:
+            break
+
+    return {'Answer Acc': (acc/total).item()}
+
+
+@METRICS.register()
+@torch.no_grad()
+def EvalRetrieval(model, dataloader, cfg):
+    # image-to-text retrieval
+    model.eval()
+    total = 0
+    recall_1 = 0
+    recall_5 = 0
+    recall_10 = 0
+
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        B = len(targets)
+
+        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        outputs = outputs.view(B, -1)
+
+        top1_preds = torch.topk(outputs, k=1, dim=-1).indices
+        top5_preds = torch.topk(outputs, k=5, dim=-1).indices
+        top10_preds = torch.topk(outputs, k=10, dim=-1).indices
+
+        for i in range(B):
+            if targets[i] in top1_preds[i]:
+                recall_1 += 1
+            if targets[i] in top5_preds[i]:
+                recall_5 += 1
+            if targets[i] in top10_preds[i]:
+                recall_10 += 1
 
         total += B
         if total >= cfg.eval.num_val_samples:
             break
 
-    return {'Recall': (acc/total).item()}
+    return {'Recall@1': recall_1/total, 'Recall@5': recall_5/total, 'Recall@10': recall_10/total}
 
 
 @METRICS.register()
@@ -61,34 +99,29 @@ def EvalVCR(model, dataloader, cfg):
 def EvalSeg(model, dataloader, cfg):
     model.eval()
     num_classes = cfg.task.num_classes
-    intersections = np.zeros(num_classes-1)   # 151-1, ignore 0
-    unions = np.zeros(num_classes-1)
     total = 0
-    for data in tqdm(dataloader):
+    # 151 - 1 = 150
+    total_area_intersect = np.zeros((num_classes-1, ), dtype=np.float)
+    total_area_union = np.zeros((num_classes-1, ), dtype=np.float)
+
+    for data in dataloader:
         imgs, txts, targets = data
         B = len(targets)
-        if not isinstance(targets, torch.Tensor):
-            targets = torch.as_tensor(targets)
 
         outputs = model(imgs, txts=None)
-        targets = targets.to(outputs.device)
+        preds = outputs.argmax(1).detach().cpu().numpy()
+        targets = targets.detach().cpu().numpy()
 
-        preds = outputs.argmax(1)
-        appear_classes = (torch.cat([preds.unique(), targets.unique()])).unique()
-        for i in appear_classes:
-            if i > 0:
-                iou, intersection, union = compute_iou_mask(preds==i, targets==i)
-                intersections[i-1] += intersection
-                unions[i-1] += union
+        area_intersect, area_union = intersect_and_union(preds, targets, num_classes, ignore_index=0)[:2]
+        total_area_intersect += area_intersect
+        total_area_union += area_union
 
         total += B
         if total >= cfg.eval.num_val_samples:
             break
     
-    valid_classes = (unions > 0)
-    ious = intersections[valid_classes] / unions[valid_classes]
-    # mean IoU
-    return {'mean IoU': ious.mean()}
+    iou = total_area_intersect / total_area_union
+    return {'mIoU': np.nanmean(iou)}
 
 
 @METRICS.register()
@@ -219,14 +252,35 @@ def compute_depth_errors(pred, gt):
     return np.array([v.detach().cpu().numpy() for v in errors])
 
 
-def compute_iou_mask(pred_mask, gt_mask):
+def intersect_and_union(pred_label, label, num_classes, ignore_index):
+    """Calculate intersection and Union.
+    Args:
+        pred_label (ndarray): Prediction segmentation map
+        label (ndarray): Ground truth segmentation map
+        num_classes (int): Number of categories
+        ignore_index (int): Index that will be ignored in evaluation.
+     Returns:
+         ndarray: The intersection of prediction and ground truth histogram
+             on all classes
+         ndarray: The union of prediction and ground truth histogram on all
+             classes
+         ndarray: The prediction histogram on all classes.
+         ndarray: The ground truth histogram on all classes.
     """
-    masks are both bool type
-    """
-    inter = torch.logical_and(pred_mask, gt_mask).sum()
-    union = torch.logical_or(pred_mask, gt_mask).sum()
-    iou = inter / (union+1e-6)
-    return iou, inter, union
+
+    mask = (label != ignore_index)
+    pred_label = pred_label[mask]
+    label = label[mask]
+
+    intersect = pred_label[pred_label == label]
+    area_intersect, _ = np.histogram(
+        intersect, bins=np.arange(num_classes)+1)
+    area_pred_label, _ = np.histogram(
+        pred_label, bins=np.arange(num_classes)+1)
+    area_label, _ = np.histogram(label, bins=np.arange(num_classes)+1)
+    area_union = area_pred_label + area_label - area_intersect
+
+    return area_intersect, area_union, area_pred_label, area_label
 
 
 def build_evaluator(eval_type):

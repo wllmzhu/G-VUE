@@ -295,6 +295,12 @@ def get_lrs(optimizer):
 def main(cfg):
     io.mkdir_if_not_exists(cfg.ckpt_dir, recursive=True)
     io.mkdir_if_not_exists(cfg.tb_dir, recursive=True)
+    
+    if cfg.task.key == 'vl_retrieval':
+        cfg.training.num_vis_samples = 5
+        cfg.eval.batch_size = 1
+        cfg.eval.num_workers = 1
+        cfg.eval.num_val_samples = 100
 
     if cfg.multiprocessing_distributed:
         cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes

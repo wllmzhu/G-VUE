@@ -24,6 +24,13 @@ def VLMatchingLoss(outputs, gts):
 
 
 @LOSS.register()
+def BongardLoss(outputs, gts):
+    # outputs: [2B, 2]
+    gts = gts.flatten().to(outputs.device)   # [B, 2] -> [2B]
+    return F.cross_entropy(outputs, gts)
+
+
+@LOSS.register()
 def MSELoss(outputs, gts):
     gts = gts.to(outputs.device)
     return F.mse_loss(outputs, gts)

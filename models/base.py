@@ -119,7 +119,7 @@ class JointModel(nn.Module):
             else:
                 # for Flickr retrieval
                 for txt in txts:
-                    # 4 captions
+                    # each sample contains multiple captions
                     for cap in txt:
                         pair = self.l_backbone.tokenizer.encode(cap)   # <s> and </s> automatically added
                         curr_len = len(pair)

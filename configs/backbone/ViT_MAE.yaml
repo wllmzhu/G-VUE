@@ -1,5 +1,5 @@
 key: ViT_MAE
-fix: False
+fix: True
 ckpt_path: /scratch/huangjiangyong/.cache/torch/hub/checkpoints/mae_pretrain_vit_base.pth
 image_size: ${model.image_size}
 patch_size: 16

@@ -6,10 +6,163 @@ import cv2
 from . import io
 from .html_writer import HtmlWriter
 from torchvision.utils import draw_segmentation_masks
+from einops import rearrange
 from fvcore.common.registry import Registry
 VISUALIZE = Registry('Visualize')
 norm_means = torch.as_tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
 norm_stds = torch.as_tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+
+
+@VISUALIZE.register()
+@torch.no_grad()
+def VisBongard(html_writer, model, dataloader, cfg, step, vis_dir):
+    html_writer.add_element({
+        0: 'query',
+        1: 'visualization',
+        2: 'prediction',
+        3: 'ground truth'
+    })
+    count = 0
+    finish_vis = False
+    model.eval()
+    for data in dataloader:
+        imgs, txts, targets = data
+        B = len(targets)
+
+        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        # [2B, 2] -> [2B]
+        preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()
+
+        targets = targets.flatten()
+
+        imgs = rearrange(imgs, 'B r C H W -> (B r) C H W')
+
+        for i in range(2*B):
+            if count+i >= cfg.training.num_vis_samples:
+                finish_vis = True
+                break
+            # imgs: [2B, 3x13, H, W]
+            assert imgs.shape[1] == 39, "channels consist of 12 shot images and a query image"
+
+            vis_imgs_list = []
+            for j in range(0, 39, 3):
+                # 12 shot imgs + 1 query image
+                vis_img = imgs[i][j:j+3].mul_(norm_stds).add_(norm_means)
+                vis_img = vis_img.detach().cpu().numpy() * 255
+                vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
+                if j < 36:
+                    vis_imgs_list.append(vis_img)
+            
+            # query image
+            query_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_query.png'
+            skio.imsave(os.path.join(vis_dir, query_name), vis_img)
+            
+            # compose holistic visualization
+            vis_imgs = np.concatenate([
+                np.concatenate(vis_imgs_list[:3], axis=0),
+                np.concatenate(vis_imgs_list[3:6], axis=0),
+                np.zeros((3*vis_img.shape[0], 5, 3)),   # middle separating line
+                np.concatenate(vis_imgs_list[6:9], axis=0),
+                np.concatenate(vis_imgs_list[9:], axis=0)
+            ], axis=1)
+            
+            shot_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_shot.png'
+            skio.imsave(os.path.join(vis_dir, shot_name), vis_imgs)
+
+            gt = targets[i]
+            pred = preds[i]
+
+            html_writer.add_element({
+                0: html_writer.image_tag(query_name),
+                1: html_writer.image_tag(shot_name),
+                2: pred,
+                3: gt
+            })
+        
+        if finish_vis is True:
+            break
+        
+        count += 2*B
+
+
+@VISUALIZE.register()
+@torch.no_grad()
+def VisRetrieval(html_writer, model, dataloader, cfg, step, vis_dir):
+    html_writer.add_element({
+        0: 'query',
+        1: 'visualization',
+        2: 'prediction',
+        3: 'ground truth'
+    })
+    count = 0
+    finish_vis = False
+    model.eval()
+
+    for data in dataloader:
+        imgs, txts, targets = data
+        B = len(targets)
+
+        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        # [rB, 1] -> [B, r]
+        outputs = outputs.view(B, -1)
+
+        for i in range(B):
+            if count+i >= cfg.training.num_vis_samples:
+                finish_vis = True
+                break
+            
+            if dataloader.dataset.subset == 'train':
+                # imgs: [B, 4, 3, H, W]
+                vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
+                vis_img = vis_img.detach().cpu().numpy() * 255
+
+                vis_img_0 = vis_img[0].astype(np.uint8).transpose(1, 2, 0)
+                vis_img_1 = vis_img[1].astype(np.uint8).transpose(1, 2, 0)
+                vis_img_2 = vis_img[2].astype(np.uint8).transpose(1, 2, 0)
+                vis_img_3 = vis_img[3].astype(np.uint8).transpose(1, 2, 0)
+
+                vis_img = np.concatenate([
+                    np.concatenate([vis_img_0, vis_img_1], axis=1),
+                    np.concatenate([vis_img_2, vis_img_3], axis=1)
+                ], axis=0)
+
+                pred = outputs[i]
+                gt = np.zeros(4)
+                gt[targets[i]] = 1
+
+                vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
+                skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+
+                html_writer.add_element({
+                    0: txts[i],
+                    1: html_writer.image_tag(vis_name),
+                    2: pred,
+                    3: gt
+                })
+            else:
+                _, preds = torch.sort(outputs[i], dim=-1, descending=True)
+
+                vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
+                vis_img = vis_img.detach().cpu().numpy() * 255
+                vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
+
+                gt = targets[i]
+                pred_rank = (preds==gt).nonzero().flatten().item()
+
+                vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
+                skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+
+                html_writer.add_element({
+                    0: txts[i][gt],
+                    1: html_writer.image_tag(vis_name),
+                    2: pred_rank,
+                    3: 0
+                })
+        
+        if finish_vis is True:
+            break
+        
+        count += B
 
 
 @VISUALIZE.register()

@@ -28,4 +28,4 @@ loss: VLMatchingLoss
 
 metrics: EvalRetrieval
 
-visualize: VisVLMatching
+visualize: VisRetrieval
