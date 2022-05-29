@@ -85,14 +85,32 @@ def train_worker(gpu, cfg):
     if gpu == 0:
         writer = SummaryWriter(log_dir=cfg.tb_dir)
 
-    params = []
-    for n, p in model.named_parameters():
-        if p.requires_grad:
-            params.append(p)
-            print(f'add {n} {p.shape} for optimization')
-    print(f'collect {len(params)} parameters for optimization')
+    if cfg.backbone.fix:
+        params = []
+        for n, p in model.named_parameters():
+            if p.requires_grad:
+                params.append(p)
+                print(f'add {n} {p.shape} for optimization')
+        print(f'collect {len(params)} parameters for optimization')
 
-    optimizer = torch.optim.AdamW(params, lr=cfg.training.lr, betas=cfg.training.betas)
+        optimizer = torch.optim.AdamW(params, lr=cfg.training.lr, betas=cfg.training.betas)
+    else:
+        params1 = []
+        params2 = []
+        for n, p in model.named_parameters():
+            if p.requires_grad:
+                if 'v_backbone' in n:
+                    params2.append(p)
+                    print(f'add {n} {p.shape} for type 2 optimization')
+                else:
+                    params1.append(p)
+                    print(f'add {n} {p.shape} for type 1 optimization')
+        print(f'collect {len(params1)} + {len(params2)} parameters for optimization')
+        param_group = [
+            {'params': params1, 'lr': cfg.training.lr},
+            {'params': params2, 'lr': cfg.training.lr_backbone}
+        ]
+        optimizer = torch.optim.AdamW(param_group, betas=cfg.training.betas)
 
     step = 0
     last_epoch = -1
@@ -149,6 +167,8 @@ def train_worker(gpu, cfg):
         optimizer.zero_grad()
         optimizer.step()
 
+    expand_batch = (cfg.task.key in ['vl_retrieval', 'common_sense'])
+    add_special_token = (cfg.task.key == 'common_sense')
     evaluator = build_evaluator(cfg.task.metrics)
 
     for epoch in range(last_epoch+1, cfg.training.num_epochs):
@@ -164,7 +184,8 @@ def train_worker(gpu, cfg):
             model.train()
             optimizer.zero_grad()
 
-            outputs = model(imgs, txts)
+            outputs = model(imgs, txts, expand_batch=expand_batch, add_special_token=add_special_token)
+
             if not isinstance(targets, torch.Tensor):
                 targets = torch.as_tensor(targets)
             loss = model.criterion(outputs, targets)
@@ -172,7 +193,7 @@ def train_worker(gpu, cfg):
 
             if cfg.training.clip_max_norm > 0:
                 torch.nn.utils.clip_grad_norm_(
-                    params, cfg.training.clip_max_norm
+                    params if cfg.backbone.fix else params1+params2, cfg.training.clip_max_norm
                 )
             optimizer.step()
             
@@ -242,14 +263,24 @@ def train_worker(gpu, cfg):
                 best_metric = model_selection_metric
                 best_epoch = epoch
                 writer.add_scalar('Best Epoch', best_epoch, step)
-                torch.save({
-                    'model': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'epoch': best_epoch,
-                    'step': step,
-                    'model_selection_metric': model_selection_metric,
-                    'warmup_scheduler': warmup_scheduler.state_dict() if cfg.training.lr_linear_decay else None,
-                }, os.path.join(cfg.ckpt_dir, 'model.pth'))
+                save_ckpt(
+                    model=model, optimizer=optimizer.state_dict(), epoch=best_epoch, step=step,
+                    metrics=model_selection_metric,
+                    scheduler=warmup_scheduler.state_dict() if cfg.training.lr_linear_decay else None,
+                    path=os.path.join(cfg.ckpt_dir, 'model.pth')
+                )
+
+
+def save_ckpt(model, optimizer, epoch, step, metrics, scheduler, path):
+    sd = model.state_dict()
+    for n, p in model.named_parameters():
+        if not p.requires_grad and n in sd:
+            del sd[n]
+
+    torch.save({
+        'model': sd, 'optimizer': optimizer, 'epoch': epoch, 'step': step,
+        'model_selection_metric': metrics, 'warmup_scheduler': scheduler
+    }, path)
 
 
 def get_lrs(optimizer):

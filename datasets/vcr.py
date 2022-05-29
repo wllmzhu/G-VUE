@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 import utils.io as io
 from utils.misc import collate_fn
-from base import DATASET
+from .base import DATASET
 from transforms.vcr_transforms import color_list, OPACITY, make_vcr_transforms
 
 
@@ -17,7 +17,7 @@ class VCRDataset(Dataset):
         self.info = info
         self.subsets = info.subsets
         self.subset = subset
-        assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets} (test is not a valid split for GQA because it contains questions only)'
+        assert self.subset in self.subsets, f'subset {self.subset} not in {self.subsets} (test is not a valid split for VCR because it contains questions only)'
         self.transform = make_vcr_transforms()
         self._load_dataset()
 
@@ -64,10 +64,8 @@ class VCRDataset(Dataset):
     def __getitem__(self, i):
         sample = json.loads(self.samples[i])
 
-        choices = [self.item_to_str(choice) for choice in sample["answer_choices"]]
-        choices = ' <SEP> '.join([' '.join(choice) for choice in choices])
-        question = ' '.join(self.item_to_str(sample['question']))
-        question += ' <SEP> ' + choices
+        choices = [' '.join(self.item_to_str(choice)) for choice in sample["answer_choices"]]
+        question = [' '.join(self.item_to_str(sample['question']))]
 
         answer_index = sample['answer_label']
 
@@ -81,8 +79,8 @@ class VCRDataset(Dataset):
 
         img, _ = self.transform(img, None)
 
-        #image, question + 4 candidate choices, answer(choice id)
-        return img, question, answer_index
+        # image, question + 4 candidate choices, answer(choice id)
+        return img, question + choices, answer_index
 
     def get_dataloader(self, **kwargs):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)

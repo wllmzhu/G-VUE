@@ -7,6 +7,57 @@ METRICS = Registry('Metrics')
 
 @METRICS.register()
 @torch.no_grad()
+def EvalRetrieval(model, dataloader, cfg):
+    model.eval()
+    acc = 0
+    total = 0
+
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        B = len(targets)
+
+        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        # TO BE IMPLEMENTED
+        for k in [1, 5, 10]:
+            preds = torch.topk(outputs, k=k, dim=-1).indices
+
+        total += B
+        if total >= cfg.eval.num_val_samples:
+            break
+
+    return {'Recall': (acc/total).item()}
+
+
+@METRICS.register()
+@torch.no_grad()
+def EvalVCR(model, dataloader, cfg):
+    model.eval()
+    acc = 0
+    total = 0
+
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        B = len(targets)
+
+        outputs = model(imgs, txts, expand_batch=True, add_special_token=True)
+        # [4B, 1] -> [B, 4]
+        outputs = outputs.view(B, -1)
+        preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()   # [B]
+
+        if not isinstance(targets, torch.Tensor):
+            targets = torch.as_tensor(targets)
+        targets = targets.to(preds.device)
+
+        acc += (preds==targets).sum()
+        total += B
+        if total >= cfg.eval.num_val_samples:
+            break
+
+    return {'Answer Acc': (acc/total).item()}
+
+
+@METRICS.register()
+@torch.no_grad()
 def EvalSeg(model, dataloader, cfg):
     model.eval()
     num_classes = cfg.task.num_classes

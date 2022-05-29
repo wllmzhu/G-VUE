@@ -1,3 +1,5 @@
+key: phrase_grounding
+
 dataset:
   key: RefCOCODataset
   info:

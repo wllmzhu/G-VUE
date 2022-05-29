@@ -3,9 +3,13 @@ from .base import *
 
 def make_ade20k_transforms(image_set):
     normalize = Compose([ToTensor(), Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-    scales = [(224, 224)]
-    resize_before_crop = [400, 500, 600]
-    crop_size = 384
+    # scales = [(224, 224)]
+    # resize_before_crop = [400, 500, 600]
+    # crop_size = 384
+    # high resolution
+    scales = [(640, 640)]
+    resize_before_crop = [600, 700, 800]
+    crop_size = 512
     
     if image_set == "train":
         horizontal = [RandomHorizontalFlip()]

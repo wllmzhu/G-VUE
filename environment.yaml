@@ -20,3 +20,4 @@ dependencies:
     - fvcore
     - pytorch_transformers
     - matplotlib
+    - einops
