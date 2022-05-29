@@ -22,7 +22,7 @@ class BongardHOIDataset(Dataset):
         self.info = info
         self.subset = subset
         assert self.subset in self.info.subsets, f'subset {self.subset} not in {self.info.subsets}'
-        self.transform = make_bongard_transforms()
+        self.transform = make_bongard_transforms(self.subset)
         self._load_dataset()
 
     def _load_dataset(self):

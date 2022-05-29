@@ -220,6 +220,14 @@ class RandomPad(object):
         pad_x = random.randint(0, self.max_pad)
         pad_y = random.randint(0, self.max_pad)
         return pad(img, target, (pad_x, pad_y))
+    
+    
+class ColorJitter(object):
+    def __init__(self, *args, **kwargs):
+        self.colorjitter = T.ColorJitter(*args, **kwargs)
+
+    def __call__(self, img, target):
+        return self.colorjitter(img), target
 
 
 class RandomSelect(object):
@@ -244,7 +252,6 @@ class ToTensor(object):
 
 
 class RandomErasing(object):
-
     def __init__(self, *args, **kwargs):
         self.eraser = T.RandomErasing(*args, **kwargs)
 
