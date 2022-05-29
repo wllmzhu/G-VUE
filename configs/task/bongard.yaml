@@ -1,0 +1,6 @@
+dataset:
+  key: BongardHOIDataset
+  info:
+    subsets: [train, val, test]
+    img_dir: /home/wllmzhu/data/bongard/bongard-hoi/images
+    anno_dir: /home/wllmzhu/data/bongard/bongard-hoi/annos

@@ -272,6 +272,31 @@ def collate_fn(batch):
     return tuple(batch)
 
 
+def bongard_collate_fn(batch):
+    def _pad_tensor(tensor_list):
+        max_imh, max_imw = -1, -1
+        for tensor_i in tensor_list:
+            # import pdb; pdb.set_trace()
+            imh, imw = tensor_i.shape[-2], tensor_i.shape[-1]
+            max_imh = max(max_imh, imh)
+            max_imw = max(max_imw, imw)
+
+        for idx, tensor_i in enumerate(tensor_list):
+            pad_tensor_i = tensor_i.new_full(list(tensor_i.shape[:-2]) + [max_imh, max_imw], 0)
+            imh, imw = tensor_i.shape[-2], tensor_i.shape[-1]
+            pad_tensor_i[..., :imh, :imw].copy_(tensor_i)
+            tensor_list[idx] = pad_tensor_i
+        return tensor_list
+    
+    batch = list(zip(*batch))
+    for i in range(len(batch)):
+        if isinstance(batch[i][0], torch.Tensor):
+            if len(batch[i][0].shape) > 1:
+                batch[i] = _pad_tensor(list(batch[i]))
+            batch[i] = torch.stack(batch[i], dim=0)
+    return tuple(batch)
+
+
 def _max_by_axis(the_list):
     # type: (List[List[int]]) -> List[int]
     maxes = the_list[0]
