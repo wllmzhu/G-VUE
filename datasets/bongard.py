@@ -79,11 +79,6 @@ class BongardHOIDataset(Dataset):
                 
         pos_info_list, neg_info_list, _ = sample
 
-        # Aug
-        np.random.shuffle(pos_info_list)
-        np.random.shuffle(neg_info_list)
-        query_aug = np.random.randint(4)
-
         pos_imgs = []
         for pos_info_i in pos_info_list:
             im_i = self.read_image(pos_info_i['im_path'])
@@ -105,19 +100,8 @@ class BongardHOIDataset(Dataset):
         neg_shot_imgs = torch.stack(neg_shot_imgs, dim=0)
         shot_imgs = torch.stack((pos_shot_imgs, neg_shot_imgs), dim=0)
         
-        # Aug
-        if query_aug == 0:
-            query_imgs = torch.stack((neg_query_im, pos_query_im), dim=0)
-            query_labels = torch.Tensor([1, 0]).long()
-        elif query_aug == 1:
-            query_imgs = torch.stack((neg_query_im, neg_query_im), dim=0)
-            query_labels = torch.Tensor([1, 1]).long()
-        elif query_aug == 2:
-            query_imgs = torch.stack((pos_query_im, neg_query_im), dim=0)
-            query_labels = torch.Tensor([0, 1]).long()
-        else:
-            query_imgs = torch.stack((pos_query_im, pos_query_im), dim=0)
-            query_labels = torch.Tensor([0, 0]).long()
+        query_imgs = torch.stack((neg_query_im, pos_query_im), dim=0)
+        query_labels = torch.Tensor([1, 0]).long()
 
         #image, 
         return shot_imgs, query_imgs, query_labels
