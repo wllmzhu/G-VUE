@@ -272,7 +272,7 @@ def collate_fn(batch):
     return tuple(batch)
 
 
-def bongard_collate_fn(batch):
+def uneven_collate_fn(batch):
     def _pad_tensor(tensor_list):
         max_imh, max_imw = -1, -1
         for tensor_i in tensor_list:

@@ -7,8 +7,10 @@ import re
 import utils.io as io
 import cv2
 import numpy as np
-from utils.misc import bongard_collate_fn
+from utils.misc import collate_fn
 from base import DATASET
+from transforms.bongard_transforms import make_bongard_transforms
+
 
 BONGARD_TASKS = ['seen_obj_seen_act', 'seen_obj_unseen_act', 'unseen_obj_seen_act', 'unseen_obj_unseen_act']
 
@@ -20,6 +22,7 @@ class BongardHOIDataset(Dataset):
         self.info = info
         self.subset = subset
         assert self.subset in self.info.subsets, f'subset {self.subset} not in {self.info.subsets}'
+        self.transform = make_bongard_transforms()
         self._load_dataset()
 
     def _load_dataset(self):
@@ -65,21 +68,10 @@ class BongardHOIDataset(Dataset):
 
         return pos_imgs, neg_imgs
 
-    def read_image(self, img_name):
-        img_path = os.path.join(self.info.img_dir, img_name)
-                
-        img = cv2.imread(img_path).astype(np.float32)
-        # BGR to RGB
-        img = img[:, :, ::-1]
-        
-        # TODO, replace with our own aug pipeline
-        pix_mean = (0.485, 0.456, 0.406)
-        pix_std = (0.229, 0.224, 0.225)
-        for i in range(3):
-            img[:, :, i] = (img[:, :, i] / 255. - pix_mean[i]) / pix_std[i]
-
-        img = torch.as_tensor(np.ascontiguousarray(img.transpose(2, 0, 1)))
-
+    def read_image(self, img_name):        
+        img = Image.open(os.path.join(self.info.img_dir, img_name)).convert('RGB')
+        # Put transform here because later we will process all images together
+        img, _ = self.transform(img, None)
         return img
 
     def __getitem__(self, i):
@@ -127,13 +119,11 @@ class BongardHOIDataset(Dataset):
             query_imgs = torch.stack((pos_query_im, pos_query_im), dim=0)
             query_labels = torch.Tensor([0, 0]).long()
 
-        #img, _ = self.transform(img, None)
-
         #image, 
         return shot_imgs, query_imgs, query_labels
 
     def get_dataloader(self, **kwargs):
-        return DataLoader(self, collate_fn=bongard_collate_fn, **kwargs)
+        return DataLoader(self, collate_fn=collate_fn, **kwargs)
 
 @hydra.main(config_path='../configs/task', config_name='bongard.yaml')
 def main(cfg):
