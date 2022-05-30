@@ -77,7 +77,7 @@ class BongardHOIDataset(Dataset):
 
         query_labels = torch.Tensor([0, 1]).long()
 
-        # two multi-channel few-shot samples, no text, two labels
+        # two multi-channel few-shot samples [2, 3x13, H, W], no text, two labels [2]
         return torch.stack([input_pos, input_neg], dim=0), None, query_labels
 
     def get_dataloader(self, **kwargs):

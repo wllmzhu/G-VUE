@@ -56,23 +56,26 @@ def crop(image, target, region):
 def hflip(image, target):
     flipped_image = F.hflip(image)
 
-    w, h = image.size
+    if target is None:
+        return flipped_image, None
+    else:
+        w, h = image.size
 
-    target = target.copy()
-    if "boxes" in target:
-        boxes = target["boxes"]
-        boxes = boxes[:, [2, 1, 0, 3]] * torch.as_tensor([-1, 1, -1, 1]) + torch.as_tensor([w, 0, w, 0])
-        target["boxes"] = boxes
+        target = target.copy()
+        if "boxes" in target:
+            boxes = target["boxes"]
+            boxes = boxes[:, [2, 1, 0, 3]] * torch.as_tensor([-1, 1, -1, 1]) + torch.as_tensor([w, 0, w, 0])
+            target["boxes"] = boxes
 
-    if "masks" in target:
-        target["masks"] = target["masks"].flip(-1)
-    if "depth" in target:
-        target["depth"] = target["depth"].flip(-1)
-    
-    if "query" in target:
-        target["query"] = target["query"].replace("left", "[TMP]").replace("right", "left").replace("[TMP]", "right")
+        if "masks" in target:
+            target["masks"] = target["masks"].flip(-1)
+        if "depth" in target:
+            target["depth"] = target["depth"].flip(-1)
+        
+        if "query" in target:
+            target["query"] = target["query"].replace("left", "[TMP]").replace("right", "left").replace("[TMP]", "right")
 
-    return flipped_image, target
+        return flipped_image, target
 
 
 def resize(image, target, size, max_size=None):
@@ -223,8 +226,10 @@ class RandomPad(object):
     
     
 class ColorJitter(object):
-    def __init__(self, *args, **kwargs):
-        self.colorjitter = T.ColorJitter(*args, **kwargs)
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+        self.colorjitter = T.ColorJitter(
+            brightness, contrast, saturation, hue
+        )
 
     def __call__(self, img, target):
         return self.colorjitter(img), target

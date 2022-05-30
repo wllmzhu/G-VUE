@@ -167,8 +167,6 @@ def train_worker(gpu, cfg):
         optimizer.zero_grad()
         optimizer.step()
 
-    expand_batch = (cfg.task.key in ['vl_retrieval', 'common_sense'])
-    add_special_token = (cfg.task.key == 'common_sense')
     evaluator = build_evaluator(cfg.task.metrics)
 
     for epoch in range(last_epoch+1, cfg.training.num_epochs):
@@ -184,7 +182,7 @@ def train_worker(gpu, cfg):
             model.train()
             optimizer.zero_grad()
 
-            outputs = model(imgs, txts, expand_batch=expand_batch, add_special_token=add_special_token)
+            outputs = model(imgs, txts, cfg.task.key)
 
             if not isinstance(targets, torch.Tensor):
                 targets = torch.as_tensor(targets)
@@ -301,6 +299,9 @@ def main(cfg):
         cfg.eval.batch_size = 1
         cfg.eval.num_workers = 1
         cfg.eval.num_val_samples = 100
+    elif cfg.task.key == 'bongard':
+        cfg.training.batch_size = 64
+        cfg.eval.batch_size = 64
 
     if cfg.multiprocessing_distributed:
         cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes

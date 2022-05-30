@@ -16,7 +16,7 @@ def EvalBongard(model, dataloader, cfg):
         imgs, txts, targets = data
         B = len(targets)
 
-        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        outputs = model(imgs, txts, cfg.task.key)
         # [2B, 2] -> [2B]
         preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()
 
@@ -44,7 +44,7 @@ def EvalRetrieval(model, dataloader, cfg):
         imgs, txts, targets = data
         B = len(targets)
 
-        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        outputs = model(imgs, txts, cfg.task.key)
         outputs = outputs.view(B, -1)
 
         top1_preds = torch.topk(outputs, k=1, dim=-1).indices
@@ -77,7 +77,7 @@ def EvalVCR(model, dataloader, cfg):
         imgs, txts, targets = data
         B = len(targets)
 
-        outputs = model(imgs, txts, expand_batch=True, add_special_token=True)
+        outputs = model(imgs, txts, cfg.task.key)
         # [4B, 1] -> [B, 4]
         outputs = outputs.view(B, -1)
         preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()   # [B]

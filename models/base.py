@@ -47,6 +47,12 @@ class JointModel(nn.Module):
         # else:
         #     self.vit_pyramid = None
 
+        if cfg.task.key == 'bongard':
+            self.register_parameter(
+                'bongard_segment_embed',
+                nn.Parameter(torch.zeros(2, cfg.v_backbone.hidden_dim[-1]))
+            )
+
         self.initialize()
 
         self.criterion = build_loss(cfg.task.loss)
@@ -58,12 +64,19 @@ class JointModel(nn.Module):
             for p in self.v_backbone.parameters():
                 p.requires_grad_(False)
 
-    def forward(self, imgs, txts=None, expand_batch=False, add_special_token=False):
+    def forward(self, imgs, txts=None, task=None):
         self.device = next(self.parameters()).device
         imgs = imgs.to(self.device)
+
+        if task == 'bongard':
+            return self.forward_bongard(imgs)
+        
+        expand_batch = (task in ['vl_retrieval', 'common_sense'])
         
         if txts is not None:
-            txt_seqs, txt_pad_masks = self.encode_txt(txts, expand_batch, add_special_token)
+            txt_seqs, txt_pad_masks = self.encode_txt(
+                txts, expand_batch=expand_batch, add_special_token=(task=='common_sense')
+            )
             #  [B, T, D],  [B, T]
             txt_seqs = self.l_proj(txt_seqs)
         else:
@@ -87,6 +100,43 @@ class JointModel(nn.Module):
         # assume 'channel' lies ahead of 'shape' in visual features
         # [B, C, h, w] for CNNs, as well as for ViTs
         return self.decoder(v_feature_list, txt_seqs, txt_pad_masks)
+    
+    def forward_bongard(self, imgs):
+        """
+        imgs: [B, 2, 3x13, H, W]
+        return [2B, 2]
+        """
+        imgs = rearrange(imgs, 'B r (M C) H W -> (B r M) C H W', C=3)
+        # [Bx2x13, 3, H, W]
+
+        imgs = self.v_backbone(imgs)[-1]
+        # [Bx2x13, C, h, w]
+
+        imgs = rearrange(imgs, '(B2 M) C h w -> B2 M C h w', M=13)
+        # [Bx2, 13, C, h, w]
+
+        pos_shot_imgs = imgs[:, :6, ...]   # [Bx2, 6, C, h, w]
+        neg_shot_imgs = imgs[:, 6:12, ...]   # [Bx2, 6, C, h, w]
+        query_imgs = imgs[:, -1, ...]   # [Bx2, C, h, w]
+        
+        # regard shot images as context, place them in txt_seqs after pooling
+        pos_shot_imgs = pos_shot_imgs.mean(1)   # [Bx2, C, h, w]
+        neg_shot_imgs = neg_shot_imgs.mean(1)   # [Bx2, C, h, w]
+        # [Bx2, C, h, w] -> [Bx2, hw, C]
+        pos_shot_imgs = rearrange(pos_shot_imgs, 'B2 C h w -> B2 (h w) C')
+        neg_shot_imgs = rearrange(neg_shot_imgs, 'B2 C h w -> B2 (h w) C')
+
+        # segment embedding for positive/negative shot images
+        pos_shot_imgs = pos_shot_imgs + self.bongard_segment_embed[0]
+        neg_shot_imgs = neg_shot_imgs + self.bongard_segment_embed[1]
+
+        shot_seqs = torch.cat([pos_shot_imgs, neg_shot_imgs], dim=1)
+        shot_seqs = self.decoder.v_proj(shot_seqs)   # feature dimension projection
+
+        return self.decoder(
+            v_feature_list=[query_imgs], txt_seqs=shot_seqs,
+            txt_pad_masks=torch.ones(shot_seqs.shape[:2]).to(torch.bool).to(self.device)
+        )
 
     @torch.no_grad()
     def encode_txt(self, txts, expand_batch=False, add_special_token=False):

@@ -29,4 +29,4 @@ loss: VLMatchingLoss
 
 metrics: EvalVCR
 
-visualize: VisVLMatching
+visualize: VisVCR

@@ -29,7 +29,7 @@ def VisBongard(html_writer, model, dataloader, cfg, step, vis_dir):
         imgs, txts, targets = data
         B = len(targets)
 
-        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        outputs = model(imgs, txts, cfg.task.key)
         # [2B, 2] -> [2B]
         preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()
 
@@ -64,7 +64,7 @@ def VisBongard(html_writer, model, dataloader, cfg, step, vis_dir):
                 np.zeros((3*vis_img.shape[0], 5, 3)),   # middle separating line
                 np.concatenate(vis_imgs_list[6:9], axis=0),
                 np.concatenate(vis_imgs_list[9:], axis=0)
-            ], axis=1)
+            ], axis=1).astype(np.uint8)
             
             shot_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_shot.png'
             skio.imsave(os.path.join(vis_dir, shot_name), vis_imgs)
@@ -102,7 +102,7 @@ def VisRetrieval(html_writer, model, dataloader, cfg, step, vis_dir):
         imgs, txts, targets = data
         B = len(targets)
 
-        outputs = model(imgs, txts, expand_batch=True, add_special_token=False)
+        outputs = model(imgs, txts, cfg.task.key)
         # [rB, 1] -> [B, r]
         outputs = outputs.view(B, -1)
 
@@ -167,7 +167,7 @@ def VisRetrieval(html_writer, model, dataloader, cfg, step, vis_dir):
 
 @VISUALIZE.register()
 @torch.no_grad()
-def VisVLMatching(html_writer, model, dataloader, cfg, step, vis_dir):
+def VisVCR(html_writer, model, dataloader, cfg, step, vis_dir):
     html_writer.add_element({
         0: 'query',
         1: 'visualization',
@@ -181,8 +181,7 @@ def VisVLMatching(html_writer, model, dataloader, cfg, step, vis_dir):
         imgs, txts, targets = data
         B = len(targets)
 
-        add_special_token = (cfg.task.key == 'common_sense')
-        outputs = model(imgs, txts, expand_batch=True, add_special_token=add_special_token)
+        outputs = model(imgs, txts, cfg.task.key)
         # [4B, 1] -> [B, 4]
         outputs = outputs.view(B, -1)
         preds = torch.topk(outputs, k=1, dim=-1).indices.squeeze()   # [B]
