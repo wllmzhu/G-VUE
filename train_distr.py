@@ -300,8 +300,8 @@ def main(cfg):
         cfg.eval.num_workers = 1
         cfg.eval.num_val_samples = 100
     elif cfg.task.key == 'bongard':
-        cfg.training.batch_size = 64
-        cfg.eval.batch_size = 64
+        cfg.training.batch_size = 32
+        cfg.eval.batch_size = 32
 
     if cfg.multiprocessing_distributed:
         cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes
