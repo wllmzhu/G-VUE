@@ -114,7 +114,6 @@ def train_worker(gpu, cfg):
 
     step = 0
     last_epoch = -1
-    model_selection_metric = 0
     best_metric = -100
     best_epoch = -1
     if os.path.exists(cfg.training.ckpt):
@@ -131,12 +130,9 @@ def train_worker(gpu, cfg):
 
         step = ckpt['step']
         last_epoch = ckpt['epoch']
-        if model_selection_metric in ckpt:
-            model_selection_metric = ckpt['model_selection_metric']
-        else:
-            model_selection_metric = 0
-            
-        best_metric = model_selection_metric
+        if 'model_selection_metric' in ckpt:
+            best_metric = ckpt['model_selection_metric']
+        
         best_epoch = last_epoch
         print(f'Loading checkpoint at the end of epoch {last_epoch}')
     
@@ -234,7 +230,15 @@ def train_worker(gpu, cfg):
         if gpu == 0:
             model_selection_metric = 0
             for eval_subset in ['val']:
-                dataloader = dataloaders[eval_subset]
+                # re-shuffle validation set
+                dataloader = DataLoader(
+                    datasets['val'],
+                    batch_size=cfg.eval.batch_size,
+                    collate_fn=collate_fn,
+                    num_workers=cfg.eval.num_workers,
+                    pin_memory=True,
+                    shuffle=True,
+                )
                 dataset_name = cfg.task.dataset.key
                 print(f'Evaluating on {dataset_name}')
 
@@ -295,13 +299,17 @@ def main(cfg):
     io.mkdir_if_not_exists(cfg.tb_dir, recursive=True)
     
     if cfg.task.key == 'vl_retrieval':
+        cfg.training.batch_size = 32
+        cfg.training.num_workers = 8
         cfg.training.num_vis_samples = 5
         cfg.eval.batch_size = 1
-        cfg.eval.num_workers = 1
+        cfg.eval.num_workers = 0
         cfg.eval.num_val_samples = 100
     elif cfg.task.key == 'bongard':
         cfg.training.batch_size = 32
+        cfg.training.num_workers = 8
         cfg.eval.batch_size = 32
+        cfg.eval.num_workers = 8
 
     if cfg.multiprocessing_distributed:
         cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes

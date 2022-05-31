@@ -4,6 +4,7 @@ import numpy as np
 import skimage.io as skio
 import cv2
 from . import io
+from math import ceil
 from .html_writer import HtmlWriter
 from torchvision.utils import draw_segmentation_masks
 from einops import rearrange
@@ -98,40 +99,37 @@ def VisRetrieval(html_writer, model, dataloader, cfg, step, vis_dir):
     finish_vis = False
     model.eval()
 
-    for data in dataloader:
-        imgs, txts, targets = data
-        B = len(targets)
+    if dataloader.dataset.subset == 'train':
+        for data in dataloader:
+            imgs, txts, targets = data
+            B = len(targets)
 
-        outputs = model(imgs, txts, cfg.task.key)
-        # [rB, 1] -> [B, r]
-        outputs = outputs.view(B, -1)
+            outputs = model(imgs, txts, cfg.task.key)
+            r = outputs.shape[0] // B
+            # [rB, 1] -> [B, r]
+            outputs = outputs.view(B, -1)
 
-        for i in range(B):
-            if count+i >= cfg.training.num_vis_samples:
-                finish_vis = True
-                break
+            for i in range(B):
+                if count+i >= cfg.training.num_vis_samples:
+                    finish_vis = True
+                    break
             
-            if dataloader.dataset.subset == 'train':
-                # imgs: [B, 4, 3, H, W]
-                vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
-                vis_img = vis_img.detach().cpu().numpy() * 255
+                # imgs: [B, 15, 3, H, W]
+                vis_img_list = imgs[i].mul_(norm_stds).add_(norm_means)
+                vis_img_list = vis_img_list.detach().cpu().numpy() * 255
+                vis_img_list = vis_img_list.astype(np.uint8)
 
-                vis_img_0 = vis_img[0].astype(np.uint8).transpose(1, 2, 0)
-                vis_img_1 = vis_img[1].astype(np.uint8).transpose(1, 2, 0)
-                vis_img_2 = vis_img[2].astype(np.uint8).transpose(1, 2, 0)
-                vis_img_3 = vis_img[3].astype(np.uint8).transpose(1, 2, 0)
-
-                vis_img = np.concatenate([
-                    np.concatenate([vis_img_0, vis_img_1], axis=1),
-                    np.concatenate([vis_img_2, vis_img_3], axis=1)
+                vis_imgs = np.concatenate([
+                    np.concatenate([vis_img.transpose(1, 2, 0) for vis_img in vis_img_list[:4]], axis=1),
+                    np.concatenate([vis_img.transpose(1, 2, 0) for vis_img in vis_img_list[4:8]], axis=1)
                 ], axis=0)
 
-                pred = outputs[i]
-                gt = np.zeros(4)
+                pred = outputs[i].detach().cpu().numpy()
+                gt = np.zeros(r)
                 gt[targets[i]] = 1
 
                 vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
-                skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+                skio.imsave(os.path.join(vis_dir, vis_name), vis_imgs)
 
                 html_writer.add_element({
                     0: txts[i],
@@ -139,30 +137,60 @@ def VisRetrieval(html_writer, model, dataloader, cfg, step, vis_dir):
                     2: pred,
                     3: gt
                 })
-            else:
-                _, preds = torch.sort(outputs[i], dim=-1, descending=True)
+            
+            if finish_vis is True:
+                break
+            count += B
+    
+    else:
+        txts = dataloader.dataset.texts
+        img2txt_id = dataloader.dataset.img2txt
+        step_size = cfg.task.text_batch_size
+        for data in dataloader:
+            imgs, _, targets = data
+            B = len(targets)
+
+            img2txt_scores = []
+            num_step = ceil(len(txts)/step_size)
+            for i in range(num_step):
+                txt_batch = [txts[i*step_size:(i+1)*step_size]] * B
+                outputs = model(imgs, txt_batch, cfg.task.key)
+                img2txt_scores.append(outputs.view(B, -1))
+
+            img2txt_scores = torch.cat(img2txt_scores, dim=-1)
+            # [B, len(txts)]
+            _, preds = torch.sort(img2txt_scores, dim=-1, descending=True)
+            preds = preds.detach().cpu()
+
+            for i in range(B):
+                if count+i >= cfg.training.num_vis_samples:
+                    finish_vis = True
+                    break
+
+                gt = targets[i]
+                txt_gt_ids = img2txt_id[gt]   # 5 ground truth candidates
+                pred_ranks = (preds[i].apply_(lambda x: x in txt_gt_ids)).nonzero()[:, 0]
+                pred_ranks = pred_ranks.numpy()
+
+                captions = [txts[j] for j in txt_gt_ids]
 
                 vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
                 vis_img = vis_img.detach().cpu().numpy() * 255
                 vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
 
-                gt = targets[i]
-                pred_rank = (preds==gt).nonzero().flatten().item()
-
                 vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
                 skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
 
                 html_writer.add_element({
-                    0: txts[i][gt],
+                    0: captions,
                     1: html_writer.image_tag(vis_name),
-                    2: pred_rank,
+                    2: pred_ranks,
                     3: 0
                 })
-        
-        if finish_vis is True:
-            break
-        
-        count += B
+            
+            if finish_vis is True:
+                break
+            count += B
 
 
 @VISUALIZE.register()

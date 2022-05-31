@@ -66,6 +66,13 @@ def eval_non_train_full(cfg):
 
 @hydra.main(config_path='./configs', config_name='base')
 def main(cfg):
+    if cfg.task.key == 'vl_retrieval':
+        cfg.eval.batch_size = 1
+        cfg.eval.num_workers = 0
+    elif cfg.task.key == 'bongard':
+        cfg.eval.batch_size = 32
+        cfg.eval.num_workers = 8
+    
     eval_non_train_full(cfg)
     
 

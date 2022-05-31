@@ -80,38 +80,53 @@ class Flickr30kDataset(Dataset):
     
     def get_learn_samples(self, i):
         """
+        each sample in self.samples consists of an image-text pair, plus an image_id
         return [
-            [positive image, positive caption],
-            [negative image, positive caption],
-            [positive image, negative caption 1],
-            [positive image, negative caption 2]
+            [positive image, positive caption] x 1,
+            [negative image, positive caption] x 7,
+            [positive image, negative caption] x 7
         ]
         """
         sample = self.samples[i]
-        img = self.read_image(sample['image'])
-        caption = sample['caption']
         img_id = sample['image_id']
+        l = len(self.samples)
 
-        neg_img_i = i
-        while self.samples[neg_img_i]['image_id'] == img_id:
-            neg_img_i = randint(0, len(self.samples)-1)
-        neg_img = self.read_image(self.samples[neg_img_i]['image'])
-
-        neg_txt1_i = i
-        while self.txt2img[neg_txt1_i] == img_id:
-            neg_txt1_i = randint(0, len(self.texts)-1)
-        neg_txt1 = self.texts[neg_txt1_i]
-
-        neg_txt2_i = i
-        while self.txt2img[neg_txt2_i] == img_id:
-            neg_txt2_i = randint(0, len(self.texts)-1)
-        neg_txt2 = self.texts[neg_txt2_i]
-
+        # construct image pool
+        select_img_ids = [img_id]
+        neg_img_idxs = []
+        while len(neg_img_idxs) < 7:
+            neg_img_idx = randint(0, l-1)
+            if self.samples[neg_img_idx]['image_id'] not in select_img_ids:
+                neg_img_idxs.append(neg_img_idx)
+        # extract images
+        img = self.read_image(sample['image'])
         img, _ = self.transform(img, None)
-        neg_img, _ = self.transform(neg_img, None)
+        select_imgs = [img]
+        for j in neg_img_idxs:
+            select_imgs.append(
+                self.transform(self.read_image(self.samples[j]['image']), None)[0]
+            )
+        # 8 -> 15
+        select_imgs.extend([img]*7)
+
+        # construct text pool
+        select_img_ids = [img_id]
+        neg_txt_idxs = []
+        while len(neg_txt_idxs) < 7:
+            neg_txt_idx = randint(0, l-1)
+            if self.samples[neg_txt_idx]['image_id'] not in select_img_ids:
+                neg_txt_idxs.append(neg_txt_idx)
+        # extract captions
+        caption = sample['caption']
+        select_txts = [caption] * 8
+        # 8 -> 15
+        for j in neg_txt_idxs:
+            select_txts.append(
+                self.texts[j]
+            )
         
-        # return tensor [4, 3, H, W] for image
-        return torch.stack([img, neg_img, img, img]), [caption, caption, neg_txt1, neg_txt2], 0
+        # return tensor [15, 3, H, W] for image
+        return torch.stack(select_imgs), select_txts, 0
     
     def get_eval_samples(self, i):
         # return one image, all captions, and ground truth index
@@ -119,13 +134,8 @@ class Flickr30kDataset(Dataset):
         img = self.read_image(sample['image'])
         img, _ = self.transform(img, None)
 
-        # sample 1 caption out of 5 candidates
-        queries = []
-        for j in range(len(self.img2txt)):
-            cands = self.img2txt[j]
-            queries.append(self.texts[choice(cands)])
-
-        return img, queries, i
+        # no caption returned, use self.img2txt to index self.texts instead
+        return img, None, i
 
     def get_dataloader(self, **kwargs):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)

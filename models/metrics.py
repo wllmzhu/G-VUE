@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from math import ceil
 from tqdm import tqdm
 from fvcore.common.registry import Registry
 METRICS = Registry('Metrics')
@@ -24,7 +25,7 @@ def EvalBongard(model, dataloader, cfg):
 
         acc += (preds==targets).sum()
         total += 2*B
-        if total >= cfg.eval.num_val_samples:
+        if total >= 2*cfg.eval.num_val_samples:
             break
 
     return {'Answer Acc': (acc/total).item()}
@@ -35,33 +36,45 @@ def EvalBongard(model, dataloader, cfg):
 def EvalRetrieval(model, dataloader, cfg):
     # image-to-text retrieval
     model.eval()
+
+    txts = dataloader.dataset.texts
+    img2txt_id = dataloader.dataset.img2txt
+    step_size = cfg.task.text_batch_size
+
+    highest_ranks = []
     total = 0
-    recall_1 = 0
-    recall_5 = 0
-    recall_10 = 0
 
     for data in tqdm(dataloader):
-        imgs, txts, targets = data
+        imgs, _, targets = data
         B = len(targets)
+        
+        img2txt_scores = []
+        num_step = ceil(len(txts)/step_size)
+        for i in range(num_step):
+            txt_batch = [txts[i*step_size:(i+1)*step_size]] * B
+            outputs = model(imgs, txt_batch, cfg.task.key)
+            img2txt_scores.append(outputs.view(B, -1))
 
-        outputs = model(imgs, txts, cfg.task.key)
-        outputs = outputs.view(B, -1)
-
-        top1_preds = torch.topk(outputs, k=1, dim=-1).indices
-        top5_preds = torch.topk(outputs, k=5, dim=-1).indices
-        top10_preds = torch.topk(outputs, k=10, dim=-1).indices
+        img2txt_scores = torch.cat(img2txt_scores, dim=-1)
+        # [B, len(txts)]
+        _, preds = torch.sort(img2txt_scores, dim=-1, descending=True)
+        preds = preds.detach().cpu()
 
         for i in range(B):
-            if targets[i] in top1_preds[i]:
-                recall_1 += 1
-            if targets[i] in top5_preds[i]:
-                recall_5 += 1
-            if targets[i] in top10_preds[i]:
-                recall_10 += 1
-
+            txt_gt_ids = img2txt_id[targets[i]]   # 5 ground truth candidates
+            pred_ranks = (preds[i].apply_(lambda x: x in txt_gt_ids)).nonzero()[:, 0]
+            # get highest rank from 5 candidates
+            highest_rank = pred_ranks.numpy().min()
+            highest_ranks.append(highest_rank)
+    
         total += B
         if total >= cfg.eval.num_val_samples:
             break
+    
+    highest_ranks = np.array(highest_ranks)
+    recall_1 = (highest_ranks < 1).sum()
+    recall_5 = (highest_ranks < 5).sum()
+    recall_10 = (highest_ranks < 10).sum()
 
     return {'Recall@1': recall_1/total, 'Recall@5': recall_5/total, 'Recall@10': recall_10/total}
 
@@ -104,7 +117,7 @@ def EvalSeg(model, dataloader, cfg):
     total_area_intersect = np.zeros((num_classes-1, ), dtype=np.float)
     total_area_union = np.zeros((num_classes-1, ), dtype=np.float)
 
-    for data in dataloader:
+    for data in tqdm(dataloader):
         imgs, txts, targets = data
         B = len(targets)
 
