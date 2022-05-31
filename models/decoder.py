@@ -25,9 +25,10 @@ class LabelType(nn.Module):
         # LabelMLP is a MLP written for the LabelType decoder
         self.output_head = LabelMLP(cfg.transformer.hidden_dim, cfg.num_classes)
 
+        grid_feature_size = cfg.image_size // cfg.grid_feature_ratio
         self.pos_embed = build_positional_embedding(
             type=cfg.positional_embedding.type,
-            shape=(cfg.image_size//cfg.reduction[-1], cfg.image_size//cfg.reduction[-1]),
+            shape=(grid_feature_size, grid_feature_size),
             hidden_dim=cfg.positional_embedding.hidden_dim
         )
         self.label_token = nn.Parameter(0.1*torch.randn(cfg.hidden_dim))

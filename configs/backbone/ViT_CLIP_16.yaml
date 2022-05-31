@@ -2,6 +2,7 @@ key: ViT_CLIP_16
 fix: True
 image_size: ${model.image_size}
 patch_size: 16
+grid_feature_ratio: 16
 reduction: [4, 8, 16, 32]
 hidden_dim: [768, 768, 768, 768]
 extract_layer: [2, 5, 8, 11]

@@ -47,6 +47,8 @@ class JointModel(nn.Module):
         # else:
         #     self.vit_pyramid = None
 
+        self.v_backbone.requires_pyramid = True if cfg.task.decoder.key == 'DenseType' else False
+
         if cfg.task.key == 'bongard':
             self.register_parameter(
                 'bongard_segment_embed',

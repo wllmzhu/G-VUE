@@ -1,5 +1,6 @@
 key: ResNet_MoCov3
 fix: True
 ckpt_path: /scratch/huangjiangyong/.cache/torch/hub/checkpoints/res-50-1000epo-mocov3.pth
+grid_feature_ratio: 32
 reduction: [2, 4, 8, 16, 32]
 hidden_dim: [64, 256, 512, 1024, 2048]

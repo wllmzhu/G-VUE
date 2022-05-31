@@ -11,6 +11,7 @@ decoder:
   key: LabelType
   params:
     image_size: ${model.image_size}
+    grid_feature_ratio: ${backbone.grid_feature_ratio}
     reduction: ${backbone.reduction}
     input_dim_list: ${backbone.hidden_dim}
     hidden_dim: ${model.hidden_dim}

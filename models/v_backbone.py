@@ -162,10 +162,12 @@ class ViT_CLIP_32(nn.Module):
         # [1+hw, B, C] -> [B, C, h, w]
         fs = [f[1:, ...].permute(1, 2, 0).view(B, -1, h, w).type(imgs_ori_type) 
               for f in self.extract_fs]
-        # create different resolutions
-        for i in range(len(self.reductions)):
-            if self.reductions[i] != self.patch_size:
-                fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
+        
+        if self.requires_pyramid:
+            # create different resolutions
+            for i in range(len(self.reductions)):
+                if self.reductions[i] != self.patch_size:
+                    fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
         
         imgs = imgs.type(imgs_ori_type)
         return fs
@@ -219,10 +221,12 @@ class ViT_CLIP_16(nn.Module):
         # [1+hw, B, C] -> [B, C, h, w]
         fs = [f[1:, ...].permute(1, 2, 0).view(B, -1, h, w).type(imgs_ori_type) 
               for f in self.extract_fs]
-        # create different resolutions
-        for i in range(len(self.reductions)):
-            if self.reductions[i] != self.patch_size:
-                fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
+        
+        if self.requires_pyramid:
+            # create different resolutions
+            for i in range(len(self.reductions)):
+                if self.reductions[i] != self.patch_size:
+                    fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
         
         imgs = imgs.type(imgs_ori_type)
         return fs
@@ -279,10 +283,12 @@ class ViT_MAE(nn.Module):
 
         # [B, 1+hw, C] -> [B, C, h, w]
         fs = [f[:, 1:, :].permute(0, 2, 1).view(B, -1, h, w) for f in self.extract_fs]
-        # create different resolutions
-        for i in range(len(self.reductions)):
-            if self.reductions[i] != self.patch_size:
-                fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
+
+        if self.requires_pyramid:
+            # create different resolutions
+            for i in range(len(self.reductions)):
+                if self.reductions[i] != self.patch_size:
+                    fs[i] = resize(fs[i], size=self.image_size//self.reductions[i], mode='bilinear')
         
         return fs
     

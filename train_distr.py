@@ -231,7 +231,7 @@ def train_worker(gpu, cfg):
             model_selection_metric = 0
             for eval_subset in ['val']:
                 # re-shuffle validation set
-                dataloader = DataLoader(
+                dataloaders['val'] = DataLoader(
                     datasets['val'],
                     batch_size=cfg.eval.batch_size,
                     collate_fn=collate_fn,
@@ -242,7 +242,7 @@ def train_worker(gpu, cfg):
                 dataset_name = cfg.task.dataset.key
                 print(f'Evaluating on {dataset_name}')
 
-                metrics = evaluator(model, dataloader, cfg)
+                metrics = evaluator(model, dataloaders['val'], cfg)
                 
                 eval_str = f'Dataset: {dataset_name} | Subset: {eval_subset} | Epoch: {epoch}'
 
