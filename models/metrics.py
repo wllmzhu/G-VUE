@@ -224,6 +224,28 @@ def EvalBbox(model, dataloader, cfg):
 
     return {'Bbox Acc@0.5': (acc/total).item()}
 
+@METRICS.register()
+@torch.no_grad()
+def EvalRec(model, dataloader, cfg):
+    model.eval()
+    iou = 0
+    total = 0
+
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        idx, tsdf = targets
+        B = tsdf.shape[0]
+
+        img_logits = model(imgs)
+        outputs = model.decoder.inference(img_logits).squeeze(1)
+        pred_vox = outputs < 0
+        vox = tsdf < 0
+        area_intersect = torch.logical_and(pred_vox, vox).reshape(B, -1)
+        area_union = torch.logical_or(pred_vox, vox).reshape(B, -1)
+        iou += (area_intersect / area_union).mean()
+        total += 1
+
+    return {'Rec iou': (iou/total).item()}
 
 def box_iou(a, b):
     a = a.view(-1, 4)

@@ -1,1 +1,59 @@
 key: 3d_reconstruction
+
+dataset:
+  key: ShapeNetDataset
+  info:
+    subsets: [train, val]
+    img_dir:
+    anno_dir: 
+
+decoder:
+  key: RecDecoder
+  params:
+    image_size: ${model.image_size}
+    reduction: ${backbone.reduction}
+    input_dim_list: ${backbone.hidden_dim}
+    hidden_dim: ${model.hidden_dim}
+    tf_cfg:
+      model:
+        arch: tf_e
+        params:
+          embed_dim: 768
+          ntokens: 512
+          nhead: 12
+          nlayers_enc: 12
+          d_hid: 256
+          dropout: 0.1
+      pe:
+        mode: 'fourier'
+        init_factor: 10
+        pos_dim: 3
+        zq_dim: 8
+        pos_embed_dim: 128
+      ckpt: ./AutoSDF/saved_ckpt/rand_tf-snet_code-all-LR1e-4-clean-epoch200.pth
+    vq_cfg:
+      model:
+        arch_v: 'arch_v2'
+        params:
+          embed_dim: 256
+          n_embed: 512
+          ddconfig:
+            double_z: False
+            z_channels: 256
+            resolution: 64
+            in_channels: 1
+            out_ch: 1
+            ch: 64
+            # ch_mult: [1,1,2,2,4]  # num_down = len(ch_mult)-1
+            ch_mult: [1,2,2,4]  # num_down = len(ch_mult)-1
+            num_res_blocks: 1
+            attn_resolutions: [8]
+            dropout: 0.0
+    
+
+num_epochs: 30
+loss: RecLoss
+
+metrics: EvalRec
+
+visualize: VisRec

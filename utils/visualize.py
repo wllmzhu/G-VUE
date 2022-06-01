@@ -9,6 +9,7 @@ from .html_writer import HtmlWriter
 from torchvision.utils import draw_segmentation_masks
 from einops import rearrange
 from fvcore.common.registry import Registry
+from models.rec_decoder.qual_util import sdf_to_mesh, save_mesh_as_gif, init_mesh_renderer
 VISUALIZE = Registry('Visualize')
 norm_means = torch.as_tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
 norm_stds = torch.as_tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
@@ -470,6 +471,62 @@ def vis_bbox(bbox, img, color=(255, 0, 0)):
     cv2.rectangle(img, [int(x1),int(y1)], [int(x2),int(y2)], color, 2)
 
     return img
+
+
+@VISUALIZE.register()
+@torch.no_grad()
+def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
+    dist, elev, azim = 1.7, 20, 20
+    mesh_renderer = init_mesh_renderer(image_size=256, dist=dist, elev=elev, azim=azim, device='cuda')
+
+    html_writer.add_element({
+        0: 'query',
+        1: 'visualization',
+        2: 'prediction',
+        3: 'ground truth'
+    })
+    count = 0
+    finish_vis = False
+    model.eval()
+
+    for data in dataloader:
+        imgs, txts, targets = data
+        idx, tsdf = targets
+        B = tsdf.shape[0]
+
+        img_logits = model(imgs.cuda())
+        outputs = model.decoder.inference(img_logits)
+
+        for i in range(B):
+            if count+i >= cfg.training.num_vis_samples:
+                finish_vis = True
+                break
+
+            vis_img = imgs[i].mul_(norm_stds).add_(norm_means) # ???
+            vis_img = vis_img.detach().cpu().numpy() * 255
+            vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
+            vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
+            skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+
+            pred_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_pred.gif'
+            gen_mesh = sdf_to_mesh(outputs[i:i+1])
+            save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, pred_name))
+
+            gt_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_gt.gif'
+            gen_mesh = sdf_to_mesh(tsdf[i:i+1].unsqueeze(1))
+            save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, gt_name))
+
+            html_writer.add_element({
+                0: txts[i],
+                1: html_writer.image_tag(vis_name),
+                2: html_writer.image_tag(pred_name),
+                3: html_writer.image_tag(gt_name)
+            })
+        
+        if finish_vis is True:
+            break
+        
+        count += B
 
 
 def visualize(model, dataloader, cfg, step, subset):
