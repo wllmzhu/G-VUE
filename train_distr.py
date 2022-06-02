@@ -181,6 +181,8 @@ def train_worker(gpu, cfg):
             outputs = model(imgs, txts, cfg.task.key)
 
             if not isinstance(targets, torch.Tensor):
+                if cfg.task.key == '3d_reconstruction':
+                    targets = torch.stack([ele[0] for ele in targets])
                 targets = torch.as_tensor(targets)
             loss = model.criterion(outputs, targets)
             loss.backward()

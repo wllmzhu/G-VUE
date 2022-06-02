@@ -58,11 +58,6 @@ def BboxLoss(outputs, gts):
     gts = gts.to(preds.device)
     return 2 * GIoU_loss(preds, gts) + 5 * F.smooth_l1_loss(preds, gts)
 
-@LOSS.register()
-def RecLoss(outputs, gts):
-    idx, tsdf = gts
-    idx = idx.to(outputs.device)
-    return F.cross_entropy(outputs, idx)
 
 def GIoU_loss(pred, gt, reduction='mean'):
     # normalized in [0, 1]
