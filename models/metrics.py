@@ -220,17 +220,20 @@ def EvalRec(model, dataloader, cfg):
 
     for data in tqdm(dataloader):
         imgs, txts, targets = data
-        idx, tsdf = targets
+        tsdf = torch.stack([ele[1] for ele in targets]).cuda()
         B = tsdf.shape[0]
 
-        img_logits = model(imgs)
-        outputs = model.decoder.inference(img_logits).squeeze(1)
+        img_logits = model(imgs.cuda())
+        outputs = model.decoder.inference(img_logits)
         pred_vox = outputs < 0
         vox = tsdf < 0
         area_intersect = torch.logical_and(pred_vox, vox).reshape(B, -1)
         area_union = torch.logical_or(pred_vox, vox).reshape(B, -1)
-        iou += (area_intersect / area_union).mean()
-        total += 1
+        iou += (area_intersect.sum(-1) / area_union.sum(-1)).sum()
+        total += B
+
+        if total >= cfg.eval.num_val_samples:
+            break
 
     return {'Rec iou': (iou/total).item()}
 

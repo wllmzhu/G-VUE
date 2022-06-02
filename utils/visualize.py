@@ -463,7 +463,7 @@ def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
 
     for data in dataloader:
         imgs, txts, targets = data
-        idx, tsdf = targets
+        tsdf = torch.stack([ele[1] for ele in targets]).cuda()
         B = tsdf.shape[0]
 
         img_logits = model(imgs.cuda())
@@ -474,7 +474,7 @@ def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
                 finish_vis = True
                 break
 
-            vis_img = imgs[i].mul_(norm_stds).add_(norm_means) # ???
+            vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
             vis_img = vis_img.detach().cpu().numpy() * 255
             vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
             vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
@@ -485,7 +485,7 @@ def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
             save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, pred_name))
 
             gt_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_gt.gif'
-            gen_mesh = sdf_to_mesh(tsdf[i:i+1].unsqueeze(1))
+            gen_mesh = sdf_to_mesh(tsdf[i:i+1])
             save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, gt_name))
 
             html_writer.add_element({

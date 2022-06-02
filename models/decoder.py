@@ -173,6 +173,11 @@ class RecDecoder(nn.Module):
         self.tf.load_state_dict(state_dict['tf'])
         self.vqvae.load_state_dict(state_dict['vqvae'])
 
+        for p in self.tf.parameters():
+            p.requires_grad_(False)
+        for p in self.vqvae.parameters():
+            p.requires_grad_(False)
+
         self.sos = 0 # start token
         self.grid_table = self.init_grid(pos_dim=cfg.tf_cfg.pe.pos_dim, zq_dim=self.grid_size).cuda()
     
@@ -268,6 +273,11 @@ class RecDecoder(nn.Module):
 
         pred = pred[1:][torch.argsort(gen_order)] # exclude pred[0] since it's <sos>, <512, B>
         return self.vqvae.decode_enc_idices(pred, z_spatial_dim=self.grid_size) # <B, 1, 64, 64, 64>
+    
+    def decode_codeidx(self, codeix):
+        B = codeix.shape[0]
+        codeix = codeix.reshape(B, -1).permute(1, 0)
+        return self.vqvae.decode_enc_idices(codeix, z_spatial_dim=self.grid_size) # <B, 1, 64, 64, 64>
 
 def build_decoder(cfg):
     # assert cfg.key in ['QueryType', 'LabelType', 'DenseType']
