@@ -180,9 +180,9 @@ def train_worker(gpu, cfg):
 
             outputs = model(imgs, txts, cfg.task.key)
 
+            if cfg.task.key == '3d_reconstruction':
+                targets = torch.stack([ele[0] for ele in targets])
             if not isinstance(targets, torch.Tensor):
-                if cfg.task.key == '3d_reconstruction':
-                    targets = torch.stack([ele[0] for ele in targets])
                 targets = torch.as_tensor(targets)
             loss = model.criterion(outputs, targets)
             loss.backward()
@@ -214,7 +214,8 @@ def train_worker(gpu, cfg):
                 writer.add_scalar(f'Loss/train', loss_value, step)
                 print(loss_str)
 
-            if gpu == 0 and step % cfg.training.vis_step == 0:
+            # if gpu == 0 and step % cfg.training.vis_step == 0:
+            if gpu == 0 and epoch == cfg.training.num_epochs-1:
                 for subset in ['train', 'val']:
                     print(f'Visualizing {subset} ...')
                     visualize(model, dataloaders[subset], cfg, step, subset)
@@ -312,6 +313,9 @@ def main(cfg):
         cfg.training.num_workers = 8
         cfg.eval.batch_size = 32
         cfg.eval.num_workers = 8
+    elif cfg.task.key == '3d_reconstruction':
+        cfg.eval.batch_size = 50
+        cfg.eval.num_val_samples = 100
 
     if cfg.multiprocessing_distributed:
         cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes

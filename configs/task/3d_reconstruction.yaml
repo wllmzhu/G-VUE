@@ -3,7 +3,7 @@ key: 3d_reconstruction
 dataset:
   key: ShapeNetDataset
   info:
-    subsets: [train, val]
+    subsets: [train, test]
     cat: 'all'
     info_file: /scratch/generalvision/ShapeNetCore.v1/DISN/info.json
     split_dir: /scratch/generalvision/ShapeNetCore.v1/DISN/filelists/
@@ -54,7 +54,7 @@ decoder:
             dropout: 0.0
     
 
-num_epochs: 30
+num_epochs: 100
 loss: CrossEntropyLoss
 
 metrics: EvalRec

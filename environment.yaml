@@ -21,3 +21,14 @@ dependencies:
     - pytorch_transformers
     - matplotlib
     - einops
+    - PyMCubes
+    - pytorch3d
+    - pytorch_lightning==1.0.3
+    - gym==0.17.3
+    - pybullet==3.0.4
+    - protobuf~=3.19.0
+    - imageio-ffmpeg==0.4.5
+    - kornia==0.4.1
+    - meshcat==0.0.18
+    - transforms3d==0.3.1
+    - wandb==0.10.15
