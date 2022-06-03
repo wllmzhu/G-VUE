@@ -215,7 +215,7 @@ def train_worker(gpu, cfg):
                 print(loss_str)
 
             # if gpu == 0 and step % cfg.training.vis_step == 0:
-            if gpu == 0 and epoch == cfg.training.num_epochs-1:
+            if gpu == 0 and step % cfg.training.vis_step == 0 and epoch == cfg.training.num_epochs-1:
                 for subset in ['train', 'val']:
                     print(f'Visualizing {subset} ...')
                     visualize(model, dataloaders[subset], cfg, step, subset)
@@ -314,6 +314,7 @@ def main(cfg):
         cfg.eval.batch_size = 32
         cfg.eval.num_workers = 8
     elif cfg.task.key == '3d_reconstruction':
+        cfg.training.batch_size = 32
         cfg.eval.batch_size = 50
         cfg.eval.num_val_samples = 100
 

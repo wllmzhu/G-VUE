@@ -14,6 +14,7 @@ decoder:
   key: RecDecoder
   params:
     image_size: ${model.image_size}
+    grid_feature_ratio: ${backbone.grid_feature_ratio}
     reduction: ${backbone.reduction}
     input_dim_list: ${backbone.hidden_dim}
     hidden_dim: ${model.hidden_dim}
@@ -54,7 +55,7 @@ decoder:
             dropout: 0.0
     
 
-num_epochs: 100
+num_epochs: 200
 loss: CrossEntropyLoss
 
 metrics: EvalRec

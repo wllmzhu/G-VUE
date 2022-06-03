@@ -1,3 +1,4 @@
+from einops import rearrange
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
@@ -134,7 +135,7 @@ class RecDecoder(nn.Module):
         self.dz = self.hz = self.wz = self.grid_size = cfg.tf_cfg.pe.zq_dim
 
         c1_in_channels, c2_in_channels, c3_in_channels, c4_in_channels = cfg.input_dim_list[-4:]
-        self.backbone_output_size = cfg.image_size // cfg.reduction[-1]
+        self.backbone_output_size = cfg.image_size // cfg.grid_feature_ratio
 
         self.linear_to3d = nn.Linear( self.backbone_output_size ** 2, self.dz * self.hz * self.wz)
         self.reduce_channel = torch.nn.Conv3d(c4_in_channels, ntoken, 1)
@@ -234,7 +235,7 @@ class RecDecoder(nn.Module):
 
         # gen image prior
         img_logprob = F.log_softmax(img_logits, dim=1) # compute the prob. of next ele
-        prob = img_logprob.reshape(self.dz * self.hz * self.wz, B, -1)
+        prob = rearrange(img_logprob, 'bs c d h w -> (d h w) bs c')
 
         # gen autosdf prior
         seq_len = 1
