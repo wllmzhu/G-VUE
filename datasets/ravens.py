@@ -39,11 +39,11 @@ class RavensDataset(Dataset):
 
         self.aug_theta_sigma = self.cfg['dataset']['augment']['theta_sigma'] if 'augment' in self.cfg['dataset'] else 60  # legacy code issue: theta_sigma was newly added
         self.pix_size = 0.003125
-        # self.in_shape = (320, 160, 6)
-        self.in_shape = (224, 224, 6)
+        self.in_shape = (320, 160, 6)
+        # self.in_shape = (224, 224, 6)
         self.cam_config = cameras.RealSenseD415.CONFIG
-        # self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
-        self.bounds = np.array([[0.15, 0.85], [-0.35, 0.35], [0, 0.28]])
+        self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
+        # self.bounds = np.array([[0.15, 0.85], [-0.35, 0.35], [0, 0.28]])
         
         # Track existing dataset if it exists.
         color_path = os.path.join(self._path, 'action')
@@ -306,11 +306,11 @@ class RavensMultiTaskDataset(RavensDataset):
 
         self.aug_theta_sigma = self.cfg['dataset']['augment']['theta_sigma'] if 'augment' in self.cfg['dataset'] else 60  # legacy code issue: theta_sigma was newly added
         self.pix_size = 0.003125
-        # self.in_shape = (320, 160, 6)
-        self.in_shape = (224, 224, 6)
+        self.in_shape = (320, 160, 6)
+        # self.in_shape = (224, 224, 6)
         self.cam_config = cameras.RealSenseD415.CONFIG
-        # self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
-        self.bounds = np.array([[0.15, 0.85], [-0.35, 0.35], [0, 0.28]])
+        self.bounds = np.array([[0.25, 0.75], [-0.5, 0.5], [0, 0.28]])
+        # self.bounds = np.array([[0.15, 0.85], [-0.35, 0.35], [0, 0.28]])
 
         self.n_episodes = {}
         episodes = {}

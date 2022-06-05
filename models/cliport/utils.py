@@ -34,8 +34,28 @@ def preprocess(img):
         # normalize
         img[:, :, :3] = (img[:, :, :3] / 255 - color_mean) / color_std
         img[:, :, 3:] = (img[:, :, 3:] - depth_mean) / depth_std
+        
+        # convert to tensor
+        img = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0)
 
     return img
+
+
+def resize_transform(inp, size, p=None):
+    if p is None:
+        q = None
+    else:
+        # corresponding transform on point
+        ori_h, ori_w = inp.shape[-2:]
+        h, w = size
+        q = (
+            np.clip(p[0]/ori_h*h, 0, h-1).astype(int), np.clip(p[1]/ori_w*w, 0, w-1).astype(int)
+        )
+    
+    if inp.ndim == 3:
+        inp = inp.unsqueeze(0)
+    inp = F.interpolate(inp, size=size, mode='bilinear')
+    return inp, q
 
 
 class FusionMult(nn.Module):

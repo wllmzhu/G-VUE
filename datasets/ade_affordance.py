@@ -25,8 +25,7 @@ class ADEAffordanceDataset(Dataset):
     
     def _load_dataset(self):
         self.samples = io.load_json_object(os.path.join(self.info.index_dir, f'{self.subset}_file_path.json'))
-        self.samples = [x.rstrip() for x in open(os.path.join(self.info.index_dir, f'ADE20K_object150_{self.subset}.txt'), 'r')]
-        print(f'load {len(self.samples)} samples in ADE20K (MIT Scene Parsing Benchmark) {self.subset}')
+        print(f'load {len(self.samples)} samples in ADE-Affordance {self.subset}')
 
     def __len__(self):
         return len(self.samples)
@@ -37,7 +36,11 @@ class ADEAffordanceDataset(Dataset):
         return seg
 
     def __getitem__(self, i):
-        filename = self.samples[i]
+        anno_path = self.samples[i]   # e.g., 'training/p/parking_lot/ADE_train_00015137'
+        anno_file = os.path.join(self.info.index_dir, anno_path)
+        
+        filename = os.path.split(anno_path)[-1] .split()
+        self.samples = [x.rstrip() for x in open(os.path.join(self.info.index_dir, f'ADE20K_object150_{self.subset}.txt'), 'r')]
         img_filename = os.path.join(self.info.img_dir, filename)
         seg_filename = os.path.join(self.info.seg_dir, filename)
         seg_filename = seg_filename.replace('.jpg', '.png')

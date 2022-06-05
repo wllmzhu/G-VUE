@@ -11,6 +11,8 @@ tag: default
 debug: False
 date: null
 
+model:
+  image_size: 224
 v_backbone: ${backbone}
 l_backbone:
     cfg_dir: /scratch/huangjiangyong/data/roberta-base

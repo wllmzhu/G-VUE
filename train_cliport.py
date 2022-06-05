@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 # from cliport import agents
-from models.cliport import agents
+from models.cliport.agents import GVUEAgent
 from datasets.ravens import RavensDataset, RavensMultiTaskDataset
 
 import hydra
@@ -70,7 +70,7 @@ def main(cfg):
         val_ds = RavensDataset(os.path.join(data_dir, '{}-val'.format(task)), cfg, n_demos=n_val, augment=False)
 
     # Initialize agent
-    agent = agents.names[agent_type](name, cfg, train_ds, val_ds)
+    agent = GVUEAgent(name, cfg, train_ds, val_ds)
 
     # Main training loop
     trainer.fit(agent)

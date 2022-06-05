@@ -27,6 +27,7 @@ dependencies:
     - gym==0.17.3
     - pybullet==3.0.4
     - protobuf~=3.19.0
+    - imageio
     - imageio-ffmpeg==0.4.5
     - kornia==0.4.1
     - meshcat==0.0.18

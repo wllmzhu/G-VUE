@@ -1,6 +1,7 @@
 import torch
 import numpy as np
-from .stream_model import STREAM
+from .stream_model import StreamModel
+from .utils import preprocess, resize_transform
 from cliport.utils import utils
 from cliport.agents.transporter import TransporterAgent
 from cliport.models.streams.two_stream_attention_lang_fusion import TwoStreamAttentionLangFusion
@@ -16,13 +17,17 @@ class OneStreamAttentionLangFusion(TwoStreamAttentionLangFusion):
 
     def _build_nets(self):
         stream_one_fcn, _ = self.stream_fcn
-        stream_one_model = STREAM.get(stream_one_fcn)
 
-        self.attn_stream_one = stream_one_model(self.in_shape, 1, self.cfg, self.device, self.preprocess)
+        self.attn_stream_one = StreamModel(self.in_shape, 1, self.cfg, self.device, self.preprocess)
         print(f"Attn FCN: {stream_one_fcn}")
 
     def attend(self, x, l):
+        # preprocess and transform
+        x = preprocess(x)
+        h, w = x.shape[-2:]
+        x, _ = resize_transform(x, size=(224, 224), p=None)
         x = self.attn_stream_one(x, l)
+        x, _ = resize_transform(x, size=(h, w), p=None)
         return x
 
 
@@ -35,23 +40,31 @@ class OneStreamTransportLangFusion(TwoStreamTransportLangFusion):
 
     def _build_nets(self):
         stream_one_fcn, _ = self.stream_fcn
-        stream_one_model = STREAM.get(stream_one_fcn)
 
-        self.key_stream_one = stream_one_model(self.in_shape, self.output_dim, self.cfg, self.device, self.preprocess)
-        self.query_stream_one = stream_one_model(self.kernel_shape, self.kernel_dim, self.cfg, self.device, self.preprocess)
+        self.key_stream_one = StreamModel(self.in_shape, self.output_dim, self.cfg, self.device, self.preprocess)
+        self.query_stream_one = StreamModel(self.kernel_shape, self.kernel_dim, self.cfg, self.device, self.preprocess)
 
         print(f"Transport FCN: {stream_one_fcn}")
 
     def transport(self, in_tensor, crop, l):
+        # preprocess and transform
+        in_tensor = preprocess(in_tensor)
+        crop = preprocess(crop)
+        h, w = in_tensor.shape[-2:]
+        in_tensor, _ = resize_transform(in_tensor, size=(224, 224), p=None)
+        crop, _ = resize_transform(crop, size=(224, 224), p=None)
+
         logits = self.key_stream_one(in_tensor, l)
         kernel = self.key_stream_one(crop, l)
+
+        logits, _ = resize_transform(logits, size=(h, w), p=None)
+        kernel, _ = resize_transform(kernel, size=(h, w), p=None)
         return logits, kernel
 
 
 class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
     def __init__(self, name, cfg, train_ds, test_ds):
         super().__init__(name, cfg, train_ds, test_ds)
-        self.in_shape = (224, 224, 6)   # customized image resolution
 
     def _build_model(self):
         stream_one_fcn = 'plain_resnet'
@@ -107,6 +120,8 @@ class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
         err = {}
         if compute_err:
             pick_conf = self.attn_forward(inp)
+            if pick_conf.ndim > 3:
+                pick_conf.squeeze_(0)
             pick_conf = pick_conf.detach().cpu().numpy()
             argmax = np.argmax(pick_conf)
             argmax = np.unravel_index(argmax, shape=pick_conf.shape)
@@ -144,8 +159,50 @@ class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
 
         inp = {'inp_img': inp_img, 'p0': p0, 'lang_goal': lang_goal}
         out = self.trans_forward(inp, softmax=False)
-        err, loss = self.transport_criterion(backprop, compute_err, inp, out, p0, p1, p1_theta)
+        err, loss = self.transport_criterion(backprop, compute_err, inp, out, p1, p1_theta)
         return loss, err
+    
+    def transport_criterion(self, backprop, compute_err, inp, output, q, theta):
+        itheta = theta / (2 * np.pi / self.transport.n_rotations)
+        itheta = np.int32(np.round(itheta)) % self.transport.n_rotations
+
+        # Get one-hot pixel label map.
+        inp_img = inp['inp_img']
+        label_size = inp_img.shape[:2] + (self.transport.n_rotations,)
+        label = np.zeros(label_size)
+        label[q[0], q[1], itheta] = 1
+
+        # Get loss.
+        label = label.transpose((2, 0, 1))
+        label = label.reshape(1, np.prod(label.shape))
+        label = torch.from_numpy(label).to(dtype=torch.float, device=output.device)
+        output = output.reshape(1, np.prod(output.shape))
+        loss = self.cross_entropy_with_logits(output, label)
+        if backprop:
+            transport_optim = self._optimizers['trans']
+            self.manual_backward(loss, transport_optim)
+            transport_optim.step()
+            transport_optim.zero_grad()
+ 
+        # Pixel and Rotation error (not used anywhere).
+        err = {}
+        if compute_err:
+            place_conf = self.trans_forward(inp)
+            if place_conf.ndim > 3:
+                place_conf.squeeze_(0)
+            place_conf = place_conf.permute(1, 2, 0)
+            place_conf = place_conf.detach().cpu().numpy()
+            argmax = np.argmax(place_conf)
+            argmax = np.unravel_index(argmax, shape=place_conf.shape)
+            p1_pix = argmax[:2]
+            p1_theta = argmax[2] * (2 * np.pi / place_conf.shape[2])
+
+            err = {
+                'dist': np.linalg.norm(np.array(q) - p1_pix, ord=1),
+                'theta': np.absolute((theta - p1_theta) % np.pi)
+            }
+        self.transport.iters += 1
+        return err, loss
 
     def act(self, obs, info, goal=None):  # pylint: disable=unused-argument
         """Run inference and return best action given visual observations."""
@@ -156,6 +213,9 @@ class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
         # Attention model forward pass.
         pick_inp = {'inp_img': img, 'lang_goal': lang_goal}
         pick_conf = self.attn_forward(pick_inp)
+
+        if pick_conf.ndim > 3:
+            pick_conf.squeeze_(0)
         pick_conf = pick_conf.detach().cpu().numpy()
         argmax = np.argmax(pick_conf)
         argmax = np.unravel_index(argmax, shape=pick_conf.shape)
@@ -165,6 +225,9 @@ class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
         # Transport model forward pass.
         place_inp = {'inp_img': img, 'p0': p0_pix, 'lang_goal': lang_goal}
         place_conf = self.trans_forward(place_inp)
+
+        if place_conf.ndim > 3:
+            place_conf.squeeze_(0)
         place_conf = place_conf.permute(1, 2, 0)
         place_conf = place_conf.detach().cpu().numpy()
         argmax = np.argmax(place_conf)

@@ -3,20 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from models.v_backbone import build_v_backbone
 from models.l_backbone import RoBERTa
-from fvcore.common.registry import Registry
 from .utils import FusionMult, Up, IdentityBlock, ConvBlock
 
 
-STREAM = Registry('Stream')
-
-
-@STREAM.register()
-class ResNetStream(nn.Module):
+class StreamModel(nn.Module):
     def __init__(self, input_shape, output_dim, cfg, device, preprocess):
         super().__init__()
         self.input_shape = input_shape
         self.output_dim = output_dim
-        self.input_dim = cfg.backbone.hidden_dim[-1]
+        self.input_dim = cfg.backbone.hidden_dim
         self.cfg = cfg
         self.device = device
         self.batchnorm = self.cfg['train']['batchnorm']
@@ -27,9 +22,9 @@ class ResNetStream(nn.Module):
 
         self.v_backbone = build_v_backbone(cfg.backbone)
         self.l_backbone = RoBERTa(cache_dir=cfg.l_backbone.cfg_dir)
-        # self._load_clip()
         self._build_decoder()
 
+        self.v_backbone.requires_pyramid = True
         self.initialize()
     
     def initialize(self):
@@ -41,9 +36,9 @@ class ResNetStream(nn.Module):
 
     def _build_decoder(self):
         # language
-        self.lang_fuser1 = FusionMult(input_dim=self.input_dim // 2)
-        self.lang_fuser2 = FusionMult(input_dim=self.input_dim // 4)
-        self.lang_fuser3 = FusionMult(input_dim=self.input_dim // 8)
+        self.lang_fuser1 = FusionMult(input_dim=1024)
+        self.lang_fuser2 = FusionMult(input_dim=512)
+        self.lang_fuser3 = FusionMult(input_dim=256)
 
         self.proj_input_dim = self.cfg.l_backbone.hidden_dim
         self.lang_proj1 = nn.Linear(self.proj_input_dim, 1024)
@@ -52,15 +47,15 @@ class ResNetStream(nn.Module):
 
         # vision
         self.conv1 = nn.Sequential(
-            nn.Conv2d(self.input_dim, 1024, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.Conv2d(self.input_dim[-1], 1024, kernel_size=3, stride=1, padding=1, bias=False),
             nn.ReLU(True)
         )
 
-        self.up1 = Up(2048, 1024 // self.up_factor, self.bilinear)
+        self.up1 = Up(1024+self.input_dim[-2], 1024 // self.up_factor, self.bilinear)
 
-        self.up2 = Up(1024, 512 // self.up_factor, self.bilinear)
+        self.up2 = Up(512+self.input_dim[-3], 512 // self.up_factor, self.bilinear)
 
-        self.up3 = Up(512, 256 // self.up_factor, self.bilinear)
+        self.up3 = Up(256+self.input_dim[-4], 256 // self.up_factor, self.bilinear)
 
         self.layer1 = nn.Sequential(
             ConvBlock(128, [64, 64, 64], kernel_size=3, stride=1, batchnorm=self.batchnorm),
@@ -85,7 +80,7 @@ class ResNetStream(nn.Module):
         )
 
     def forward(self, x, l):
-        x = self.preprocess(x)
+        # x = self.preprocess(x)
 
         in_type = x.dtype
         in_shape = x.shape
@@ -97,7 +92,7 @@ class ResNetStream(nn.Module):
         txt_seqs, _ = self.l_backbone(l, device=x.device)
         l_input = txt_seqs[:, 0].to(dtype=x.dtype)
 
-        assert x.shape[1] == self.input_dim
+        assert x.shape[1] == self.input_dim[-1]
         x = self.conv1(x)
 
         x = self.lang_fuser1(x, l_input, x2_proj=self.lang_proj1)
