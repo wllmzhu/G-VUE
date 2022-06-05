@@ -6,6 +6,10 @@ def make_nyuv2_transforms(image_set):
     scales = [(224, 224)]
     resize_before_crop = [400, 500, 600]
     crop_size = 384
+    # high resolution
+    # scales = [(640, 640)]
+    # resize_before_crop = [600, 700, 800]
+    # crop_size = 512
     
     if image_set == "train":
         horizontal = [RandomHorizontalFlip()]

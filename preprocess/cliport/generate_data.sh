@@ -30,7 +30,7 @@ for task in ${task_list_train}; do
     echo "generating $task for train"
     python ${CLIPORT_ROOT}/cliport/demos.py n=100 \
                                             task=${task} \
-                                            mode=train > logs/3d_recon_prepro/train/${task}.log
+                                            mode=train > logs/cliport/train/${task}.log
 done
 
 # val
@@ -38,13 +38,13 @@ for task in ${task_list_test}; do
     echo "generating ${task} for val"
     python ${CLIPORT_ROOT}/cliport/demos.py n=100 \
                                             task=${task} \
-                                            mode=val > logs/3d_recon_prepro/val/${task}.log
+                                            mode=val > logs/cliport/val/${task}.log
 done
 
-# # test
+# test
 for task in ${task_list_test}; do
     echo "generating ${task} for test"
     python ${CLIPORT_ROOT}/cliport/demos.py n=100 \
                                             task=${task} \
-                                            mode=test > logs/3d_recon_prepro/test/${task}.log
+                                            mode=test > logs/cliport/test/${task}.log
 done

@@ -477,7 +477,7 @@ def vis_bbox(bbox, img, color=(255, 0, 0)):
 @torch.no_grad()
 def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
     dist, elev, azim = 1.7, 20, 20
-    mesh_renderer = init_mesh_renderer(image_size=256, dist=dist, elev=elev, azim=azim, device='cuda')
+    mesh_renderer = init_mesh_renderer(image_size=256, dist=dist, elev=elev, azim=azim, device='cpu')
 
     html_writer.add_element({
         0: 'query',
@@ -491,11 +491,11 @@ def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
 
     for data in dataloader:
         imgs, txts, targets = data
-        tsdf = torch.stack([ele[1] for ele in targets]).cuda()
+        tsdf = torch.stack([ele[1] for ele in targets]).cpu()
         B = tsdf.shape[0]
 
         img_logits = model(imgs.cuda())
-        outputs = model.decoder.inference(img_logits)
+        outputs = model.decoder.inference(img_logits).detach().cpu()
 
         for i in range(B):
             if count+i >= cfg.training.num_vis_samples:
@@ -510,11 +510,11 @@ def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
 
             pred_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_pred.gif'
             gen_mesh = sdf_to_mesh(outputs[i:i+1])
-            save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, pred_name))
+            save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, pred_name), device='cpu')
 
             gt_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '_gt.gif'
             gen_mesh = sdf_to_mesh(tsdf[i:i+1])
-            save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, gt_name))
+            save_mesh_as_gif(mesh_renderer, gen_mesh, nrow=1, out_name=os.path.join(vis_dir, gt_name), device='cpu')
 
             html_writer.add_element({
                 0: txts[i],
