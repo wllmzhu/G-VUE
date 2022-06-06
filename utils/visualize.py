@@ -548,6 +548,9 @@ def VisCameraRelocalization(html_writer, model, dataloader, cfg, step, vis_dir):
         B = imgs.shape[0]
 
         outputs = model(imgs)
+
+        outputs = outputs.detach().cpu().numpy()
+        targets = targets.detach().cpu().numpy()
         
         for i in range(B):
             if count+i >= cfg.training.num_vis_samples:

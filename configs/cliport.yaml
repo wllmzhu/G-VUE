@@ -54,6 +54,43 @@ train:
   save_steps: [1000, 2000, 3000, 4000, 5000, 7000, 10000, 20000, 40000, 80000, 120000, 160000, 200000, 300000, 400000, 500000, 600000, 800000, 1000000, 1200000]
   load_from_last_ckpt: True
 
+eval:
+  mode: val   # val or test
+  agent: ${train.agent}
+  n_demos: 100   # number of val instances
+  train_demos: 100   # training demos used to train model
+  n_repeats: 1   # number of repeats
+  gpu: [0]
+  save_results: True   # write results to json
+  update_results: False   # overwrite existing json results?
+  checkpoint_type: 'val_missing'
+  val_on_heldout: True
+
+  disp: False
+  shared_memory: False
+  task: null   # task to evaluate the model on
+  model_task: ${train.task}   # task the model was trained on (e.g. multi-language-conditioned or packing-boxes-pairs-seen-colors)
+  type: single   # 'single' or 'multi'
+
+  # paths
+  exp_folder: exps
+  data_dir: ${root_dir}/data
+  assets_root: ${root_dir}/cliport/environments/assets/
+
+  model_path: ${train.train_dir}/checkpoints/   # path to pre-trained models
+  train_config: ${train.train_dir}/.hydra/config.yaml   # path to train config
+  save_path: ${root_dir}/${eval.exp_folder}/${date}-${train.agent}-n${train.n_demos}-eval-${eval.task}/checkpoints/
+  results_path: ${eval.save_path}   # path to existing results
+
+  # record videos (super slow)
+  record:
+    save_video: False
+    save_video_path: ${root_dir}/${eval.exp_folder}/${date}-${train.agent}-n${train.n_demos}-eval-${eval.task}/videos/
+    add_text: True
+    fps: 20
+    video_height: 640
+    video_width: 720
+
 wandb:
   run_name: 'cliport0'
   logger:
