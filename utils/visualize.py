@@ -537,6 +537,8 @@ def VisCameraRelocalization(html_writer, model, dataloader, cfg, step, vis_dir):
     html_writer.add_element({
         0: 'query',
         1: 'visualization',
+        2: 'prediction',
+        3: 'ground truth'
     })
     count = 0
     finish_vis = False
@@ -544,6 +546,8 @@ def VisCameraRelocalization(html_writer, model, dataloader, cfg, step, vis_dir):
     for data in dataloader:
         imgs, txts, targets = data
         B = imgs.shape[0]
+
+        outputs = model(imgs)
         
         for i in range(B):
             if count+i >= cfg.training.num_vis_samples:
@@ -559,6 +563,8 @@ def VisCameraRelocalization(html_writer, model, dataloader, cfg, step, vis_dir):
             html_writer.add_element({
                 0: txts[i],
                 1: html_writer.image_tag(vis_name),
+                2: outputs[i],
+                3: targets[i],
             })
         
         if finish_vis is True:
