@@ -26,7 +26,7 @@ decoder:
       hidden_dim: ${task.decoder.params.transformer.hidden_dim}
     num_classes: 7
 
-num_epochs: 100
+num_epochs: 200
 loss: CameraRelocalizationLoss
 
 metrics: EvalCameraRelocalization

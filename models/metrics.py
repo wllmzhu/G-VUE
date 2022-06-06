@@ -256,8 +256,8 @@ def EvalRec(model, dataloader, cfg):
 @torch.no_grad()
 def EvalCameraRelocalization(model, dataloader, cfg):
     model.eval()
-    position_error = 0
-    orientation_error = 0
+    position_error = []
+    orientation_error = []
     total = 0
 
     for data in tqdm(dataloader):
@@ -268,39 +268,32 @@ def EvalCameraRelocalization(model, dataloader, cfg):
         targets = targets.to(outputs.device)
         
         pos_error, orient_error = camera_relocalization_errors(outputs, targets)
-        position_error += pos_error
-        orientation_error += orient_error
+        position_error.append(pos_error)
+        orientation_error.append(orient_error)
         total += B
 
         if total >= cfg.eval.num_val_samples:
             break
-
-    return {'position_error': (position_error/total).item(), 
-        'orientation_error_roll': (orientation_error[0]/total).item(),
-        'orientation_error_pitch': (orientation_error[1]/total).item(),
-        'orientation_error_yaw': (orientation_error[2]/total).item(),}
-
-# quaternion to euler conversion based on https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-def quaternion_to_euler(orientation):
-    # convert to numpy
-    w = orientation[:, 0].cpu().numpy()
-    x = orientation[:, 1].cpu().numpy()
-    y = orientation[:, 2].cpu().numpy()
-    z = orientation[:, 3].cpu().numpy()
-
-    sinr_cosp = 2 * (w * x + y * z)
-    cosr_cosp = 1 - 2 * (x * x + y * y)
-    roll = np.arctan2(sinr_cosp, cosr_cosp)
-
-    sinp = 2 * (w * y - z * x)
-    sinp = np.array(list(map(lambda x: x / abs(x) if abs(x) > 1 else x, sinp)))
-    pitch = np.arcsin(sinp)
+    position_error = np.concatenate(position_error, axis=0)
+    orientation_error = np.concatenate(orientation_error, axis=0)
     
-    siny_cosp = 2.0 * (w * z + x * y)
-    cosy_cosp = 1.0 - 2.0 * (y * y + z * z)
-    yaw = np.arctan2(siny_cosp, cosy_cosp)
+    print('T: median = {:.3f}, mean = {:.3f}'.format(np.median(position_error), np.mean(position_error)))
+    print('R: median = {:.3f}, mean = {:.3f}'.format(np.median(orientation_error), np.mean(orientation_error)))
 
-    return torch.tensor(np.array([np.degrees(np.array(roll)), np.degrees(np.array(pitch)), np.degrees(np.array(yaw))])).to(orientation.device) # [3, bs]
+    return {'position_error': np.mean(position_error), 
+        'orientation_error': np.mean(orientation_error)}
+
+def quaternion_angular_error(q1, q2):
+    """
+    angular error between two quaternions
+    :param q1: (4, ), normalized 
+    :param q2: (4, ), normalized
+    :return:
+    """
+    d = abs(np.dot(q1, q2))
+    d = min(1.0, max(-1.0, d))
+    theta = 2 * np.arccos(d) * 180 / np.pi
+    return theta
 
 def camera_relocalization_errors(output, target):  # returns mean position error in units and mean angle error in degrees
     position = output[:, :3]
@@ -310,11 +303,10 @@ def camera_relocalization_errors(output, target):  # returns mean position error
     orientation = F.normalize(orientation, p=2, dim=1)
     orientation_target = F.normalize(orientation_target, p=2, dim=1)
 
-    position_error = torch.norm(position - position_target, p=2, dim=-1).sum()
+    position_error = torch.norm(position - position_target, p=2, dim=-1).cpu().numpy()
     
-    orientation_euler = quaternion_to_euler(orientation)
-    orientation_target_euler = quaternion_to_euler(orientation_target)
-    orientation_error = torch.abs(orientation_euler - orientation_target_euler).sum(-1) # [3, bs].sum(-1)
+    orientation_error = [quaternion_angular_error(p, t) for p, t in zip(orientation.cpu().numpy(), orientation_target.cpu().numpy())]
+    orientation_error = np.array(orientation_error)
 
     return position_error, orientation_error
 
