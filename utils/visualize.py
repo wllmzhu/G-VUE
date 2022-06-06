@@ -528,6 +528,43 @@ def VisRec(html_writer, model, dataloader, cfg, step, vis_dir):
         
         count += B
 
+@VISUALIZE.register()
+@torch.no_grad()
+def VisCameraRelocalization(html_writer, model, dataloader, cfg, step, vis_dir):
+    """
+    Just visualize input images
+    """
+    html_writer.add_element({
+        0: 'query',
+        1: 'visualization',
+    })
+    count = 0
+    finish_vis = False
+
+    for data in dataloader:
+        imgs, txts, targets = data
+        B = imgs.shape[0]
+        
+        for i in range(B):
+            if count+i >= cfg.training.num_vis_samples:
+                finish_vis = True
+                break
+
+            vis_img = imgs[i].mul_(norm_stds).add_(norm_means)
+            vis_img = vis_img.detach().cpu().numpy() * 255
+            vis_img = vis_img.astype(np.uint8).transpose(1, 2, 0)
+            vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
+            skio.imsave(os.path.join(vis_dir, vis_name), vis_img)
+
+            html_writer.add_element({
+                0: txts[i],
+                1: html_writer.image_tag(vis_name),
+            })
+        
+        if finish_vis is True:
+            break
+        
+        count += B
 
 def visualize(model, dataloader, cfg, step, subset):
     vis_dir = os.path.join(
