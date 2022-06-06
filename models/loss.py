@@ -93,6 +93,22 @@ def GIoU_loss(pred, gt, reduction='mean'):
         pass
     return loss
 
+@LOSS.register()
+def CameraRelocalizationLoss(outputs, gts, beta=150):
+    gts = gts.to(outputs.device)
+    
+    position = outputs[:, :3]
+    orientation = outputs[:, -4:]
+    position_target = gts[:, :3]
+    orientation_target = gts[:, -4:]
+    
+    orientation = F.normalize(orientation, p=2, dim=1)
+    orientation_target = F.normalize(orientation_target, p=2, dim=1)
+
+    position_loss = F.mse_loss(position, position_target)
+    orientation_loss = F.mse_loss(orientation, orientation_target)
+
+    return position_loss + beta * orientation_loss
 
 def build_loss(loss_type):
     return LOSS.get(loss_type)
