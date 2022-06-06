@@ -13,6 +13,13 @@ from cliport import tasks
 from cliport.utils import utils
 from cliport.environments.environment import Environment
 
+UNSEEN_TASKS = [
+    'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
+    'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
+    'packing-unseen-google-objects-seq', 'packing-boxes-pairs-unseen-colors',
+    'separating-piles-unseen-colors', 'towers-of-hanoi-seq-unseen-colors'
+]
+
 
 @hydra.main(config_path='./configs', config_name='cliport')
 def main(cfg):
@@ -32,28 +39,28 @@ def main(cfg):
 
     # Choose eval mode and task.
     mode = vcfg.mode
-    eval_task = vcfg.eval_task
+    eval_task = vcfg.task
     if mode not in {'train', 'val', 'test'}:
         raise Exception("Invalid mode. Valid options: train, val, test")
 
     # Load eval dataset.
     dataset_type = vcfg.type
-    if 'multi' in dataset_type:
-        ds = RavensMultiTaskDataset(vcfg.data_dir,
-                                    tcfg,
-                                    group=eval_task,
-                                    mode=mode,
-                                    n_demos=vcfg.n_demos,
-                                    augment=False)
-    else:
-        ds = RavensDataset(os.path.join(vcfg.data_dir, f"{eval_task}-{mode}"),
-                           tcfg, n_demos=vcfg.n_demos, augment=False)
+    # if 'multi' in dataset_type:
+    #     ds = RavensMultiTaskDataset(vcfg.data_dir,
+    #                                 tcfg,
+    #                                 group=eval_task,
+    #                                 mode=mode,
+    #                                 n_demos=vcfg.n_demos,
+    #                                 augment=False)
+    # else:
+    #     ds = RavensDataset(os.path.join(vcfg.data_dir, f"{eval_task}-{mode}"),
+    #                        tcfg, n_demos=vcfg.n_demos, augment=False)
 
     all_results = {}
     name = '{}-{}-n{}'.format(eval_task, vcfg.agent, vcfg.n_demos)
 
     # Save path for results.
-    json_name = f"multi-results-{mode}.json" if 'multi' in vcfg.model_path else f"results-{mode}.json"
+    json_name = f"multi-results-{mode}.json" # if 'multi' in vcfg.model_path else f"results-{mode}.json"
     save_path = vcfg.save_path
     print(f"Save path for results: {save_path}")
     if not os.path.exists(save_path):
@@ -81,76 +88,86 @@ def main(cfg):
             print(f"Skipping because of existing results for {model_file}.")
             continue
 
-        results = []
-        mean_reward = 0.0
+        for eval_task in UNSEEN_TASKS:
+            ds = RavensDataset(os.path.join(vcfg.data_dir, f"{eval_task}-{mode}"),
+                               tcfg, n_demos=vcfg.n_demos, augment=False)
 
-        # Run testing for each training run.
-        for train_run in range(vcfg.n_repeats):
+            results = []
+            mean_reward = 0.0
 
-            # Initialize agent.
-            utils.set_seed(train_run, torch=True)
-            agent = GVUEAgent(name, tcfg, None, ds)
+            # Run testing for each training run.
+            for train_run in range(vcfg.n_repeats):
 
-            # Load checkpoint
-            agent.load(model_file)
-            print(f"Loaded: {model_file}")
+                # Initialize agent.
+                utils.set_seed(train_run, torch=True)
+                agent = GVUEAgent(name, tcfg, None, ds)
 
-            record = vcfg.record.save_video
-            n_demos = vcfg.n_demos
+                # Load checkpoint
+                agent.load(model_file)
+                print(f"Loaded: {model_file}")
 
-            # Run testing and save total rewards with last transition info.
-            for i in range(0, n_demos):
-                print(f'Test: {i + 1}/{n_demos}')
-                episode, seed = ds.load(i)
-                goal = episode[-1]
-                total_reward = 0
-                np.random.seed(seed)
+                record = vcfg.record.save_video
+                n_demos = vcfg.n_demos
 
-                # set task
-                if 'multi' in dataset_type:
-                    task_name = ds.get_curr_task()
-                    task = tasks.names[task_name]()
+                # Run testing and save total rewards with last transition info.
+                for i in range(0, n_demos):
+                    print(f'Test: {i + 1}/{n_demos}')
+                    episode, seed = ds.load(i)
+                    goal = episode[-1]
+                    total_reward = 0
+                    np.random.seed(seed)
+
+                    # set task
+                    if 'multi' in dataset_type:
+                        task_name = ds.get_curr_task()
+                        task = tasks.names[task_name]()
+                    else:
+                        task_name = eval_task
+                        task = tasks.names[task_name]()
                     print(f'Evaluating on {task_name}')
-                else:
-                    task_name = vcfg.eval_task
-                    task = tasks.names[task_name]()
 
-                task.mode = mode
-                env.seed(seed)
-                env.set_task(task)
-                obs = env.reset()
-                info = env.info
-                reward = 0
+                    task.mode = mode
+                    env.seed(seed)
+                    env.set_task(task)
+                    obs = env.reset()
+                    info = env.info
+                    reward = 0
 
-                # Start recording video (NOTE: super slow)
-                if record:
-                    video_name = f'{task_name}-{i+1:06d}'
-                    if 'multi' in vcfg.model_task:
-                        video_name = f"{vcfg.model_task}-{video_name}"
-                    env.start_rec(video_name)
+                    # Start recording video (NOTE: super slow)
+                    if record:
+                        video_name = f'{task_name}-{i+1:06d}'
+                        if 'multi' in vcfg.model_task:
+                            video_name = f"{vcfg.model_task}-{video_name}"
+                        env.start_rec(video_name)
 
-                for _ in range(task.max_steps):
-                    act = agent.act(obs, info, goal)
-                    lang_goal = info['lang_goal']
-                    print(f'Lang Goal: {lang_goal}')
-                    obs, reward, done, info = env.step(act)
-                    total_reward += reward
-                    print(f'Total Reward: {total_reward:.3f} | Done: {done}\n')
-                    if done:
-                        break
+                    for _ in range(task.max_steps):
+                        act = agent.act(obs, info, goal)
+                        lang_goal = info['lang_goal']
+                        print(f'Lang Goal: {lang_goal}')
+                        obs, reward, done, info = env.step(act)
+                        total_reward += reward
+                        print(f'Total Reward: {total_reward:.3f} | Done: {done}\n')
+                        if done:
+                            break
 
-                results.append((total_reward, info))
-                mean_reward = np.mean([r for r, i in results])
-                print(f'Mean: {mean_reward} | Task: {task_name} | Ckpt: {ckpt}')
+                    results.append((total_reward, info))
+                    mean_reward = np.mean([r for r, i in results])
+                    print(f'Mean: {mean_reward} | Task: {task_name} | Ckpt: {ckpt}')
 
-                # End recording video
-                if record:
-                    env.end_rec()
+                    # End recording video
+                    if record:
+                        env.end_rec()
 
-            all_results[ckpt] = {
-                'episodes': results,
-                'mean_reward': mean_reward,
-            }
+                all_results[ckpt][eval_task] = {
+                    'episodes': results,
+                    'mean_reward': mean_reward,
+                }
+
+        # average scores on various tasks
+        average_scores = [all_results[ckpt][eval_task]['mean_reward'] for eval_task in UNSEEN_TASKS]
+        average_scores = np.mean(average_scores)
+        print(f'average scores on tasks for {ckpt}: {average_scores}')
+        all_results[ckpt].update({'average_score': average_scores})
 
         # Save results in a json file.
         if vcfg.save_results:
@@ -194,9 +211,9 @@ def list_ckpts_to_eval(vcfg, existing_results):
             best_checkpoint = 'last.ckpt'
             best_success = -1.0
             for ckpt, res in eval_res.items():
-                if res['mean_reward'] > best_success:
+                if res['average_scores'] > best_success:
                     best_checkpoint = ckpt
-                    best_success = res['mean_reward']
+                    best_success = res['average_scores']
             print(best_checkpoint)
             ckpt = best_checkpoint
             ckpts_to_eval.append(ckpt)
