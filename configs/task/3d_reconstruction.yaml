@@ -55,7 +55,7 @@ decoder:
             dropout: 0.0
     
 
-num_epochs: 200
+num_epochs: 100
 loss: CrossEntropyLoss
 
 metrics: EvalRec

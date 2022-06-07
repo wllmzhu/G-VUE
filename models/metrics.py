@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import numpy as np
 from math import ceil
 from tqdm import tqdm
@@ -250,6 +251,64 @@ def EvalRec(model, dataloader, cfg):
             break
 
     return {'Rec iou': (iou/total).item()}
+
+@METRICS.register()
+@torch.no_grad()
+def EvalCameraRelocalization(model, dataloader, cfg):
+    model.eval()
+    position_error = []
+    orientation_error = []
+    total = 0
+
+    for data in tqdm(dataloader):
+        imgs, txts, targets = data
+        B = targets.shape[0]
+
+        outputs = model(imgs)
+        targets = targets.to(outputs.device)
+        
+        pos_error, orient_error = camera_relocalization_errors(outputs, targets)
+        position_error.append(pos_error)
+        orientation_error.append(orient_error)
+        total += B
+
+        if total >= cfg.eval.num_val_samples:
+            break
+    position_error = np.concatenate(position_error, axis=0)
+    orientation_error = np.concatenate(orientation_error, axis=0)
+    
+    print('T: median = {:.3f}, mean = {:.3f}'.format(np.median(position_error), np.mean(position_error)))
+    print('R: median = {:.3f}, mean = {:.3f}'.format(np.median(orientation_error), np.mean(orientation_error)))
+
+    return {'position_error': np.mean(position_error), 
+        'orientation_error': np.mean(orientation_error)}
+
+def quaternion_angular_error(q1, q2):
+    """
+    angular error between two quaternions
+    :param q1: (4, ), normalized 
+    :param q2: (4, ), normalized
+    :return:
+    """
+    d = abs(np.dot(q1, q2))
+    d = min(1.0, max(-1.0, d))
+    theta = 2 * np.arccos(d) * 180 / np.pi
+    return theta
+
+def camera_relocalization_errors(output, target):  # returns mean position error in units and mean angle error in degrees
+    position = output[:, :3]
+    orientation = output[:, -4:]
+    position_target = target[:, :3]
+    orientation_target = target[:, -4:]
+    orientation = F.normalize(orientation, p=2, dim=1)
+    orientation_target = F.normalize(orientation_target, p=2, dim=1)
+
+    position_error = torch.norm(position - position_target, p=2, dim=-1).cpu().numpy()
+    
+    orientation_error = [quaternion_angular_error(p, t) for p, t in zip(orientation.cpu().numpy(), orientation_target.cpu().numpy())]
+    orientation_error = np.array(orientation_error)
+
+    return position_error, orientation_error
 
 def box_iou(a, b):
     a = a.view(-1, 4)

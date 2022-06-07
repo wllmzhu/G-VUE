@@ -67,13 +67,13 @@ def sdf_to_mesh(sdf, level=0.02, color=None, render_all=False):
 
     return p3d_mesh
 
-def save_mesh_as_gif(mesh_renderer, mesh, nrow=3, out_name='1.gif'):
+def save_mesh_as_gif(mesh_renderer, mesh, nrow=3, out_name='1.gif', device='cuda'):
     """ save batch of mesh into gif """
 
     # img_comb = render_mesh(mesh_renderer, mesh, norm=False)    
 
     # rotate
-    rot_comb = rotate_mesh_360(mesh_renderer, mesh) # save the first one
+    rot_comb = rotate_mesh_360(mesh_renderer, mesh, device=device) # save the first one
     
     # gather img into batches
     nimgs = len(rot_comb)
@@ -97,14 +97,14 @@ def save_mesh_as_gif(mesh_renderer, mesh, nrow=3, out_name='1.gif'):
         for rot in rot_comb_img:
             writer.append_data(rot)
 
-def rotate_mesh_360(mesh_renderer, mesh):
+def rotate_mesh_360(mesh_renderer, mesh, device='cuda'):
     cur_mesh = mesh
 
     B = len(mesh.verts_list())
     ret = [ [] for i in range(B)]
 
     for i in range(36):
-        cur_mesh = rotate_mesh(cur_mesh)
+        cur_mesh = rotate_mesh(cur_mesh, device=device)
         img = render_mesh(mesh_renderer, cur_mesh, norm=False) # b c h w # important!! no norm here or they will not align
         img = img.permute(0, 2, 3, 1) # b h w c
         img = img.detach().cpu().numpy()

@@ -53,4 +53,4 @@ eval:
   batch_size: 100
   num_workers: 20
   num_val_samples: 1000
-  lower_better: ['abs_rel', 'sq_rel', 'rms', 'log_rms', 'log10']
+  lower_better: ['abs_rel', 'sq_rel', 'rms', 'log_rms', 'log10', 'position_error', 'orientation_error']

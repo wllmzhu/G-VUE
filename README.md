@@ -75,6 +75,6 @@ General *Vision* Understanding Evaluation
   * `image` → ` `
   * 
 * [ ] **Task 4.3:** Manipulation (CLIPort)
-  * `image` → ` `
-  * 
+  * `image + text` → `pick and place (action)`
+  * run `export CLIPORT_ROOT=${path_to_cliport_repo}` before running scripts
 

@@ -233,19 +233,11 @@ def train_worker(gpu, cfg):
         if gpu == 0:
             model_selection_metric = 0
             for eval_subset in ['val']:
-                # re-shuffle validation set
-                dataloaders['val'] = DataLoader(
-                    datasets['val'],
-                    batch_size=cfg.eval.batch_size,
-                    collate_fn=collate_fn,
-                    num_workers=cfg.eval.num_workers,
-                    pin_memory=True,
-                    shuffle=True,
-                )
+                dataloader = dataloaders['val']
                 dataset_name = cfg.task.dataset.key
                 print(f'Evaluating on {dataset_name}')
 
-                metrics = evaluator(model, dataloaders['val'], cfg)
+                metrics = evaluator(model, dataloader, cfg)
                 
                 eval_str = f'Dataset: {dataset_name} | Subset: {eval_subset} | Epoch: {epoch}'
 
@@ -317,6 +309,11 @@ def main(cfg):
         cfg.training.batch_size = 32
         cfg.eval.batch_size = 50
         cfg.eval.num_val_samples = 100
+    elif cfg.task.key == 'camera_relocalization':
+        cfg.training.batch_size = 32
+        cfg.training.num_workers = 4
+        cfg.eval.batch_size = 32
+        cfg.eval.num_workers = 4
 
     if cfg.multiprocessing_distributed:
         cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes

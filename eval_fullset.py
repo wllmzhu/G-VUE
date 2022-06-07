@@ -72,6 +72,8 @@ def main(cfg):
     elif cfg.task.key == 'bongard':
         cfg.eval.batch_size = 32
         cfg.eval.num_workers = 8
+    elif cfg.task.key == '3d_reconstruction':
+        cfg.eval.batch_size = 50
     
     eval_non_train_full(cfg)
     
