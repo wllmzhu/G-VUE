@@ -88,6 +88,8 @@ def main(cfg):
             print(f"Skipping because of existing results for {model_file}.")
             continue
 
+        all_results[ckpt] = {}
+
         for eval_task in UNSEEN_TASKS:
             ds = RavensDataset(os.path.join(vcfg.data_dir, f"{eval_task}-{mode}"),
                                tcfg, n_demos=vcfg.n_demos, augment=False)
@@ -199,10 +201,11 @@ def list_ckpts_to_eval(vcfg, existing_results):
     # Find the best checkpoint from validation and run eval on the test set.
     elif vcfg.checkpoint_type == 'test_best':
         result_jsons = [c for c in os.listdir(vcfg.results_path) if "results-val" in c]
-        if 'multi' in vcfg.model_task:
-            result_jsons = [r for r in result_jsons if "multi" in r]
-        else:
-            result_jsons = [r for r in result_jsons if "multi" not in r]
+
+        # if 'multi' in vcfg.model_task:
+        #     result_jsons = [r for r in result_jsons if "multi" in r]
+        # else:
+        #     result_jsons = [r for r in result_jsons if "multi" not in r]
 
         if len(result_jsons) > 0:
             result_json = result_jsons[0]
@@ -211,9 +214,9 @@ def list_ckpts_to_eval(vcfg, existing_results):
             best_checkpoint = 'last.ckpt'
             best_success = -1.0
             for ckpt, res in eval_res.items():
-                if res['average_scores'] > best_success:
+                if res['average_score'] > best_success:
                     best_checkpoint = ckpt
-                    best_success = res['average_scores']
+                    best_success = res['average_score']
             print(best_checkpoint)
             ckpt = best_checkpoint
             ckpts_to_eval.append(ckpt)
