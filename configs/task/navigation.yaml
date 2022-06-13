@@ -14,30 +14,3 @@ dataset:
       ResNet_ImageNet:
         key: ViT_CLIP_16
         fix: True
-
-
-
-# dataset:
-#   key: ADE20kDataset
-#   info:
-#     subsets: [train, val]
-#     index_dir: /scratch/generalvision/ADE20k
-#     img_dir: /scratch/generalvision/ADE20k/images
-#     anno_dir: /scratch/generalvision/ADE20k/annotations
-
-# decoder:
-#   key: DenseType
-#   params:
-#     image_size: ${model.image_size}
-#     input_dim_list: ${backbone.hidden_dim}
-#     hidden_dim: ${model.hidden_dim}
-#     dropout: 0.1
-#     num_classes: ${task.num_classes}
-
-# num_classes: 151
-# num_epochs: 50
-# loss: CrossEntropyLossWithIgnore
-
-# metrics: EvalSeg
-
-# visualize: VisSeg

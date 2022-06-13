@@ -6,6 +6,8 @@ LOSS = Registry('Loss')
 
 @LOSS.register()
 def CrossEntropyLoss(outputs, gts):
+    if outputs.shape[0] != gts.shape[0]:
+        outputs = outputs.view(gts.shape[0], -1)
     gts = gts.to(outputs.device)
     return F.cross_entropy(outputs, gts)
 
@@ -17,10 +19,9 @@ def CrossEntropyLossWithIgnore(outputs, gts):
 
 
 @LOSS.register()
-def VLMatchingLoss(outputs, gts):
-    outputs = outputs.view(gts.shape[0], -1)
-    gts = gts.to(outputs.device)
-    return F.cross_entropy(outputs, gts)
+def ContrastiveLoss(outputs, gts):
+    gts = torch.arange(outputs.shape[0]).to(outputs.device)
+    return (F.cross_entropy(outputs, gts) + F.cross_entropy(outputs.T, gts)) / 2
 
 
 @LOSS.register()
@@ -28,12 +29,6 @@ def BongardLoss(outputs, gts):
     # outputs: [2B, 2]
     gts = gts.flatten().to(outputs.device)   # [B, 2] -> [2B]
     return F.cross_entropy(outputs, gts)
-
-
-@LOSS.register()
-def MSELoss(outputs, gts):
-    gts = gts.to(outputs.device)
-    return F.mse_loss(outputs, gts)
 
 
 @LOSS.register()

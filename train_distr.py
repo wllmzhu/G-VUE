@@ -164,6 +164,7 @@ def train_worker(gpu, cfg):
         optimizer.step()
 
     evaluator = build_evaluator(cfg.task.metrics)
+    eval_interval = cfg.training.eval_interval
 
     for epoch in range(last_epoch+1, cfg.training.num_epochs):
 
@@ -230,7 +231,7 @@ def train_worker(gpu, cfg):
             elif cfg.training.lr_warmup is True and epoch == 0 and it < warmup_iters:
                 warmup_scheduler.step(it)
         
-        if gpu == 0:
+        if gpu == 0 and epoch % eval_interval == eval_interval-1:
             model_selection_metric = 0
             for eval_subset in ['val']:
                 dataloader = dataloaders['val']
@@ -294,9 +295,9 @@ def main(cfg):
     io.mkdir_if_not_exists(cfg.tb_dir, recursive=True)
     
     if cfg.task.key == 'vl_retrieval':
-        cfg.training.batch_size = 32
-        cfg.training.num_workers = 8
+        cfg.training.batch_size = 256
         cfg.training.num_vis_samples = 5
+        cfg.training.eval_interval = 10
         cfg.eval.batch_size = 1
         cfg.eval.num_workers = 0
         cfg.eval.num_val_samples = 100

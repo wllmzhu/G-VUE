@@ -106,28 +106,19 @@ def VisRetrieval(html_writer, model, dataloader, cfg, step, vis_dir):
             B = len(targets)
 
             outputs = model(imgs, txts, cfg.task.key)
-            r = outputs.shape[0] // B
-            # [rB, 1] -> [B, r]
-            outputs = outputs.view(B, -1)
+            _, preds = torch.sort(outputs, dim=-1, descending=True)
+            preds = preds.detach().cpu()
 
             for i in range(B):
                 if count+i >= cfg.training.num_vis_samples:
                     finish_vis = True
                     break
-            
-                # imgs: [B, 15, 3, H, W]
-                vis_img_list = imgs[i].mul_(norm_stds).add_(norm_means)
-                vis_img_list = vis_img_list.detach().cpu().numpy() * 255
-                vis_img_list = vis_img_list.astype(np.uint8)
 
-                vis_imgs = np.concatenate([
-                    np.concatenate([vis_img.transpose(1, 2, 0) for vis_img in vis_img_list[:4]], axis=1),
-                    np.concatenate([vis_img.transpose(1, 2, 0) for vis_img in vis_img_list[4:8]], axis=1)
-                ], axis=0)
-
-                pred = outputs[i].detach().cpu().numpy()
-                gt = np.zeros(r)
-                gt[targets[i]] = 1
+                vis_imgs = imgs[i].mul_(norm_stds).add_(norm_means)
+                vis_imgs = vis_imgs.detach().cpu().numpy() * 255
+                vis_imgs = vis_imgs.astype(np.uint8)
+                
+                pred = (preds[i]==i).nonzero()[:, 0].numpy()
 
                 vis_name = str(step).zfill(6) + '_' + str(count+i).zfill(4) + '.png'
                 skio.imsave(os.path.join(vis_dir, vis_name), vis_imgs)
@@ -136,7 +127,7 @@ def VisRetrieval(html_writer, model, dataloader, cfg, step, vis_dir):
                     0: txts[i],
                     1: html_writer.image_tag(vis_name),
                     2: pred,
-                    3: gt
+                    3: 0
                 })
             
             if finish_vis is True:

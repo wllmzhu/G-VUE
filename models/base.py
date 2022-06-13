@@ -6,14 +6,15 @@ task_decoder is supposed to be trained, from which we evaluate visual represenat
 """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from einops import rearrange
-
+from clip.model import AttentionPool2d
 from .v_backbone import build_v_backbone
 from .l_backbone import RoBERTa
 from .decoder import build_decoder
 from .loss import build_loss
-from .decoder_utils import ViTPyramid
+from .decoder_utils import ViTPyramid, LabelMLP
 
 
 class JointModel(nn.Module):
@@ -22,15 +23,28 @@ class JointModel(nn.Module):
         self.cfg = cfg
         self.v_backbone = build_v_backbone(cfg.v_backbone)
         self.l_backbone = RoBERTa(cache_dir=cfg.l_backbone.cfg_dir)
-        self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
-        self.decoder = build_decoder(cfg.task.decoder)
+
+        if cfg.task.key == 'vl_retrieval':
+            self.attnpool = AttentionPool2d(
+                cfg.image_size//cfg.v_backbone.grid_feature_ratio,
+                cfg.v_backbone.hidden_dim[-1],
+                num_heads=8, output_dim=cfg.v_backbone.hidden_dim[-1]
+            )
+            self.v_proj = LabelMLP(cfg.v_backbone.hidden_dim[-1], cfg.task.decoder.embed_dim)
+            self.l_proj = LabelMLP(cfg.l_backbone.hidden_dim, cfg.task.decoder.embed_dim)
+        else:
+            # default
+            self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
+            self.decoder = build_decoder(cfg.task.decoder)
 
         # if 'ViT' in cfg.v_backbone.key and cfg.task.decoder.key == 'DenseType':
-        #     # self.vit_pyramid = ViTPyramid(
-        #     #     reductions=cfg.v_backbone.reduction,
-        #     #     hidden_dims=cfg.v_backbone.hidden_dim,
-        #     #     num_cross=len(cfg.v_backbone.extract_layer)-1
-        #     # )
+        #     # cross-attention with Q at different resolutions
+        #     self.vit_pyramid = ViTPyramid(
+        #         reductions=cfg.v_backbone.reduction,
+        #         hidden_dims=cfg.v_backbone.hidden_dim,
+        #         num_cross=len(cfg.v_backbone.extract_layer)-1
+        #     )
+        #     # Benchmarking Detection with ViT, Li et al.
         #     self.vit_pyramid = nn.ModuleList(
         #         [
         #             nn.Sequential(
@@ -72,37 +86,75 @@ class JointModel(nn.Module):
 
         if task == 'bongard':
             return self.forward_bongard(imgs)
-        
-        expand_batch = (task in ['vl_retrieval', 'common_sense'])
+        elif task == 'vl_retrieval':
+            return self.forward_flickr30k(imgs, txts)
         
         if txts is not None:
-            txt_seqs, txt_pad_masks = self.encode_txt(
-                txts, expand_batch=expand_batch, add_special_token=(task=='common_sense')
-            )
+            if task == 'common_sense':
+                txt_seqs, txt_pad_masks = self.encode_txt(
+                    txts, expand_batch=True, add_special_token=True
+                )
+                r = txt_seqs.shape[0] // imgs.shape[0]   # expansion rate
+                imgs = imgs.unsqueeze(1).repeat(1, r, 1, 1, 1)
+                imgs = rearrange(imgs, 'B r C H W -> (B r) C H W')
+            else:
+                # default
+                txt_seqs, txt_pad_masks = self.encode_txt(
+                    txts, expand_batch=False, add_special_token=False
+                )
             #  [B, T, D],  [B, T]
             txt_seqs = self.l_proj(txt_seqs)
         else:
             txt_seqs = None
             txt_pad_masks = None
         
-        if expand_batch:
-            if imgs.ndim == 4:
-                r = txt_seqs.shape[0] // imgs.shape[0]
-                imgs = imgs.unsqueeze(1).repeat(1, r, 1, 1, 1)
-                imgs = rearrange(imgs, 'B r C H W -> (B r) C H W')
-            elif imgs.ndim == 5:
-                imgs = rearrange(imgs, 'B r C H W -> (B r) C H W')
-        
         v_feature_list = self.v_backbone(imgs)
 
         # if self.vit_pyramid is not None:
-        #     # v_feature_list = self.vit_pyramid(imgs, v_feature_list)
+        #     v_feature_list = self.vit_pyramid(imgs, v_feature_list)
         #     v_feature_list = [self.vit_pyramid[i](f) for i, f in enumerate(v_feature_list)]
 
         # assume 'channel' lies ahead of 'shape' in visual features
         # [B, C, h, w] for CNNs, as well as for ViTs
         return self.decoder(v_feature_list, txt_seqs, txt_pad_masks)
     
+    def forward_flickr30k(self, imgs, txts):
+        """
+        imgs: [B, 3, H, W]
+        txts: [B, T]
+        """
+        imgs = self.v_backbone(imgs)
+        # [[B, C, h, w]]
+
+        if isinstance(txts[0], (list, tuple)):
+            # inference
+            txt_seqs, txt_pad_masks = self.encode_txt(
+                txts, expand_batch=True, add_special_token=False
+            )
+        else:
+            # training
+            txt_seqs, txt_pad_masks = self.encode_txt(
+                txts, expand_batch=False, add_special_token=False
+            )
+        #  [B, T, D],  [B, T]
+
+        img_feats = self.attnpool(imgs[-1])
+
+        img_feats = self.v_proj(img_feats)
+        # [B, 1024]
+
+        txt_feats = txt_seqs[:, 0]   # first token
+        txt_feats = self.l_proj(txt_feats)
+        # [B, 1024]
+
+        # normalize
+        img_feats = F.normalize(img_feats)
+        txt_feats = F.normalize(txt_feats)
+
+        scores = torch.matmul(img_feats, txt_feats.T)
+        # [B, B] if training, [B, text_batch_size] if inference
+        return scores
+
     def forward_bongard(self, imgs):
         """
         imgs: [B, 2, 3x13, H, W]

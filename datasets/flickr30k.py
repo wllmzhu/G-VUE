@@ -49,7 +49,7 @@ class Flickr30kDataset(Dataset):
                 txt_id += 1 
                 
     def __len__(self):
-        return len(self.samples)
+        return len(self.img2txt)
 
     def pre_caption(self, caption):
         caption = re.sub(
@@ -79,54 +79,15 @@ class Flickr30kDataset(Dataset):
             return self.get_eval_samples(i)
     
     def get_learn_samples(self, i):
-        """
-        each sample in self.samples consists of an image-text pair, plus an image_id
-        return [
-            [positive image, positive caption] x 1,
-            [negative image, positive caption] x 7,
-            [positive image, negative caption] x 7
-        ]
-        """
-        sample = self.samples[i]
-        img_id = sample['image_id']
-        l = len(self.samples)
+        idx = choice(list(range(i*5, i*5+5)))
+        sample = self.samples[idx]
 
-        # construct image pool
-        select_img_ids = [img_id]
-        neg_img_idxs = []
-        while len(neg_img_idxs) < 7:
-            neg_img_idx = randint(0, l-1)
-            if self.samples[neg_img_idx]['image_id'] not in select_img_ids:
-                neg_img_idxs.append(neg_img_idx)
-        # extract images
         img = self.read_image(sample['image'])
         img, _ = self.transform(img, None)
-        select_imgs = [img]
-        for j in neg_img_idxs:
-            select_imgs.append(
-                self.transform(self.read_image(self.samples[j]['image']), None)[0]
-            )
-        # 8 -> 15
-        select_imgs.extend([img]*7)
 
-        # construct text pool
-        select_img_ids = [img_id]
-        neg_txt_idxs = []
-        while len(neg_txt_idxs) < 7:
-            neg_txt_idx = randint(0, l-1)
-            if self.samples[neg_txt_idx]['image_id'] not in select_img_ids:
-                neg_txt_idxs.append(neg_txt_idx)
-        # extract captions
         caption = sample['caption']
-        select_txts = [caption] * 8
-        # 8 -> 15
-        for j in neg_txt_idxs:
-            select_txts.append(
-                self.texts[j]
-            )
-        
-        # return tensor [15, 3, H, W] for image
-        return torch.stack(select_imgs), select_txts, 0
+
+        return img, caption, True
     
     def get_eval_samples(self, i):
         # return one image, all captions, and ground truth index
