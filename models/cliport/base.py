@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from .stream_model import StreamModel
+from .stream_model import models, StreamModel
 from .utils import preprocess, resize_transform
 from cliport.utils import utils
 from cliport.agents.transporter import TransporterAgent
@@ -17,8 +17,9 @@ class OneStreamAttentionLangFusion(TwoStreamAttentionLangFusion):
 
     def _build_nets(self):
         stream_one_fcn, _ = self.stream_fcn
+        stream_one_model = models.get(stream_one_fcn, StreamModel)
 
-        self.attn_stream_one = StreamModel(self.in_shape, 1, self.cfg, self.device, self.preprocess)
+        self.attn_stream_one = stream_one_model(self.in_shape, 1, self.cfg, self.device, self.preprocess)
         print(f"Attn FCN: {stream_one_fcn}")
 
     def attend(self, x, l):
@@ -40,9 +41,10 @@ class OneStreamTransportLangFusion(TwoStreamTransportLangFusion):
 
     def _build_nets(self):
         stream_one_fcn, _ = self.stream_fcn
+        stream_one_model = models.get(stream_one_fcn, StreamModel)
 
-        self.key_stream_one = StreamModel(self.in_shape, self.output_dim, self.cfg, self.device, self.preprocess)
-        self.query_stream_one = StreamModel(self.kernel_shape, self.kernel_dim, self.cfg, self.device, self.preprocess)
+        self.key_stream_one = stream_one_model(self.in_shape, self.output_dim, self.cfg, self.device, self.preprocess)
+        self.query_stream_one = stream_one_model(self.kernel_shape, self.kernel_dim, self.cfg, self.device, self.preprocess)
 
         print(f"Transport FCN: {stream_one_fcn}")
 
@@ -50,15 +52,16 @@ class OneStreamTransportLangFusion(TwoStreamTransportLangFusion):
         # preprocess and transform
         in_tensor = preprocess(in_tensor)
         crop = preprocess(crop)
-        h, w = in_tensor.shape[-2:]
+        h1, w1 = in_tensor.shape[-2:]
+        h2, w2 = crop.shape[-2:]
         in_tensor, _ = resize_transform(in_tensor, size=(224, 224), p=None)
         crop, _ = resize_transform(crop, size=(224, 224), p=None)
 
         logits = self.key_stream_one(in_tensor, l)
         kernel = self.key_stream_one(crop, l)
 
-        logits, _ = resize_transform(logits, size=(h, w), p=None)
-        kernel, _ = resize_transform(kernel, size=(h, w), p=None)
+        logits, _ = resize_transform(logits, size=(h1, w1), p=None)
+        kernel, _ = resize_transform(kernel, size=(h2, w2), p=None)
         return logits, kernel
 
 
@@ -177,7 +180,7 @@ class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
         label = label.reshape(1, np.prod(label.shape))
         label = torch.from_numpy(label).to(dtype=torch.float, device=output.device)
         output = output.reshape(1, np.prod(output.shape))
-        loss = self.cross_entropy_with_logits(output, label)
+        loss = self.cross_entropy_with_logits(output, label, reduction='sum')
         if backprop:
             transport_optim = self._optimizers['trans']
             self.manual_backward(loss, transport_optim)

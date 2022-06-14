@@ -47,6 +47,7 @@ training:
   vis_step: 5000
   clip_max_norm: 1.0
   num_vis_samples: 15
+  eval_interval: 1
 
 eval:
   ckpt: ${exp_dir}/ckpts/model.pth
