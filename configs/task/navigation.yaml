@@ -2,42 +2,64 @@ key: navigation
 
 dataset:
   info:
-    mattersim_build_dir: /home/wllmzhu/github/Matterport3DSimulator/build     #path to locally compiled MatterSim package
-    matterport_data_dir: /home/wllmzhu/data/matterport_data_new/v1/scans                   #path to downloaded Matterport3D dataset
-    connectivity_dir: /home/wllmzhu/github/Recurrent-VLN-BERT/connectivity    #path to connectivity file
-    img_feature_dir: /home/wllmzhu/data/r2r_img_features                      #path to the output directory for computed img features
-    backbone_config_dir: /home/wllmzhu/github/G-VUE/configs/backbone
-    prevalent_aug_path: None
+    mattersim_build_dir: /home/huangjiangyong/Documents/G-VUE-Matterport3D/build     #path to locally compiled MatterSim package
+    matterport_data_dir: /home/huangjiangyong/william/matterport_data_new/v1/scans      #path to downloaded Matterport3D dataset
+    connectivity_dir: /home/huangjiangyong/Documents/G-VUE-RecurrentVLN/connectivity    #path to connectivity file
+    img_feature_dir: /home/huangjiangyong/william/r2r_img_features                      # path to the output directory for computed img features
+    backbone_config_dir: /home/huangjiangyong/Documents/G-VUE/configs/backbone
     
-    v_backbone_candidates: ['ViT_CLIP_16']
-    candidate_configs:
+    v_backbone_candidate: ViT_MAE
+    v_backbone_config:
+      ResNet_CLIP:
+        key: ResNet_CLIP
+        fix: True
+        grid_feature_ratio: 32
+        reduction: [4, 8, 16, 32]
+        hidden_dim: [256, 512, 1024, 2048]
+      ResNet_Ego4D:
+        key: ResNet_Ego4D
+        fix: True
+        grid_feature_ratio: 32
+        reduction: [2, 4, 8, 16, 32]
+        hidden_dim: [64, 256, 512, 1024, 2048]
       ResNet_ImageNet:
+        key: ResNet_ImageNet
+        fix: True
+        grid_feature_ratio: 32
+        reduction: [2, 4, 8, 16, 32]
+        hidden_dim: [64, 256, 512, 1024, 2048]
+      ResNet_MoCov3:
+        key: ResNet_MoCov3
+        fix: True
+        ckpt_path: /home/huangjiangyong/.cache/torch/hub/checkpoints/res-50-1000epo-mocov3.pth
+        grid_feature_ratio: 32
+        reduction: [2, 4, 8, 16, 32]
+        hidden_dim: [64, 256, 512, 1024, 2048]
+      ViT_CLIP_16:
         key: ViT_CLIP_16
         fix: True
-
-
-
-# dataset:
-#   key: ADE20kDataset
-#   info:
-#     subsets: [train, val]
-#     index_dir: /scratch/generalvision/ADE20k
-#     img_dir: /scratch/generalvision/ADE20k/images
-#     anno_dir: /scratch/generalvision/ADE20k/annotations
-
-# decoder:
-#   key: DenseType
-#   params:
-#     image_size: ${model.image_size}
-#     input_dim_list: ${backbone.hidden_dim}
-#     hidden_dim: ${model.hidden_dim}
-#     dropout: 0.1
-#     num_classes: ${task.num_classes}
-
-# num_classes: 151
-# num_epochs: 50
-# loss: CrossEntropyLossWithIgnore
-
-# metrics: EvalSeg
-
-# visualize: VisSeg
+        image_size: 224
+        patch_size: 16
+        grid_feature_ratio: 16
+        reduction: [4, 8, 16, 32]
+        hidden_dim: [768, 768, 768, 768]
+        extract_layer: [2, 5, 8, 11]
+      ViT_CLIP_32:
+        key: ViT_CLIP_32
+        fix: True
+        image_size: 224
+        patch_size: 32
+        grid_feature_ratio: 32
+        reduction: [4, 8, 16, 32]
+        hidden_dim: [768, 768, 768, 768]
+        extract_layer: [2, 5, 8, 11]
+      ViT_MAE:
+        key: ViT_MAE
+        fix: True
+        ckpt_path: /mnt/huangjiangyong/MAE/mae_pretrain_vit_base.pth
+        image_size: 224
+        patch_size: 16
+        grid_feature_ratio: 16
+        reduction: [4, 8, 16, 32]
+        hidden_dim: [768, 768, 768, 768]
+        extract_layer: [2, 5, 8, 11]
