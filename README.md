@@ -1,5 +1,5 @@
 # G-VUE
-General *Vision* Understanding Evaluation
+General-purpose Vision Understanding Evaluation
 
 
 # Setup
@@ -68,13 +68,10 @@ General *Vision* Understanding Evaluation
 
 **Category 4: Act** 
 
-* [ ] **Task 4.1:** Affordance Reasoning (FunkPoint)
+* [ ] **Task 4.1:** Navigation (R2R)
   * `image` → ` `
   * 
-* [ ] **Task 4.2:** Navigation (PointGoal)
-  * `image` → ` `
-  * 
-* [ ] **Task 4.3:** Manipulation (CLIPort)
+* [ ] **Task 4.2:** Manipulation (CLIPort)
   * `image + text` → `pick and place (action)`
   * run `export CLIPORT_ROOT=${path_to_cliport_repo}` before running scripts
 
