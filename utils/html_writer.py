@@ -1,3 +1,5 @@
+""" copy from GPV-1 utils: https://github.com/allenai/gpv-1/blob/main/utils/html_writer.py """
+
 class HtmlWriter():
     def __init__(self, filename):
         self.filename = filename

@@ -312,9 +312,7 @@ def main(cfg):
         cfg.eval.num_val_samples = 100
     elif cfg.task.key == 'camera_relocalization':
         cfg.training.batch_size = 32
-        cfg.training.num_workers = 4
-        cfg.eval.batch_size = 32
-        cfg.eval.num_workers = 4
+        cfg.training.num_workers = 8
 
     if cfg.multiprocessing_distributed:
         cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes
