@@ -73,7 +73,7 @@ General-purpose Vision Understanding Evaluation
   * one or two word short response to question
 * [ ] **Task 3.2:** Common Sense Reasoning (VCR)
   * `image + text` → `class label`
-  * selection among the 4 answer candidates
+  * selection among 4 answer candidates
 * [ ] **Task 3.3:** Abstract Reasoning (Bongard-HOI)
   * `images` → `class label (binary)`
   * positive class or negative class regarding shot samples
@@ -81,8 +81,8 @@ General-purpose Vision Understanding Evaluation
 **Category 4: Act** 
 
 * [ ] **Task 4.1:** Navigation (R2R)
-  * `image` → `class label`
-  * direction towards goal
+  * `image` → `class label (direction)`
+  * index, out of all neighbors, of the next one to move to
 * [ ] **Task 4.2:** Manipulation (CLIPort)
   * `image + text` → `pick and place (action)`
   * where and how to manipulation are determined by dense affordance prediction
