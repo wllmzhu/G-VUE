@@ -1,9 +1,13 @@
+""" adapted from MDETR transforms: https://github.com/ashkamath/mdetr/blob/main/datasets/transforms.py """
+# Copyright (c) Aishwarya Kamath & Nicolas Carion. Licensed under the Apache License 2.0. All Rights Reserved
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
+
 import random
 import PIL
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
-from utils.misc import interpolate
+from torch.nn.functional import interpolate
 
 
 def crop(image, target, region):

@@ -1,13 +1,8 @@
 # G-VUE
-General *Vision* Understanding Evaluation
+General-purpose Vision Understanding Evaluation
 
 
 # Setup
-- Register: run command below in the top-level directory ("G-VUE") to register packages in this repo.
-
-  ```bash
-  pip install -e .
-  ```
 
 - Create environment from "environment.yaml".
 
@@ -28,6 +23,23 @@ General *Vision* Understanding Evaluation
   pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
   ```
 
+- Environment for navigation task
+
+- Environment for manipulation task. You can refer to [CLIPort](https://github.com/cliport/cliport) for details.
+
+  ```bash
+  git clone https://github.com/cliport/cliport.git
+  cd cliport
+  ```
+
+  Note: make following preparations before installing `cliport`
+  - run `export CLIPORT_ROOT=${path_to_cliport_repo}`
+  - make sure to comment or delete the line `install_requires` in `setup.py`, to prevent from disturbing packages
+
+  ```bash
+  python setup.py develop
+  ```
+
 # Tasks
 
 **Category 1: Perceive** 
@@ -35,46 +47,42 @@ General *Vision* Understanding Evaluation
 * [ ] **Task 1.1:** Depth (NYU v2)
   * `image` → `[H,W] dense map `
   * depth on each pixel
-* [ ] **Task 1.2:** 6D Pose Estimation (LineMod)
-  * `image` → `6 numbers `
-  * 3 positions, 3 orientation
+* [ ] **Task 1.2:** Camera Pose Estimation (Cambridge Landmark & 7 Scene)
+  * `image` → `7 numbers `
+  * 3 for translation and 4 for orientation
 * [ ] **Task 1.3:** 3D Reconstruction (ShapeNet)
-  * `image` → `[H,W,L] dense map `
-  * 3D voxels
+  * `image` → `[D,H,W] dense cube `
+  * Volumetric SDF
 
 **Category 2: Ground** 
 
-* [ ] **Task 2.1:** Segmentation (ADE20K)
-  * `image` → `[H,W,C] dense map `
-  * class identity on each pixel
-* [ ] **Task 2.2:** Phrase Grounding (Ref-COCO)
+* [ ] **Task 2.1:** Image-Text Retrieval (Flickr30k)
+  * `image + text` → `matching score`
+  * cross-modal similarity
+* [ ] **Task 2.2:** Phrase Grounding (RefCOCO)
   * `image + text` → `4 numbers`
-  * bounding box coordinates
-* [ ] **Task 2.3:** Vision-Language Retrieval (Flickr30k)
-  * `image + text` → `class label (multiple choice)`
-  * index of the right reference sentence from a choice of 5
+  * bounding box representation
+* [ ] **Task 2.3:** Semantic Segmentation (ADE20k)
+  * `image` → `[H,W] dense map `
+  * class label on each pixel
 
 **Category 3: Reason** 
 
 * [ ] **Task 3.1:** Visual Question Answering (GQA)
   * `image + text` → `class label (vocab)`
   * one or two word short response to question
-* [ ] **Task 3.2:** Bongard Problem (Bongard-HOI)
-  * `image` → `class label (boolean)`
-  * 
-* [ ] **Task 3.3:** Common Sense Reasoning (VCR)
+* [ ] **Task 3.2:** Common Sense Reasoning (VCR)
   * `image + text` → `class label`
-  * 
+  * selection among 4 answer candidates
+* [ ] **Task 3.3:** Abstract Reasoning (Bongard-HOI)
+  * `images` → `class label (binary)`
+  * positive class or negative class regarding shot samples
 
 **Category 4: Act** 
 
-* [ ] **Task 4.1:** Affordance Reasoning (FunkPoint)
-  * `image` → ` `
-  * 
-* [ ] **Task 4.2:** Navigation (PointGoal)
-  * `image` → ` `
-  * 
-* [ ] **Task 4.3:** Manipulation (CLIPort)
+* [ ] **Task 4.1:** Navigation (R2R)
+  * `image` → `class label (direction)`
+  * index, out of all neighbors, of the next one to move to
+* [ ] **Task 4.2:** Manipulation (CLIPort)
   * `image + text` → `pick and place (action)`
-  * run `export CLIPORT_ROOT=${path_to_cliport_repo}` before running scripts
-
+  * where and how to manipulation are determined by dense affordance prediction

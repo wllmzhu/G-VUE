@@ -32,10 +32,12 @@ class JointModel(nn.Module):
             )
             self.v_proj = LabelMLP(cfg.v_backbone.hidden_dim[-1], cfg.task.decoder.embed_dim)
             self.l_proj = LabelMLP(cfg.l_backbone.hidden_dim, cfg.task.decoder.embed_dim)
+            self.v_backbone.requires_pyramid = False
         else:
             # default
             self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
             self.decoder = build_decoder(cfg.task.decoder)
+            self.v_backbone.requires_pyramid = True if cfg.task.decoder.key == 'DenseType' else False
 
         # if 'ViT' in cfg.v_backbone.key and cfg.task.decoder.key == 'DenseType':
         #     # cross-attention with Q at different resolutions
@@ -60,8 +62,6 @@ class JointModel(nn.Module):
         #     )
         # else:
         #     self.vit_pyramid = None
-
-        self.v_backbone.requires_pyramid = True if cfg.task.decoder.key == 'DenseType' else False
 
         if cfg.task.key == 'bongard':
             self.register_parameter(
