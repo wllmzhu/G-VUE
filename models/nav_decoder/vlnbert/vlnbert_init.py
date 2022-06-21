@@ -31,7 +31,7 @@ def get_vlnbert_models(cfg, config=None):
         visual_model = model_class.from_pretrained(model_name_or_path, from_tf=False, config=vis_config)
 
     elif cfg.model.decoder.type == 'prevalent':
-        from models.r2r_decoder.vlnbert.vlnbert_PREVALENT import VLNBert
+        from models.nav_decoder.vlnbert.vlnbert_PREVALENT import VLNBert
         model_class = VLNBert
         model_name_or_path = cfg.train.pretrained_path.prevalent
         vis_config = config_class.from_pretrained('bert-base-uncased')

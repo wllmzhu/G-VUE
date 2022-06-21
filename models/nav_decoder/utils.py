@@ -12,7 +12,7 @@ import numpy as np
 import networkx as nx
 from numpy.linalg import norm
 
-from models.r2r_decoder.constants import DISCRETIZED_VIEWS, TSV_FIELDNAMES, VFOV
+from models.nav_decoder.constants import DISCRETIZED_VIEWS, TSV_FIELDNAMES, VFOV
 
 # padding, unknown word, end of sentence
 base_vocab = ['<PAD>', '<UNK>', '<EOS>']

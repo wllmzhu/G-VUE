@@ -2,7 +2,7 @@ import csv
 import os
 from models.v_backbone import build_v_backbone
 from transforms.r2r_transforms import make_r2r_transforms
-from models.r2r_decoder.constants import DISCRETIZED_VIEWS, VFOV, TSV_FIELDNAMES
+from models.nav_decoder.constants import DISCRETIZED_VIEWS, VFOV, TSV_FIELDNAMES
 import hydra
 import torch
 import torch.nn.functional as F

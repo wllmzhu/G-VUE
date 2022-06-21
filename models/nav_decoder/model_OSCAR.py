@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 
-from models.r2r_decoder.vlnbert.vlnbert_init import get_vlnbert_models
+from models.nav_decoder.vlnbert.vlnbert_init import get_vlnbert_models
 
 
 

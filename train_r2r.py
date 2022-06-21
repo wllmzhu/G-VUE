@@ -8,17 +8,17 @@ import numpy as np
 from collections import defaultdict
 import hydra
 
-from models.r2r_decoder.utils import timeSince, read_img_features, print_progress
+from models.nav_decoder.utils import timeSince, read_img_features, print_progress
 import utils
-from models.r2r_decoder.env import R2RBatch
-from models.r2r_decoder.agent import Seq2SeqAgent
-from models.r2r_decoder.eval import Evaluation
+from models.nav_decoder.env import R2RBatch
+from models.nav_decoder.agent import Seq2SeqAgent
+from models.nav_decoder.eval import Evaluation
 
 import warnings
 warnings.filterwarnings("ignore")
 from tensorboardX import SummaryWriter
 
-from models.r2r_decoder.vlnbert.vlnbert_init import get_tokenizer
+from models.nav_decoder.vlnbert.vlnbert_init import get_tokenizer
 
 is_ResNet = None
 

@@ -6,15 +6,15 @@ import csv
 import numpy as np
 import math
 import base64
-import models.r2r_decoder.utils as utils
+import models.nav_decoder.utils as utils
 import json
 import os
 import random
 import networkx as nx
 
-from models.r2r_decoder.constants import DISCRETIZED_VIEWS, VFOV
+from models.nav_decoder.constants import DISCRETIZED_VIEWS, VFOV
 
-from models.r2r_decoder.utils import load_datasets, load_nav_graphs, pad_instr_tokens
+from models.nav_decoder.utils import load_datasets, load_nav_graphs, pad_instr_tokens
 
 csv.field_size_limit(sys.maxsize)
 
