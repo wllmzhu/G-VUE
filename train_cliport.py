@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 # from cliport import agents
-from models.cliport.agents import GVUEAgent, ClipLingUNetTransporterAgent
+from models.manip_decoder.agents import GVUEAgent, ClipLingUNetTransporterAgent
 from datasets.ravens import RavensDataset, RavensMultiTaskDataset
 
 import hydra

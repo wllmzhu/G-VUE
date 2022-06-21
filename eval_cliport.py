@@ -7,7 +7,7 @@ import json
 import numpy as np
 import hydra
 # from cliport import agents
-from models.cliport.agents import GVUEAgent
+from models.manip_decoder.agents import GVUEAgent
 from datasets.ravens import RavensDataset, RavensMultiTaskDataset
 from cliport import tasks
 from cliport.utils import utils
