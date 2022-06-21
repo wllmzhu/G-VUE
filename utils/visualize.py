@@ -9,7 +9,7 @@ from .html_writer import HtmlWriter
 from torchvision.utils import draw_segmentation_masks
 from einops import rearrange
 from fvcore.common.registry import Registry
-from models.rec_decoder.qual_util import sdf_to_mesh, save_mesh_as_gif, init_mesh_renderer
+from models.rec3d_decoder.qual_util import sdf_to_mesh, save_mesh_as_gif, init_mesh_renderer
 VISUALIZE = Registry('Visualize')
 norm_means = torch.as_tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
 norm_stds = torch.as_tensor([0.229, 0.224, 0.225]).view(3, 1, 1)

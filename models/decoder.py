@@ -7,10 +7,10 @@ from .positional_embedding import build_positional_embedding
 from fvcore.common.registry import Registry
 from mmcv.cnn import ConvModule
 from .decoder_utils import LabelMLP, DenseMLP, resize
-from .rec_decoder.modules import Upsample, AttnBlock, Normalize, nonlinearity
-from .rec_decoder.modules import ResnetBlock as PVQVAEResnetBlock
-from .rec_decoder.rand_transformer import RandTransformer
-from .rec_decoder.auto_encoder import PVQVAE
+from .rec3d_decoder.modules import Upsample, AttnBlock, Normalize, nonlinearity
+from .rec3d_decoder.modules import ResnetBlock as PVQVAEResnetBlock
+from .rec3d_decoder.rand_transformer import RandTransformer
+from .rec3d_decoder.auto_encoder import PVQVAE
 
 import hydra
 
@@ -124,7 +124,7 @@ class DenseType(nn.Module):
         return x
 
 @DECODER.register()
-class RecDecoder(nn.Module):
+class Rec3DType(nn.Module):
     """
     Sepcific Decoder for 3D reconstruction
     """
@@ -283,7 +283,7 @@ class RecDecoder(nn.Module):
 
 def build_decoder(cfg):
     # assert cfg.key in ['QueryType', 'LabelType', 'DenseType']
-    assert cfg.key in ['LabelType', 'DenseType', 'RecDecoder']
+    assert cfg.key in ['LabelType', 'DenseType', 'Rec3DType']
     return DECODER.get(cfg.key)(cfg.params)
 
 

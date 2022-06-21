@@ -11,7 +11,7 @@ dataset:
     anno_dir: /scratch/generalvision/ShapeNetCore.v1/autosdf/extracted_code/
 
 decoder:
-  key: RecDecoder
+  key: Rec3DType
   params:
     image_size: ${model.image_size}
     grid_feature_ratio: ${backbone.grid_feature_ratio}
