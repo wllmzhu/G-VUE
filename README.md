@@ -23,7 +23,7 @@ General-purpose Vision Understanding Evaluation
     pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
     ```
 
-4. Environment for Act:navigation task
+4. Environment for Act:Navigation task
 
     Clone the modified Matterport3D repo and run the setup script.
 
@@ -44,7 +44,7 @@ General-purpose Vision Understanding Evaluation
     ```
 
 
-5. Environment for Act:manipulation task. Please refer to [CLIPort](https://github.com/cliport/cliport) for details.
+5. Environment for Act:Manipulation task. Please refer to [CLIPort](https://github.com/cliport/cliport) for details.
 
     ```bash
     git clone https://github.com/cliport/cliport.git
