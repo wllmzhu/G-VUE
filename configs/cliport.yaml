@@ -35,7 +35,7 @@ train:
   task: seen_unseen
   agent: ${backbone.key}
   n_demos: 100
-  n_steps: 601000   # 201000 for single-task, 601000 for multi-task
+  n_steps: 81000   # 201000 for single-task, 601000 for multi-task
 
   # hyper params
   n_rotations: 36

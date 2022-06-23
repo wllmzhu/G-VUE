@@ -23,12 +23,23 @@ class OneStreamAttentionLangFusion(TwoStreamAttentionLangFusion):
         print(f"Attn FCN: {stream_one_fcn}")
 
     def attend(self, x, l):
-        # preprocess and transform
         x = preprocess(x)
-        h, w = x.shape[-2:]
-        x, _ = resize_transform(x, size=(224, 224), p=None)
-        x = self.attn_stream_one(x, l)
-        x, _ = resize_transform(x, size=(h, w), p=None)
+        if self.cfg.backbone.fix:
+            h, w = x.shape[-2:]
+            x, _ = resize_transform(x, size=self.cfg.model.image_size, p=None)
+            x = self.attn_stream_one(x, l)
+            x, _ = resize_transform(x, size=(h, w), p=None)
+        else:
+            try:
+                # try to forward without resize
+                x = self.attn_stream_one(x, l)
+            except:
+                # compromise to resize
+                h, w = x.shape[-2:]
+                x, _ = resize_transform(x, size=self.cfg.model.image_size, p=None)
+                x = self.attn_stream_one(x, l)
+                x, _ = resize_transform(x, size=(h, w), p=None)
+        
         return x
 
 
@@ -49,19 +60,36 @@ class OneStreamTransportLangFusion(TwoStreamTransportLangFusion):
         print(f"Transport FCN: {stream_one_fcn}")
 
     def transport(self, in_tensor, crop, l):
-        # preprocess and transform
+        # logits
         in_tensor = preprocess(in_tensor)
+        if self.cfg.backbone.fix:
+            h1, w1 = in_tensor.shape[-2:]
+            in_tensor, _ = resize_transform(in_tensor, size=self.cfg.model.image_size, p=None)
+            logits = self.key_stream_one(in_tensor, l)
+            logits, _ = resize_transform(logits, size=(h1, w1), p=None)
+        else:
+            try:
+                # try to forward without resize
+                logits = self.key_stream_one(in_tensor, l)
+            except:
+                # compromise to resize
+                h1, w1 = in_tensor.shape[-2:]
+                in_tensor, _ = resize_transform(in_tensor, size=self.cfg.model.image_size, p=None)
+                logits = self.key_stream_one(in_tensor, l)
+                logits, _ = resize_transform(logits, size=(h1, w1), p=None)
+        
+        # kernel
         crop = preprocess(crop)
-        h1, w1 = in_tensor.shape[-2:]
-        h2, w2 = crop.shape[-2:]
-        in_tensor, _ = resize_transform(in_tensor, size=(224, 224), p=None)
-        crop, _ = resize_transform(crop, size=(224, 224), p=None)
-
-        logits = self.key_stream_one(in_tensor, l)
-        kernel = self.key_stream_one(crop, l)
-
-        logits, _ = resize_transform(logits, size=(h1, w1), p=None)
-        kernel, _ = resize_transform(kernel, size=(h2, w2), p=None)
+        try:
+            # try to forward without resize, since crop is a region
+            kernel = self.query_stream_one(crop, l)
+        except:
+            # compromise to resize
+            h2, w2 = crop.shape[-2:]
+            crop, _ = resize_transform(crop, size=self.cfg.model.image_size, p=None)
+            kernel = self.query_stream_one(crop, l)
+            kernel, _ = resize_transform(kernel, size=(h2, w2), p=None)
+        
         return logits, kernel
 
 
