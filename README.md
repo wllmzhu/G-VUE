@@ -32,7 +32,17 @@ General-purpose Vision Understanding Evaluation
     cd G-VUE-Matterport3D
     bash G-VUE-setup.sh
     ```
-    As instructed by the setup script, copy the Matterport3D repo directory to the r2r config yaml file.
+
+    As instructed by the setup script, copy the Matterport3D repo directory to the r2r config yaml's "mattersim_repo" field.
+
+    Specify a directory to download all the required data in the r2r config yaml's "downloaded_data" field,
+
+    then run the setup_navigation.sh script and feed in this \<data_directory\>
+
+    ```bash
+    bash scripts/setup_navigation.sh <data_directory>
+    ```
+
 
 5. Environment for Act:manipulation task. Please refer to [CLIPort](https://github.com/cliport/cliport) for details.
 
