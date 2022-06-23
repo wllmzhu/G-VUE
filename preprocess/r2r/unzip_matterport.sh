@@ -1,8 +1,9 @@
-#go to the v1/scan directory, then run this simple script to extract all images
+# A component of setup_navigation.sh, unzip all matterport data
+# Meant to be run inside v1/scan directory
 
 for d in */ ; do
     cd $d
-    unzip *
+    unzip "*.zip"
     mv $d* .
     rmdir $d
     cd ..

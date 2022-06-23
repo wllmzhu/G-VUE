@@ -17,3 +17,5 @@ myproject.egg-info/
 *.out
 logs/
 .nfs*
+
+preprocess/r2r/download-mp.py

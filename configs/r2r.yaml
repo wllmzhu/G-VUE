@@ -6,8 +6,14 @@ hydra:
   run:
     dir: ${exp_dir}
 
+# =========================== to be filled out by user =========================== #
+mattersim_repo: /home/wllmzhu/Documents/G-VUE-Matterport3D    #path to G-VUE-Matterport3D repo (printed by G-VUE-setup.sh)
+downloaded_data: /home/wllmzhu/data/temp   #path to data directory (also need to supply as argument to setup_navigation.sh)
+output_dir: null        #find a good directory to store logs, ckpts, etc.
+l_backbone_cfg: null    #language backbone cfg, just like other tasks
+# ================================================================================ #
+
 exp_name: default
-output_dir: /home/huangjiangyong/scratch/data/GVUE
 exp_dir: ${output_dir}/${exp_name}
 date: null
 name: ${model.v_backbone.key}
@@ -16,16 +22,16 @@ submit: 0
 test_only: False
 
 simulator:
-  build_path: /home/huangjiangyong/Documents/G-VUE-Matterport3D/build
+  build_path: ${mattersim_repo}/build
   data:
-    scans_path: /home/huangjiangyong/william/matterport_data_new/v1/scans
-    conn_path: /home/huangjiangyong/Documents/G-VUE-RecurrentVLN/connectivity
+    scans_path: ${downloaded_data}/v1/scans
+    conn_path: ${mattersim_repo}/connectivity
 
 precompute_v_feature:
   use_cached: True
   batch_size: 4
   data:
-    output_dir: /home/huangjiangyong/william/r2r_img_features
+    output_dir: ${downloaded_data}/r2r_img_features
     tsv_path: ${precompute_v_feature.data.output_dir}/${model.v_backbone}.tsv
 
 model:
@@ -33,7 +39,7 @@ model:
   v_sizes: ${model.v_backbone.hidden_dim}
   v_backbone: ${backbone}
   l_backbone:
-      cfg_dir: /scratch/huangjiangyong/data/roberta-base
+      cfg_dir: ${l_backbone_cfg}
       hidden_dim: 768
   decoder:
     type: prevalent  # only PREVALENT is supported. Isn't hard to make OSCAR work though.
@@ -48,14 +54,14 @@ train:
   type: listener    # in ['listener', 'auglistener', 'validlistener'] 
   eval_path: null
   pretrained_path: 
-    prevalent: /home/huangjiangyong/william/Prevalent/pretrained_model
+    prevalent: ${downloaded_data}/Prevalent/pretrained_model
     oscar: null
   log:
     dir: ${exp_dir}
     record_file: ${exp_dir}${model.v_backbone.key}.txt
   data:
     v_feature: ${precompute_v_feature.data.tsv_path}
-    r2r_dir: /home/huangjiangyong/william/data
+    r2r_dir: ${downloaded_data}/r2r_data
     aug_path: null
   setting:
     batch_size: 32
