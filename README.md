@@ -35,7 +35,7 @@ General-purpose Vision Understanding Evaluation
 
     As instructed by the setup script, copy the Matterport3D repo directory to the r2r config yaml's "mattersim_repo" field.
 
-    Specify a directory to download all the required data in the r2r config yaml's "downloaded_data" field,
+    Specify a \<data_directory\> to download all the required data in the r2r config yaml's "downloaded_data" field,
 
     then run the setup_navigation.sh script and feed in this \<data_directory\>
 
