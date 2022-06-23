@@ -6,5 +6,4 @@ from .vcr import VCRDataset
 from .flickr30k import Flickr30kDataset
 from .bongard import BongardHOIDataset
 from .shapenet import ShapeNetDataset
-from .cambridgelandmarks import CambridgeLandmarksDataset
-from .seven_scenes import SevenScenesDataset
+from .camerapose import CameraPoseDataset

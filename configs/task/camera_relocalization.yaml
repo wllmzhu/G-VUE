@@ -1,12 +1,19 @@
 key: camera_relocalization
 
 dataset:
-  key: SevenScenesDataset
+  key: CameraPoseDataset
   info:
-    subsets: [train, test]
-    dataset_dir: /scratch/generalvision/7scenes
-    scene: heads
-    all_scenes: ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
+    dataset: cambridgelandmarks
+    cambridgelandmarks:
+      subsets: [train, test]
+      dataset_dir: /scratch/generalvision/CambridgeLandmarks
+      scene: KingsCollege
+      all_scenes: ['KingsCollege', 'OldHospital', 'ShopFacade', 'StMarysChurch']
+    sevenscenes:
+      subsets: [train, test]
+      dataset_dir: /scratch/generalvision/7scenes
+      scene: heads
+      all_scenes: ['chess', 'fire', 'heads', 'office', 'pumpkin', 'redkitchen', 'stairs']
 
 decoder:
   key: LabelType

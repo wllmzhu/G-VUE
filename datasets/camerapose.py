@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 import utils.io as io
 from transforms.cambridgelandmarks_transforms import make_cambridgelandmarks_transforms
+from transforms.seven_scenes_transforms import make_seven_scenes_transforms
 from utils.misc import collate_fn
 from .base import DATASET
 import json
@@ -12,22 +13,30 @@ import random
 import numpy as np
 
 @DATASET.register()
-class CambridgeLandmarksDataset(Dataset):
+class CameraPoseDataset(Dataset):
     def __init__(self, info, subset):
         super().__init__()
         self.info = info
         self.subset = subset
 
-        self.transforms = make_cambridgelandmarks_transforms()
+        self.dataset_dir = self.info.cambridgelandmarks.dataset_dir if self.info.dataset == 'cambridgelandmarks' else self.info.sevenscenes.dataset_dir
+        self.scene = self.info.cambridgelandmarks.scene if self.info.dataset == 'cambridgelandmarks' else self.info.sevenscenes.scene
 
-        ## load kingscollege data
+        self.transforms = make_cambridgelandmarks_transforms() if self.info.dataset == 'cambridgelandmarks' else make_seven_scenes_transforms()
+
+        ## load camera pose dataset
         self._load_data()
     
     def _load_data(self):
-        phase = 'train' if self.subset == 'train' else 'test'
+        if self.info.dataset == 'cambridgelandmarks':
+            phase = 'train' if self.subset == 'train' else 'test'
+            txt = os.path.join(self.dataset_dir, self.scene, 'dataset_{}.txt'.format(phase))
+        elif self.info.dataset == 'sevenscenes':
+            phase = 'train' if self.subset == 'train' else 'val'
+            txt = os.path.join(self.dataset_dir, '7Scenes_PoseNet_TrainVal', '{}_{}.txt'.format(self.scene, phase))
 
         self.samples = [] # [(image, pose), ...]
-        with open(os.path.join(self.info.dataset_dir, self.info.scene, 'dataset_{}.txt'.format(phase)), 'r') as fp:
+        with open(txt, 'r') as fp:
             next(fp)  # skip the 3 header lines
             next(fp)
             next(fp)
@@ -42,9 +51,13 @@ class CambridgeLandmarksDataset(Dataset):
                 p6 = float(p6)
 
                 pose = np.array([p0, p1, p2, p3, p4, p5, p6], dtype=np.float32)
-                image = os.path.join(self.info.dataset_dir, self.info.scene, fname)
+                image = os.path.join(
+                    self.dataset_dir,
+                    self.scene,
+                    fname if self.info.dataset == 'cambridgelandmarks' else fname[1:])
 
                 self.samples.append((image, pose))
+
     
     def __len__(self):
         return len(self.samples)
@@ -61,21 +74,3 @@ class CambridgeLandmarksDataset(Dataset):
 
     def get_dataloader(self, **kwargs):
         return DataLoader(self, collate_fn=collate_fn, **kwargs)
-
-
-@hydra.main(config_path='../config', config_name='camera_relocalization.yaml')
-def main(cfg):
-    dataset = CambridgeLandmarksDataset(cfg.dataset.info, 'val')
-    dataloader = dataset.get_dataloader(batch_size=8, shuffle=False)
-    for data in dataloader:
-        imgs, txts, targets = data
-        print({
-            'image': imgs,
-            'text': txts,
-            'target': targets
-        })
-        break
-
-
-if __name__=='__main__':
-    main()
