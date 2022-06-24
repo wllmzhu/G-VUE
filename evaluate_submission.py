@@ -2,47 +2,32 @@ import os
 import hydra
 import torch
 import numpy as np
+import h5py
 from torch.utils.data import DataLoader
-from models.base import JointModel
 from datasets.base import create_dataset
 from utils.misc import collate_fn
-import h5py
 from evaluate_all_tasks import evaluate
 
-all_tasks = [
-    'depth', 'camera_relocalization', '3d_reconstruction', 'vl_retrieval', 'phrase_grounding',
-    'segmentation', 'vqa', 'common_sense', 'bongard', 'navigation', 'manipulation'
-]
+subsets = {
+    'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
+    'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
+    'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test']
+}
 
 
-def init_model(cfg, device, task):
-    model = JointModel(cfg.model).to(device)
-    state_dict = model.state_dict()
-    ckpt = torch.load(ckpt_path[task], map_location=device)
-    loaded_params = 0
-    for k, v in ckpt['model'].items():
-        if k in state_dict and state_dict[k].size() == v.size():
-            state_dict[k] = v
-            loaded_params += 1
+def evaluate_camera_pose(cfg, h5py_file):
+    task_scores = []
 
-    model.load_state_dict(state_dict)
-    print(f'loaded {loaded_params} parameters from {ckpt_path[task]} for {task} task')
-    return model
-
-
-def evaluate_h5py(cfg):
-    h5py_file = h5py.File('preds_to_submit.h5py', 'w')
-    
-    for task in all_tasks:
-        print(f'generating predictions on {task} task, {task_dataset} dataset')
-
-        for subset in task_subsets:
-            if subset != 'train':
+    data_types = ['cambridgelandmarks', 'sevenscenes']
+    for data_type in data_types:
+        cfg.task.dataset.info.dataset = data_type
+        for scene in cfg.task.dataset.info[data_type].all_scenes:
+            cfg.task.dataset.info[data_type].scene = scene
+            print(f'evaluating results on camera_relocalization task, {data_type} dataset, {scene} scene')
+            for subset in subsets['camera_relocalization']:
                 dataset = create_dataset(cfg, subset)
-                l = len(datasets[subset])
-                print(f'{subset} set size: {l}')
-
-                dataloader = dataloader = DataLoader(
+                print(f'{subset} set size: {len(dataset)}')
+                dataloader = DataLoader(
                     dataset,
                     batch_size=cfg.eval.batch_size,
                     shuffle=False,
@@ -50,10 +35,38 @@ def evaluate_h5py(cfg):
                     num_workers=cfg.eval.num_workers,
                     pin_memory=True
                 )
-                task_score = evaluate(task)(dataloader, h5py_file)
-                task_scores.append(task_score)
-        
-        print(f'{task} task score: {round(np.mean(task_scores), 2)}')
+                task_scores.append(evaluate('camera_relocalization')(dataloader, h5py_file))
+    
+    print(f'{cfg.task.key} task score: {np.mean(task_scores):.2f}')
+    return np.mean(task_scores)
+
+
+def evaluate_h5py(cfg):
+    h5py_file = h5py.File('preds_to_submit.h5py', 'r')
+
+    if cfg.task.key == 'camera_relocalization':
+        task_scores = evaluate_camera_pose(cfg, h5py_file)
+    elif cfg.task.key == 'navigation':
+        raise NotImplementedError
+    elif cfg.task.key == 'manipulation':
+        task_scores = evaluate_manip(cfg, )
+    else:
+        print(f'evaluating results on {cfg.task.key} task, {cfg.task.dataset.key} dataset')
+        task_scores = []
+        for subset in subsets[cfg.task.key]:
+            dataset = create_dataset(cfg, subset)
+            print(f'{subset} set size: {len(dataset)}')
+            dataloader = DataLoader(
+                dataset,
+                batch_size=cfg.eval.batch_size,
+                shuffle=False,
+                collate_fn=collate_fn,
+                num_workers=cfg.eval.num_workers,
+                pin_memory=True
+            )
+            task_scores.append(evaluate(cfg.task.key)(dataloader, h5py_file))
+    
+    print(f'{cfg.task.key} task score: {np.mean(task_scores):.2f}')
     
     # TODO: Act tasks
 
@@ -62,15 +75,6 @@ def evaluate_h5py(cfg):
 
 @hydra.main(config_path='./configs', config_name='base')
 def main(cfg):
-    if cfg.task.key == 'vl_retrieval':
-        cfg.eval.batch_size = 1
-        cfg.eval.num_workers = 0
-    elif cfg.task.key == 'bongard':
-        cfg.eval.batch_size = 32
-        cfg.eval.num_workers = 8
-    elif cfg.task.key == '3d_reconstruction':
-        cfg.eval.batch_size = 50
-    
     evaluate_h5py(cfg)
     
 

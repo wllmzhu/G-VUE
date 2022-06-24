@@ -26,7 +26,8 @@ def InferDepth(model, dataloader, h5py_file):
 
 @torch.no_grad()
 def InferCameraRelocalization(model, dataloader, h5py_file):
-    grp = h5py_file.create_group('camera_relocalization')
+    grp = h5py_file.create_group('camera_relocalization') if 'camera_relocalization' not in h5py_file.keys() \
+                                                          else h5py_file['camera_relocalization']
     model.eval()
     all_preds = []
 
@@ -36,7 +37,7 @@ def InferCameraRelocalization(model, dataloader, h5py_file):
         all_preds.append(outputs.detach().cpu().numpy())
     
     all_preds = np.concatenate(all_preds, axis=0)
-    grp.create_dataset(f'{dataloader.dataset.subset}', data=all_preds)
+    grp.create_dataset(f'{dataloader.dataset.scene}', data=all_preds)
     return h5py_file
 
 
@@ -91,7 +92,8 @@ def InferRetrieval(model, dataloader, h5py_file):
 
 @torch.no_grad()
 def InferBbox(model, dataloader, h5py_file):
-    grp = h5py_file.create_group('phrase_grounding')
+    grp = h5py_file.create_group('phrase_grounding') if 'phrase_grounding' not in h5py_file.keys() \
+                                                     else h5py_file['phrase_grounding']
     model.eval()
     all_preds = []
 
@@ -199,7 +201,8 @@ def InferNav(agent, env, h5py_file):
 task_infer_dict = {
     'depth': InferDepth, 'camera_relocalization': InferCameraRelocalization, '3d_reconstruction': InferRec,
     'vl_retrieval': InferRetrieval, 'phrase_grounding': InferBbox, 'segmentation': InferSeg,
-    'vqa': InferQA, 'common_sense': InferVCR, 'bongard': InferBongard
+    'vqa': InferQA, 'common_sense': InferVCR, 'bongard': InferBongard,
+    'navigation': InferNav,
 }
 
 

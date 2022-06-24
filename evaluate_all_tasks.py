@@ -45,9 +45,9 @@ def EvalDepth(dataloader, h5py_file):
 
 def EvalCameraRelocalization(dataloader, h5py_file):
     grp = h5py_file['camera_relocalization']
-    subset = dataloader.dataset.subset
+    subset = dataloader.dataset.scene
     all_preds = np.array(grp[subset])
-    print(f'evaluating camera_relocalization task on {dataloader.dataset.info.dataset} {dataloader.dataset.scene} {subset} subset')
+    print(f'evaluating camera_relocalization task on {dataloader.dataset.info.dataset} {subset} subset')
 
     position_error = []
     orientation_error = []
