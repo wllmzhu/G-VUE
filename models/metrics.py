@@ -150,15 +150,17 @@ def EvalDepth(model, dataloader, cfg):
         imgs, txts, targets = data
         B = len(targets)
         if not isinstance(targets, torch.Tensor):
-            targets = torch.as_tensor(targets)
+            targets = torch.stack(targets)
 
         outputs = model(imgs, txts=None)
         preds = (outputs.sigmoid().squeeze() * max_depth).clip(min_depth, max_depth)
         targets = targets.squeeze().to(preds.device)
 
-        valid_mask = torch.logical_and(targets>min_depth, targets<max_depth)
-        errors = compute_depth_errors(preds[valid_mask], targets[valid_mask])
-        errors_all = np.concatenate([errors_all, errors.reshape(-1, 8)], axis=0)
+        for i in range(B):
+            target = targets[i]
+            valid_mask = torch.logical_and(target>min_depth, target<max_depth)
+            errors = compute_depth_errors(preds[i][valid_mask], target[valid_mask])
+            errors_all = np.concatenate([errors_all, errors.reshape(-1, 8)], axis=0)
 
         total += B
         if total >= cfg.eval.num_val_samples:
