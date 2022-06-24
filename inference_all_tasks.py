@@ -182,6 +182,20 @@ def InferBongard(model, dataloader, h5py_file):
     return h5py_file
 
 
+@torch.no_grad()
+def InferNav(agent, env, h5py_file):
+    grp = h5py_file.create_group('navigation')
+    agent.vln_bert.eval()
+    agent.critic.eval()
+
+    agent.env = env
+    agent.test(use_dropout=False, feedback='argmax', iters=None)
+    result = agent.get_results()
+
+    grp.create_dataset(f'{env.name}', data=result)
+    return h5py_file
+  
+
 task_infer_dict = {
     'depth': InferDepth, 'camera_relocalization': InferCameraRelocalization, '3d_reconstruction': InferRec,
     'vl_retrieval': InferRetrieval, 'phrase_grounding': InferBbox, 'segmentation': InferSeg,
