@@ -267,6 +267,19 @@ def EvalBongard(dataloader, h5py_file):
     return task_score
 
 
+def EvalNav(dataloader, h5py_file):
+    raise NotImplementedError
+
+
+def EvalManip(eval_task, h5py_file):
+    grp = h5py_file['manipulation']
+    task_record = dict(grp[eval_task])
+    print(f'evaluating manipulation task on Ravens {eval_task} subset')
+    task_score = np.mean(task_record['rewards']) * 100
+    print(f'Success Score: {task_score:.2f}')
+    return task_score
+
+
 def quaternion_angular_error(q1, q2):
     """
     angular error between two quaternions
@@ -365,7 +378,8 @@ def intersect_and_union(pred_label, label, num_classes, ignore_index):
 task_eval_dict = {
     'depth': EvalDepth, 'camera_relocalization': EvalCameraRelocalization, '3d_reconstruction': EvalRec,
     'vl_retrieval': EvalRetrieval, 'phrase_grounding': EvalBbox, 'segmentation': EvalSeg,
-    'vqa': EvalQA, 'common_sense': EvalVCR, 'bongard': EvalBongard
+    'vqa': EvalQA, 'common_sense': EvalVCR, 'bongard': EvalBongard,
+    'navigation': EvalNav, 'manipulation': EvalManip
 }
 
 

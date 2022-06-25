@@ -11,13 +11,19 @@ from evaluate_all_tasks import evaluate
 subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
-    'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test']
+    'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
+    'navigation': None,
+    'manipulation': [
+        'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
+        'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
+        'packing-unseen-google-objects-seq', 'packing-boxes-pairs-unseen-colors',
+        'separating-piles-unseen-colors', 'towers-of-hanoi-seq-unseen-colors'
+    ]
 }
 
 
 def evaluate_camera_pose(cfg, h5py_file):
     task_scores = []
-
     data_types = ['cambridgelandmarks', 'sevenscenes']
     for data_type in data_types:
         cfg.task.dataset.info.dataset = data_type
@@ -37,19 +43,23 @@ def evaluate_camera_pose(cfg, h5py_file):
                 )
                 task_scores.append(evaluate('camera_relocalization')(dataloader, h5py_file))
     
-    print(f'{cfg.task.key} task score: {np.mean(task_scores):.2f}')
-    return np.mean(task_scores)
+    return task_scores
 
 
-def evaluate_h5py(cfg):
-    h5py_file = h5py.File('preds_to_submit.h5py', 'r')
+def evaluate_manip(h5py_file):
+    task_scores = []
+    for eval_task in subsets['manipulation']:
+        task_scores.append(evaluate('manipulation')(eval_task, h5py_file))
+    return task_scores
 
+
+def evaluate_h5py(cfg, h5py_file):
     if cfg.task.key == 'camera_relocalization':
         task_scores = evaluate_camera_pose(cfg, h5py_file)
     elif cfg.task.key == 'navigation':
         raise NotImplementedError
     elif cfg.task.key == 'manipulation':
-        task_scores = evaluate_manip(cfg, )
+        task_scores = evaluate_manip(h5py_file)
     else:
         print(f'evaluating results on {cfg.task.key} task, {cfg.task.dataset.key} dataset')
         task_scores = []
@@ -67,15 +77,13 @@ def evaluate_h5py(cfg):
             task_scores.append(evaluate(cfg.task.key)(dataloader, h5py_file))
     
     print(f'{cfg.task.key} task score: {np.mean(task_scores):.2f}')
-    
-    # TODO: Act tasks
-
-    h5py_file.close()
 
 
 @hydra.main(config_path='./configs', config_name='base')
 def main(cfg):
-    evaluate_h5py(cfg)
+    h5py_file = h5py.File('preds_to_submit.h5py', 'r')
+    evaluate_h5py(cfg, h5py_file)
+    h5py_file.close()
     
 
 if __name__=='__main__':

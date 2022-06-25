@@ -4,18 +4,29 @@ import torch
 import numpy as np
 import h5py
 import json
+import yaml
 import cliport.utils as utils
+from cliport.environments.environment import Environment
 from torch.utils.data import DataLoader
 from models.base import JointModel
+from models.manip_decoder.agents import GVUEAgent
 from datasets.base import create_dataset
 from datasets.ravens import RavensDataset
 from utils.misc import collate_fn
 from inference_all_tasks import inference
+from hydra.core.hydra_config import HydraConfig
 
 subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
-    'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test']
+    'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
+    'navigation': None,
+    'manipulation': [
+        'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
+        'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
+        'packing-unseen-google-objects-seq', 'packing-boxes-pairs-unseen-colors',
+        'separating-piles-unseen-colors', 'towers-of-hanoi-seq-unseen-colors'
+    ]
 }
 
 
@@ -53,13 +64,14 @@ def generate_camera_pose(cfg, model, h5py_file):
                     pin_memory=True
                 )
                 h5py_file = inference('camera_relocalization')(model, dataloader, h5py_file)
+    return h5py_file
 
 
 def specify_cliport_ckpt(vcfg):
-    result_jsons = [c for c in os.listdir(vcfg.results_path) if "results-val" in c]
+    result_jsons = [c for c in os.listdir(vcfg['results_path']) if 'results-val' in c]
     if len(result_jsons) > 0:
         result_json = result_jsons[0]
-        with open(os.path.join(vcfg.results_path, result_json), 'r') as f:
+        with open(os.path.join(vcfg['results_path'], result_json), 'r') as f:
             eval_res = json.load(f)
         best_checkpoint = 'last.ckpt'
         best_success = -1.0
@@ -76,80 +88,34 @@ def specify_cliport_ckpt(vcfg):
 
 
 def generate_manip(cfg, h5py_file):
-    for eval_task in UNSEEN_TASKS:
-        ds = RavensDataset(os.path.join(vcfg.data_dir, f'{eval_task}-test_best'),
-                           tcfg, n_demos=vcfg.n_demos, augment=False)
+    vcfg = cfg['eval']
+    tcfg = utils.load_hydra_config(vcfg['train_config'])
 
-        results = []
-        mean_reward = 0.0
+    env = Environment(
+        vcfg['assets_root'],
+        disp=vcfg['disp'],
+        shared_memory=vcfg['shared_memory'],
+        hz=480,
+        record_cfg=vcfg['record']
+    )
 
-        # Initialize agent.
+    eval_task = vcfg['task']
+    name = '{}-{}-n{}'.format(eval_task, vcfg['agent'], vcfg['n_demos'])
+    ckpt = specify_cliport_ckpt(vcfg)
+    model_file = os.path.join(vcfg['model_path'], ckpt)
+    print(f'evaluating checkpoint: {model_file}')
+
+    for eval_task in subsets['manipulation']:
+        ds = RavensDataset(os.path.join(vcfg['data_dir'], f'{eval_task}-test'),
+                           tcfg, n_demos=vcfg['n_demos'], augment=False)
+
         utils.set_seed(1, torch=True)
         agent = GVUEAgent(name, tcfg, None, ds)
-
-        # Load checkpoint
         agent.load(model_file)
-        print(f"Loaded: {model_file}")
 
-        record = vcfg.record.save_video
-        n_demos = vcfg.n_demos
+        h5py_file = inference('manipulation')(env, agent, eval_task, ds, h5py_file, n_demos=vcfg['n_demos'])
 
-        # Run testing and save total rewards with last transition info.
-        for i in range(0, n_demos):
-            print(f'Test: {i + 1}/{n_demos}')
-            episode, seed = ds.load(i)
-            goal = episode[-1]
-            total_reward = 0
-            np.random.seed(seed)
-
-            # set task
-            if 'multi' in dataset_type:
-                task_name = ds.get_curr_task()
-                task = tasks.names[task_name]()
-            else:
-                task_name = eval_task
-                task = tasks.names[task_name]()
-            print(f'Evaluating on {task_name}')
-
-            task.mode = mode
-            env.seed(seed)
-            env.set_task(task)
-            obs = env.reset()
-            info = env.info
-            reward = 0
-
-            # Start recording video (NOTE: super slow)
-            if record:
-                video_name = f'{task_name}-{i+1:06d}'
-                if 'multi' in vcfg.model_task:
-                    video_name = f"{vcfg.model_task}-{video_name}"
-                env.start_rec(video_name)
-
-            for _ in range(task.max_steps):
-                act = agent.act(obs, info, goal)
-                lang_goal = info['lang_goal']
-                print(f'Lang Goal: {lang_goal}')
-                print(f'Action: {act}')
-                obs, reward, done, info = env.step(act)
-                total_reward += reward
-                print(f'Total Reward: {total_reward:.3f} | Done: {done}\n')
-                if done:
-                    break
-
-            results.append((total_reward, info))
-            mean_reward = np.mean([r for r, i in results])
-            print(f'Mean: {mean_reward} | Task: {task_name} | Ckpt: {ckpt}')
-
-            all_results[ckpt][eval_task] = {
-                'episodes': results,
-                'mean_reward': mean_reward,
-            }
-
-    # average scores on various tasks
-    average_scores = [all_results[ckpt][eval_task]['mean_reward'] for eval_task in UNSEEN_TASKS]
-    average_scores = np.mean(average_scores)
-    print(f'average scores on tasks for {ckpt}: {average_scores}')
-    all_results[ckpt].update({'average_score': average_scores})
+    return h5py_file
 
 
 def generate_group(cfg, h5py_file):
@@ -157,11 +123,14 @@ def generate_group(cfg, h5py_file):
 
     if cfg.task.key == 'camera_relocalization':
         model = init_model(cfg, device)
-        generate_camera_pose(cfg, model, h5py_file)
+        h5py_file = generate_camera_pose(cfg, model, h5py_file)
     elif cfg.task.key == 'navigation':
         raise NotImplementedError
     elif cfg.task.key == 'manipulation':
-        generate_manip(cfg, model, )
+        cliport_cfg = os.path.join(HydraConfig.get().runtime.cwd, 'configs/cliport.yaml')
+        with open(cliport_cfg, 'r') as f:
+            cfg = yaml.safe_load(f)
+        h5py_file = generate_manip(cfg)
     else:
         model = init_model(cfg, device)
         print(f'generating predictions on {cfg.task.key} task, {cfg.task.dataset.key} dataset')
@@ -178,9 +147,7 @@ def generate_group(cfg, h5py_file):
             )
             h5py_file = inference(cfg.task.key)(model, dataloader, h5py_file)
     
-    # TODO: Act tasks
-
-    h5py_file.close()
+    return h5py_file
 
 
 @hydra.main(config_path='./configs', config_name='base')
@@ -195,7 +162,8 @@ def main(cfg):
         cfg.eval.batch_size = 50
     
     h5py_file = h5py.File('preds_to_submit.h5py', 'w')
-    generate_group(cfg, h5py_file)
+    h5py_file = generate_group(cfg, h5py_file)
+    h5py_file.close()
     
 
 if __name__=='__main__':

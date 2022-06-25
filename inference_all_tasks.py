@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 from math import ceil
 from tqdm import tqdm
+from cliport import tasks
 
 
 @torch.no_grad()
@@ -196,13 +197,50 @@ def InferNav(agent, env, h5py_file):
 
     grp.create_dataset(f'{env.name}', data=result)
     return h5py_file
+
+
+@torch.no_grad()
+def InferManip(env, agent, eval_task, dataset, h5py_file, n_demos=100):
+    grp = h5py_file.create_group('manipulation') if 'manipulation' not in h5py_file.keys() \
+                                                 else h5py_file['manipulation']
+    task = tasks.names[eval_task]()
+    total_rewards = []
+    total_actions = []
+    print(f'Evaluating on {eval_task}')
+    for i in range(0, n_demos):
+        print(f'Test: {i + 1}/{n_demos}')
+        episode, seed = dataset.load(i)
+        goal = episode[-1]
+        total_reward = 0
+        actions = []
+        np.random.seed(seed)
+
+        task.mode = 'test'
+        env.seed(seed)
+        env.set_task(task)
+        obs = env.reset()
+        info = env.info
+
+        for _ in range(task.max_steps):
+            act = agent.act(obs, info, goal)
+            actions.append(act)
+            obs, reward, done, info = env.step(act)
+            total_reward += reward
+            if done:
+                break
+
+        total_rewards.append(total_reward)
+        total_actions.append(actions)
+    
+    grp.create_dataset(f'{eval_task}', data={'rewards': total_rewards, 'actions': total_actions})
+    return h5py_file
   
 
 task_infer_dict = {
     'depth': InferDepth, 'camera_relocalization': InferCameraRelocalization, '3d_reconstruction': InferRec,
     'vl_retrieval': InferRetrieval, 'phrase_grounding': InferBbox, 'segmentation': InferSeg,
     'vqa': InferQA, 'common_sense': InferVCR, 'bongard': InferBongard,
-    'navigation': InferNav,
+    'navigation': InferNav, 'manipulation': InferManip
 }
 
 
