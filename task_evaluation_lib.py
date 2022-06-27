@@ -267,10 +267,13 @@ def EvalBongard(dataloader, h5py_file):
     return task_score
 
 
-def EvalNav(dataloader, h5py_file):
+def EvalNav(env_name, evaluator, h5py_file):
     grp = h5py_file['navigation']
-    
-
+    task_record = dict(grp[eval_task])
+    print(f'evaluating navigation task on R2R {eval_task} subset')
+    score_summary, _ = evaluator.score(task_record)
+    acc_and_spl = [score_summary['success_rate'], score_summary['spl']]
+    return acc_and_spl
 
 def EvalManip(eval_task, h5py_file):
     grp = h5py_file['manipulation']

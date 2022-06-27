@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 from datasets.base import create_dataset
 from utils.misc import collate_fn
 from task_evaluation_lib import evaluate
+from collections import OrderedDict
+from models.nav_decoder.eval import R2REvaluation
 
 subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
@@ -48,9 +50,12 @@ def evaluate_camera_pose(cfg, h5py_file):
 
 def evaluate_nav(h5py_file):
     task_scores = []
-    for eval_tasks in subsets['navigation']:
-        task_scores.append(evaluate('navigation')(eval_task, h5py_file))
-
+    featurized_scans = h5py_file['navigation/featurized_scans']
+    val_envs = OrderedDict(
+        (split, R2REvaluation(cfg, [split], featurized_scans, tok)) for split in subsets['navigation'])
+    for env_name, evaluator in val_envs.items():
+        task_scores.extend(evaluate('navigation')(env_name, evaluator, h5py_file))
+    return task_scores
 
 def evaluate_manip(h5py_file):
     task_scores = []

@@ -9,7 +9,6 @@ import yaml
 from collections import OrderedDict
 import models.nav_decoder.utils as r2r_utils 
 from models.nav_decoder.env import R2RBatch
-from models.nav_decoder.eval import R2REvaluation
 from models.nav_decoder.agent import GVUENavAgent
 import cliport.utils as cliport_utils
 from cliport.environments.environment import Environment
@@ -77,11 +76,10 @@ def generate_nav(cfg, h5py_file):
     sys.path.insert(0, cfg.simulator.build_path)
     import MatterSim  
 
-    val_env_names = ['val_seen', 'val_unseen']
     feat_dict = r2r_utils.read_img_features(cfg.train.data.v_feature, test_only=cfg.test_only)
-    # featurized_scans = set([key.split("_")[0] for key in list(feat_dict.keys())])
+    featurized_scans = set([key.split("_")[0] for key in list(feat_dict.keys())])
     val_envs = OrderedDict(R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split])
-                            for split in val_env_names)
+                            for split in subsets['navigation'])
     
     train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'], tokenizer=tok)
     agent = GVUENavAgent(cfg, train_env, "", None, cfg.train.setting.max_action)
@@ -89,6 +87,9 @@ def generate_nav(cfg, h5py_file):
 
     for env in val_envs.items():
         h5py_file = inference('navigation')(cfg, agent, env, h5py_file)
+    
+    #Save featurized_scans
+    h5py.create_dataset(f'navigation/featurized_scans', data=featurized_scans)
 
     return h5py_file
 
