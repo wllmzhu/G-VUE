@@ -7,18 +7,20 @@ hydra:
     dir: ${exp_dir}
 
 # =========================== to be filled out by user =========================== #
+output_dir: /home/huangjiangyong/william/r2r_output             #find a good directory to store logs, ckpts, etc.
+
 mattersim_repo: /home/huangjiangyong/Documents/G-VUE-Matterport3D    #path to G-VUE-Matterport3D repo (printed by G-VUE-setup.sh)
 downloaded_data: /home/huangjiangyong/william/r2r_all_data        #path to data directory (also need to supply as argument to setup_navigation.sh)
-output_dir: /home/huangjiangyong/william/r2r_output             #find a good directory to store logs, ckpts, etc.
 #l_backbone_cfg: null    #language backbone cfg, just like other tasks
 # ================================================================================ #
 
 eval:
-  path: null     # path to the torch ckpt to be evaluated
+  #Automatically set to evaluate the best saved ckpt. Change this to evaluate something else.
+  path: ${exp_dir}/snap/${backbone.key}/state_dict/best_val_unseen
+  #path: /home/huangjiangyong/william/r2r_output/22.06.27-ViT_CLIP_16-navigation/snap/ViT_CLIP_16/state_dict/best_val_unseen  # path to the torch ckpt to be evaluated
 
 exp_name: default
 exp_dir: ${output_dir}/${exp_name}
-date: null
 name: ${model.v_backbone.key}
 
 submit: 0

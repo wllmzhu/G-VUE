@@ -81,7 +81,7 @@ def generate_nav(cfg, h5py_file):
     val_envs = OrderedDict(R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split])
                             for split in subsets['navigation'])
     
-    train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'], tokenizer=tok)
+    train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'])
     agent = GVUENavAgent(cfg, train_env, "", None, cfg.train.setting.max_action)
     agent.load(cfg.eval.path)
 

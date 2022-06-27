@@ -48,11 +48,11 @@ def evaluate_camera_pose(cfg, h5py_file):
     return task_scores
 
 
-def evaluate_nav(h5py_file):
+def evaluate_nav(cfg, h5py_file):
     task_scores = []
     featurized_scans = h5py_file['navigation/featurized_scans']
     val_envs = OrderedDict(
-        (split, R2REvaluation(cfg, [split], featurized_scans, tok)) for split in subsets['navigation'])
+        (split, R2REvaluation(cfg, [split], featurized_scans, None)) for split in subsets['navigation'])
     for env_name, evaluator in val_envs.items():
         task_scores.extend(evaluate('navigation')(env_name, evaluator, h5py_file))
     return task_scores
@@ -68,7 +68,7 @@ def evaluate_h5py(cfg, h5py_file):
     if cfg.task.key == 'camera_relocalization':
         task_scores = evaluate_camera_pose(cfg, h5py_file)
     elif cfg.task.key == 'navigation':
-        task_scores = evaluate_nav(h5py_file)
+        task_scores = evaluate_nav(cfg, h5py_file)
     elif cfg.task.key == 'manipulation':
         task_scores = evaluate_manip(h5py_file)
     else:
