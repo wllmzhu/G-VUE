@@ -268,7 +268,8 @@ def EvalBongard(dataloader, h5py_file):
 
 
 def EvalNav(dataloader, h5py_file):
-    raise NotImplementedError
+    grp = h5py_file['navigation']
+    
 
 
 def EvalManip(eval_task, h5py_file):
