@@ -87,12 +87,14 @@ def evaluate_h5py(cfg, h5py_file):
             )
             task_scores.append(evaluate(cfg.task.key)(dataloader, h5py_file))
     
-    print(f'{cfg.task.key} task score: {np.mean(task_scores):.2f}')
+    score = f'{np.mean(task_scores):.2f}'
+    print(f'{cfg.task.key} task score: {score}')
+        
 
 
 @hydra.main(config_path='./configs', config_name='base')
 def main(cfg):
-    h5py_file = h5py.File('preds_to_submit.h5py', 'r')
+    h5py_file = h5py.File('submission.h5py', 'r')
     evaluate_h5py(cfg, h5py_file)
     h5py_file.close()
     

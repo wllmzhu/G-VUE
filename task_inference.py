@@ -191,7 +191,7 @@ def main(cfg):
     elif cfg.task.key == '3d_reconstruction':
         cfg.eval.batch_size = 50
     
-    h5py_file = h5py.File('preds_to_submit.h5py', 'w')
+    h5py_file = h5py.File('submission.h5py', 'w')
     h5py_file = generate_group(cfg, h5py_file)
     h5py_file.close()
     
