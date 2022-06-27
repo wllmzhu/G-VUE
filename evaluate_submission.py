@@ -6,7 +6,7 @@ import h5py
 from torch.utils.data import DataLoader
 from datasets.base import create_dataset
 from utils.misc import collate_fn
-from evaluate_all_tasks import evaluate
+from task_evaluation_lib import evaluate
 
 subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
