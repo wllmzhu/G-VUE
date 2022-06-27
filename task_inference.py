@@ -74,7 +74,7 @@ def generate_camera_pose(cfg, model, h5py_file):
 
 def generate_nav(cfg, h5py_file):
     sys.path.insert(0, cfg.simulator.build_path)
-    import MatterSim  
+    import MatterSim
 
     feat_dict = r2r_utils.read_img_features(cfg.train.data.v_feature, test_only=cfg.test_only)
     featurized_scans = set([key.split("_")[0] for key in list(feat_dict.keys())])
@@ -86,10 +86,10 @@ def generate_nav(cfg, h5py_file):
     agent.load(cfg.eval.path)
 
     for env in val_envs.items():
-        h5py_file = inference('navigation')(cfg, agent, env, h5py_file)
+        h5py_file = inference('navigation')(agent, env, h5py_file)
     
     #Save featurized_scans
-    h5py.create_dataset(f'navigation/featurized_scans', data=featurized_scans)
+    h5py.create_dataset('navigation/featurized_scans', data=featurized_scans)
 
     return h5py_file
 
@@ -191,7 +191,7 @@ def main(cfg):
     elif cfg.task.key == '3d_reconstruction':
         cfg.eval.batch_size = 50
     
-    h5py_file = h5py.File('submission.h5py', 'w')
+    h5py_file = h5py.File(os.path.join(HydraConfig.get().runtime.cwd, 'submission.h5py'), 'w')
     h5py_file = generate_group(cfg, h5py_file)
     h5py_file.close()
     

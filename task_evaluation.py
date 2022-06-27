@@ -9,6 +9,7 @@ from utils.misc import collate_fn
 from task_evaluation_lib import evaluate
 from collections import OrderedDict
 from models.nav_decoder.eval import R2REvaluation
+from hydra.core.hydra_config import HydraConfig
 
 subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
@@ -57,6 +58,7 @@ def evaluate_nav(cfg, h5py_file):
         task_scores.extend(evaluate('navigation')(env_name, evaluator, h5py_file))
     return task_scores
 
+
 def evaluate_manip(h5py_file):
     task_scores = []
     for eval_task in subsets['manipulation']:
@@ -89,12 +91,11 @@ def evaluate_h5py(cfg, h5py_file):
     
     score = f'{np.mean(task_scores):.2f}'
     print(f'{cfg.task.key} task score: {score}')
-        
 
 
 @hydra.main(config_path='./configs', config_name='base')
 def main(cfg):
-    h5py_file = h5py.File('submission.h5py', 'r')
+    h5py_file = h5py.File(os.path.join(HydraConfig.get().runtime.cwd, 'submission.h5py'), 'r')
     evaluate_h5py(cfg, h5py_file)
     h5py_file.close()
     

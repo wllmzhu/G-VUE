@@ -186,7 +186,7 @@ def InferBongard(model, dataloader, h5py_file):
 
 
 @torch.no_grad()
-def InferNav(cfg, agent, env, h5py_file):
+def InferNav(agent, env, h5py_file):
     grp = h5py_file.create_group('navigation')
     agent.vln_bert.eval()
     agent.critic.eval()
