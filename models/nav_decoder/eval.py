@@ -14,7 +14,7 @@ from models.nav_decoder.utils import load_datasets, load_nav_graphs, ndtw_graphl
 from models.nav_decoder.agent import BaseAgent
 
 
-class Evaluation(object):
+class R2REvaluation(object):
     ''' Results submission format:  [{'instr_id': string, 'trajectory':[(viewpoint_id, heading_rads, elevation_rads),] } ] '''
 
     def __init__(self, cfg, splits, scans, tok):

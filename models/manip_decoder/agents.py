@@ -2,7 +2,7 @@ from .utils import preprocess
 from .base import OneStreamAttentionLangFusion, OneStreamTransportLangFusion, TwoStreamClipLingUNetTransporterAgent
 
 
-class GVUEAgent(TwoStreamClipLingUNetTransporterAgent):
+class GVUEManipAgent(TwoStreamClipLingUNetTransporterAgent):
 
     def __init__(self, name, cfg, train_ds, test_ds):
         self.stream_fcn = cfg.backbone.key

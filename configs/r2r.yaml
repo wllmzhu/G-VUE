@@ -7,11 +7,14 @@ hydra:
     dir: ${exp_dir}
 
 # =========================== to be filled out by user =========================== #
-mattersim_repo: /home/wllmzhu/Documents/G-VUE-Matterport3D    #path to G-VUE-Matterport3D repo (printed by G-VUE-setup.sh)
+mattersim_repo: /home/huangjiangyong/Documents/G-VUE-Matterport3D    #path to G-VUE-Matterport3D repo (printed by G-VUE-setup.sh)
 downloaded_data: /home/wllmzhu/data/temp   #path to data directory (also need to supply as argument to setup_navigation.sh)
-output_dir: null        #find a good directory to store logs, ckpts, etc.
-l_backbone_cfg: null    #language backbone cfg, just like other tasks
+output_dir: /home/        #find a good directory to store logs, ckpts, etc.
+#l_backbone_cfg: null    #language backbone cfg, just like other tasks
 # ================================================================================ #
+
+eval:
+  load: null     # path to the torch ckpt to be evaluated
 
 exp_name: default
 exp_dir: ${output_dir}/${exp_name}
@@ -49,10 +52,9 @@ model:
     dropout: 0.5  
     crossentropy_ignoreid: -100
   
-# for eval, set 'type' to validlistener, and set eval_path to the weights of the model to be evaluated
+# For eval, set 'type' to validlistener, and set eval_path to the weights of the model to be evaluated
 train: 
   type: listener    # in ['listener', 'auglistener', 'validlistener'] 
-  eval_path: null
   pretrained_path: 
     prevalent: ${downloaded_data}/Prevalent/pretrained_model
     oscar: null
@@ -76,7 +78,6 @@ train:
   a2c:
     gamma: 0.9
     normalize_loss: total    # in ['batch', 'total']
-
 
   
 

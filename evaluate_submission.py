@@ -12,7 +12,7 @@ subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
     'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
-    'navigation': None,
+    'navigation': ['val_train_seen', 'val_seen', 'val_unseen'],
     'manipulation': [
         'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
         'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
@@ -46,6 +46,12 @@ def evaluate_camera_pose(cfg, h5py_file):
     return task_scores
 
 
+def evaluate_nav(h5py_file):
+    task_scores = []
+    for eval_tasks in subsets['navigation']:
+        task_scores.append(evaluate('navigation')(eval_task, h5py_file))
+
+
 def evaluate_manip(h5py_file):
     task_scores = []
     for eval_task in subsets['manipulation']:
@@ -57,7 +63,7 @@ def evaluate_h5py(cfg, h5py_file):
     if cfg.task.key == 'camera_relocalization':
         task_scores = evaluate_camera_pose(cfg, h5py_file)
     elif cfg.task.key == 'navigation':
-        raise NotImplementedError
+        task_scores = evaluate_nav(h5py_file)
     elif cfg.task.key == 'manipulation':
         task_scores = evaluate_manip(h5py_file)
     else:

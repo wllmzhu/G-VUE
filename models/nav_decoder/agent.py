@@ -76,7 +76,7 @@ class BaseAgent(object):
                     break
 
 
-class Seq2SeqAgent(BaseAgent):
+class GVUENavAgent(BaseAgent):
     ''' An agent based on an LSTM seq2seq model with attention. '''
 
     # For now, the agent can't pick which forward move to make - just the one in the middle
@@ -92,7 +92,7 @@ class Seq2SeqAgent(BaseAgent):
     }
 
     def __init__(self, cfg, env, results_path, tok, episode_len=20):
-        super(Seq2SeqAgent, self).__init__(env, results_path)
+        super(GVUENavAgent, self).__init__(env, results_path)
         self.tok = tok
         self.episode_len = episode_len
         self.feature_size = self.env.feature_size
@@ -494,7 +494,7 @@ class Seq2SeqAgent(BaseAgent):
         else:
             self.vln_bert.eval()
             self.critic.eval()
-        super(Seq2SeqAgent, self).test(iters)
+        super(GVUENavAgent, self).test(iters)
 
     def zero_grad(self):
         self.loss = 0.

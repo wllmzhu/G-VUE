@@ -11,8 +11,8 @@ import hydra
 from models.nav_decoder.utils import timeSince, read_img_features, print_progress
 import utils
 from models.nav_decoder.env import R2RBatch
-from models.nav_decoder.agent import Seq2SeqAgent
-from models.nav_decoder.eval import Evaluation
+from models.nav_decoder.agent import GVUENavAgent
+from models.nav_decoder.eval import R2REvaluation
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -68,7 +68,7 @@ def train_val(cfg):
     val_envs = OrderedDict(
         ((split,
           (R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split], tokenizer=tok),
-           Evaluation(cfg, [split], featurized_scans, tok))
+           R2REvaluation(cfg, [split], featurized_scans, tok))
           )
          for split in val_env_names
          )
@@ -106,7 +106,7 @@ def train_val_augment(cfg):
 
     # Setup the validation data
     val_envs = {split: (R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split], tokenizer=tok_bert),
-                Evaluation(cfg, [split], featurized_scans, tok_bert))
+                R2REvaluation(cfg, [split], featurized_scans, tok_bert))
                 for split in val_env_names}
 
     # Start training
@@ -114,7 +114,7 @@ def train_val_augment(cfg):
 
 def train(cfg, train_env, tok, n_iters, log_every=2000, val_envs={}, aug_env=None):
     writer = SummaryWriter(log_dir=cfg.train.log.dir)
-    listner = Seq2SeqAgent(cfg, train_env, "", tok, cfg.train.setting.max_action)
+    listner = GVUENavAgent(cfg, train_env, "", tok, cfg.train.setting.max_action)
 
     record_file = open(cfg.train.log.record_file, 'a')
     record_file.write(str(cfg) + '\n\n')
@@ -221,7 +221,7 @@ def train(cfg, train_env, tok, n_iters, log_every=2000, val_envs={}, aug_env=Non
 
 
 def valid(cfg, train_env, tok, val_envs={}):
-    agent = Seq2SeqAgent(cfg, train_env, "", tok, cfg.train.setting.max_action)
+    agent = GVUENavAgent(cfg, train_env, "", tok, cfg.train.setting.max_action)
 
     print("Loaded the listener model at iter %d from %s" % (agent.load(cfg.load), cfg.load))
 

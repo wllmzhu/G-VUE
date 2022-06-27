@@ -1,6 +1,6 @@
 DATA_DIR=$1
 CURR_DIR=$(pwd)
-DOWNLOAD_SCRIPT=preprocess/r2r/download-mp.py
+DOWNLOAD_SCRIPT=preprocess/r2r/download_mp.py
 
 # Check if DATA_DIR is supplied
 if [ -z "$1" ]
@@ -12,10 +12,9 @@ fi
 #If the required Matterport3D dataset download script is not found
 if ! test -f "$DOWNLOAD_SCRIPT" 
 then
-    echo "Please go to https://niessner.github.io/Matterport/ \n
-    Follow instruction there to email the Matterport3D team your signed Terms of Use \n
-    After obtaining a reply from them, copy the attached dowload-mp.py script to \n
-    G-VUE/preprocess/r2r \n"
+echo "Unable to find download-mp.py. Please go to https://niessner.github.io/Matterport/ ,
+Follow instruction there to email the Matterport3D team your signed Terms of Use.
+After they reply with the required dowload-mp.py script, copy the script to G-VUE/preprocess/r2r"
 exit 1
 fi
 

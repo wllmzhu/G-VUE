@@ -5,7 +5,7 @@ from pathlib import Path
 
 import torch
 # from cliport import agents
-from models.manip_decoder.agents import GVUEAgent, ClipLingUNetTransporterAgent
+from models.manip_decoder.agents import GVUEManipAgent, ClipLingUNetTransporterAgent
 from datasets.ravens import RavensDataset, RavensMultiTaskDataset
 
 import hydra
@@ -74,7 +74,7 @@ def main(cfg):
     # reproduce clip-only
     # agent = ClipLingUNetTransporterAgent(name, cfg, train_ds, val_ds)
     
-    agent = GVUEAgent(name, cfg, train_ds, val_ds)
+    agent = GVUEManipAgent(name, cfg, train_ds, val_ds)
 
     # Main training loop
     trainer.fit(agent)

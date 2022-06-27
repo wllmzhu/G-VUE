@@ -1,15 +1,21 @@
 import os
+import sys
 import hydra
 import torch
 import numpy as np
 import h5py
 import json
 import yaml
-import cliport.utils as utils
+from collections import OrderedDict
+import models.nav_decoder.utils as r2r_utils 
+from models.nav_decoder.env import R2RBatch
+from models.nav_decoder.eval import R2REvaluation
+from models.nav_decoder.agent import GVUENavAgent
+import cliport.utils as cliport_utils
 from cliport.environments.environment import Environment
 from torch.utils.data import DataLoader
 from models.base import JointModel
-from models.manip_decoder.agents import GVUEAgent
+from models.manip_decoder.agents import GVUEManipAgent
 from datasets.base import create_dataset
 from datasets.ravens import RavensDataset
 from utils.misc import collate_fn
@@ -20,7 +26,7 @@ subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
     'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
-    'navigation': None,
+    'navigation': ['val_train_seen', 'val_seen', 'val_unseen'],
     'manipulation': [
         'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
         'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
@@ -67,6 +73,26 @@ def generate_camera_pose(cfg, model, h5py_file):
     return h5py_file
 
 
+def generate_nav(cfg, h5py_file):
+    sys.path.insert(0, cfg.simulator.build_path)
+    import MatterSim  
+
+    val_env_names = ['val_seen', 'val_unseen']
+    feat_dict = r2r_utils.read_img_features(cfg.train.data.v_feature, test_only=cfg.test_only)
+    # featurized_scans = set([key.split("_")[0] for key in list(feat_dict.keys())])
+    val_envs = OrderedDict(R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split])
+                            for split in val_env_names)
+    
+    train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'], tokenizer=tok)
+    agent = GVUENavAgent(cfg, train_env, "", None, cfg.train.setting.max_action)
+    agent.load(cfg.load)
+
+    for env in val_envs.items():
+        h5py_file = inference('navigation')(cfg, agent, env, h5py_file)
+
+    return h5py_file
+
+
 def specify_cliport_ckpt(vcfg):
     result_jsons = [c for c in os.listdir(vcfg['results_path']) if 'results-val' in c]
     if len(result_jsons) > 0:
@@ -89,7 +115,7 @@ def specify_cliport_ckpt(vcfg):
 
 def generate_manip(cfg, h5py_file):
     vcfg = cfg['eval']
-    tcfg = utils.load_hydra_config(vcfg['train_config'])
+    tcfg = cliport_utils.load_hydra_config(vcfg['train_config'])
 
     env = Environment(
         vcfg['assets_root'],
@@ -109,8 +135,8 @@ def generate_manip(cfg, h5py_file):
         ds = RavensDataset(os.path.join(vcfg['data_dir'], f'{eval_task}-test'),
                            tcfg, n_demos=vcfg['n_demos'], augment=False)
 
-        utils.set_seed(1, torch=True)
-        agent = GVUEAgent(name, tcfg, None, ds)
+        cliport_utils.set_seed(1, torch=True)
+        agent = GVUEManipAgent(name, tcfg, None, ds)
         agent.load(model_file)
 
         h5py_file = inference('manipulation')(env, agent, eval_task, ds, h5py_file, n_demos=vcfg['n_demos'])
@@ -125,7 +151,10 @@ def generate_group(cfg, h5py_file):
         model = init_model(cfg, device)
         h5py_file = generate_camera_pose(cfg, model, h5py_file)
     elif cfg.task.key == 'navigation':
-        raise NotImplementedError
+        r2r_cfg = os.path.join(HydraConfig.get().runtime.cwd, 'configs/r2r.yaml')
+        with open(r2r_cfg, 'r') as f:
+            cfg = yaml.safe_load(f)
+        h5py_file = generate_nav(cfg)
     elif cfg.task.key == 'manipulation':
         cliport_cfg = os.path.join(HydraConfig.get().runtime.cwd, 'configs/cliport.yaml')
         with open(cliport_cfg, 'r') as f:
