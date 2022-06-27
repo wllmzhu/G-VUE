@@ -8,13 +8,13 @@ hydra:
 
 # =========================== to be filled out by user =========================== #
 mattersim_repo: /home/huangjiangyong/Documents/G-VUE-Matterport3D    #path to G-VUE-Matterport3D repo (printed by G-VUE-setup.sh)
-downloaded_data: /home/wllmzhu/data/temp   #path to data directory (also need to supply as argument to setup_navigation.sh)
-output_dir: /home/        #find a good directory to store logs, ckpts, etc.
+downloaded_data: /home/huangjiangyong/william/r2r_all_data        #path to data directory (also need to supply as argument to setup_navigation.sh)
+output_dir: /home/huangjiangyong/william/r2r_output             #find a good directory to store logs, ckpts, etc.
 #l_backbone_cfg: null    #language backbone cfg, just like other tasks
 # ================================================================================ #
 
 eval:
-  load: null     # path to the torch ckpt to be evaluated
+  path: null     # path to the torch ckpt to be evaluated
 
 exp_name: default
 exp_dir: ${output_dir}/${exp_name}
@@ -35,7 +35,7 @@ precompute_v_feature:
   batch_size: 4
   data:
     output_dir: ${downloaded_data}/r2r_img_features
-    tsv_path: ${precompute_v_feature.data.output_dir}/${model.v_backbone}.tsv
+    tsv_path: ${precompute_v_feature.data.output_dir}/${model.v_backbone.key}.tsv
 
 model:
   image_size: 224
@@ -52,9 +52,12 @@ model:
     dropout: 0.5  
     crossentropy_ignoreid: -100
   
-# For eval, set 'type' to validlistener, and set eval_path to the weights of the model to be evaluated
+# For eval, set 'type' to validlistener
 train: 
-  type: listener    # in ['listener', 'auglistener', 'validlistener'] 
+  type: listener    # in ['listener', 'auglistener', 'validlistener']
+  continue_training:
+    key: False
+    path: null
   pretrained_path: 
     prevalent: ${downloaded_data}/Prevalent/pretrained_model
     oscar: null

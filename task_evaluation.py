@@ -14,7 +14,7 @@ subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
     'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
-    'navigation': ['val_train_seen', 'val_seen', 'val_unseen'],
+    'navigation': ['val_seen', 'val_unseen'],
     'manipulation': [
         'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
         'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',

@@ -49,7 +49,8 @@ wget https://www.dropbox.com/s/hh5qec8o5urcztn/R2R_train.json
 wget https://www.dropbox.com/s/8ye4gqce7v8yzdm/R2R_val_seen.json
 wget https://www.dropbox.com/s/p6hlckr70a07wka/R2R_val_unseen.json
 wget https://www.dropbox.com/s/w4pnbwqamwzdwd1/R2R_test.json
-wget https://github.com/YicongHong/Recurrent-VLN-BERT/blob/main/data/id_paths.json
+wget https://raw.githubusercontent.com/YicongHong/Recurrent-VLN-BERT/main/data/id_paths.json
+wget https://raw.githubusercontent.com/YicongHong/Recurrent-VLN-BERT/main/data/R2R_val_train_seen.json
 cd ${CURR_DIR}
 
 # Create directory to place precomputed visual features

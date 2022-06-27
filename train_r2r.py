@@ -121,13 +121,13 @@ def train(cfg, train_env, tok, n_iters, log_every=2000, val_envs={}, aug_env=Non
     record_file.close()
 
     start_iter = 0
-    if cfg.train.eval_path is not None:
+    if cfg.train.continue_training:
         if cfg.train.data.aug_path is None:
-            start_iter = listner.load(os.path.join(cfg.train.eval_path))
-            print("\nLOAD the model from {}, iteration ".format(cfg.train.eval_path, start_iter))
+            start_iter = listner.load(os.path.join(cfg.train.continue_training.path))
+            print("\nLOAD the model from {}, iteration ".format(cfg.train.continue_training.path, start_iter))
         else:
-            load_iter = listner.load(os.path.join(cfg.train.eval_path))
-            print("\nLOAD the model from {}, iteration ".format(cfg.train.eval_path, load_iter))
+            load_iter = listner.load(os.path.join(cfg.train.continue_training.path))
+            print("\nLOAD the model from {}, iteration ".format(cfg.train.continue_training.path, load_iter))
 
     start = time.time()
     print('\nListener training starts, start iteration: %s' % str(start_iter))
@@ -223,7 +223,7 @@ def train(cfg, train_env, tok, n_iters, log_every=2000, val_envs={}, aug_env=Non
 def valid(cfg, train_env, tok, val_envs={}):
     agent = GVUENavAgent(cfg, train_env, "", tok, cfg.train.setting.max_action)
 
-    print("Loaded the listener model at iter %d from %s" % (agent.load(cfg.load), cfg.load))
+    print("Loaded the listener model at iter %d from %s" % (agent.load(cfg.eval.path), cfg.eval.path))
 
     for env_name, (env, evaluator) in val_envs.items():
         agent.logs = defaultdict(list)

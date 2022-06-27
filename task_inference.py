@@ -25,7 +25,7 @@ subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
     'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
-    'navigation': ['val_train_seen', 'val_seen', 'val_unseen'],
+    'navigation': ['val_seen', 'val_unseen'],
     'manipulation': [
         'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
         'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
@@ -83,7 +83,7 @@ def generate_nav(cfg, h5py_file):
     
     train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'], tokenizer=tok)
     agent = GVUENavAgent(cfg, train_env, "", None, cfg.train.setting.max_action)
-    agent.load(cfg.load)
+    agent.load(cfg.eval.path)
 
     for env in val_envs.items():
         h5py_file = inference('navigation')(cfg, agent, env, h5py_file)
