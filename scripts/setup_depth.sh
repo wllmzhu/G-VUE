@@ -1,5 +1,3 @@
-
-
 cd ../data/nyuv2/
 mkdir -p images annos
 cd nyu_depth_v2_labeled
