@@ -74,7 +74,6 @@ def generate_camera_pose(cfg, model, h5py_file):
 
 def generate_nav(cfg, h5py_file):
     sys.path.insert(0, cfg.simulator.build_path)
-    import MatterSim
 
     feat_dict = r2r_utils.read_img_features(cfg.train.data.v_feature, test_only=cfg.test_only)
     featurized_scans = set([key.split("_")[0] for key in list(feat_dict.keys())])

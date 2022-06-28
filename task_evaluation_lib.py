@@ -26,7 +26,7 @@ def EvalDepth(dataloader, h5py_file):
 
         for i in range(B):
             target = targets[i]
-            valid_mask = torch.logical_and(target>min_depth, target<max_depth)
+            valid_mask = np.logical_and(target>min_depth, target<max_depth)
             errors = compute_depth_errors(all_preds[sample_idx][valid_mask], target[valid_mask])
             errors_all.append(errors)
             sample_idx += 1
