@@ -20,6 +20,8 @@ from datasets.ravens import RavensDataset
 from utils.misc import collate_fn
 from task_inference_lib import inference
 from hydra.core.hydra_config import HydraConfig
+import omegaconf
+from hydra import compose, initialize
 
 subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
@@ -73,23 +75,19 @@ def generate_camera_pose(cfg, model, h5py_file):
 
 
 def generate_nav(cfg, h5py_file):
-    sys.path.insert(0, cfg.simulator.build_path)
-    import MatterSim
-
     feat_dict = r2r_utils.read_img_features(cfg.train.data.v_feature, test_only=cfg.test_only)
     featurized_scans = set([key.split("_")[0] for key in list(feat_dict.keys())])
-    val_envs = OrderedDict(R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split])
-                            for split in subsets['navigation'])
-    
-    train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'])
+    val_envs = OrderedDict(((split, R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split])) for split in subsets['navigation']))
+
+    train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'], )
     agent = GVUENavAgent(cfg, train_env, "", None, cfg.train.setting.max_action)
     agent.load(cfg.eval.path)
 
-    for env in val_envs.items():
+    for _, env in val_envs.items():
         h5py_file = inference('navigation')(agent, env, h5py_file)
-    
+
     #Save featurized_scans
-    h5py.create_dataset('navigation/featurized_scans', data=featurized_scans)
+    h5py_file.create_dataset('navigation/featurized_scans', data=str(featurized_scans))
 
     return h5py_file
 
@@ -144,23 +142,31 @@ def generate_manip(cfg, h5py_file):
 
     return h5py_file
 
+ 
+def reload_cfg(cfg, new_config_path, new_config_name):
+    backbone = cfg.backbone.key
+    exp_name = cfg.exp_name
+    hydra.core.global_hydra.GlobalHydra.instance().clear()
+    initialize(config_path=new_config_path, job_name="task_inference")
+    cfg = compose(config_name=new_config_name, overrides=[f'backbone={backbone}', f'exp_name={exp_name}'])
+    return cfg
+
 
 def generate_group(cfg, h5py_file):
     device = f'cuda:{cfg.gpu}' if torch.cuda.is_available() else 'cpu'
-
     if cfg.task.key == 'camera_relocalization':
         model = init_model(cfg, device)
         h5py_file = generate_camera_pose(cfg, model, h5py_file)
     elif cfg.task.key == 'navigation':
-        r2r_cfg = os.path.join(HydraConfig.get().runtime.cwd, 'configs/r2r.yaml')
-        with open(r2r_cfg, 'r') as f:
-            cfg = yaml.safe_load(f)
-        h5py_file = generate_nav(cfg)
+        r2r_config_path = os.path.relpath(os.path.join(HydraConfig.get().runtime.cwd, 'configs'), os.getcwd())
+        r2r_config_name = 'r2r'
+        cfg = reload_cfg(cfg, r2r_config_path, r2r_config_name)
+        h5py_file = generate_nav(cfg, h5py_file)
     elif cfg.task.key == 'manipulation':
-        cliport_cfg = os.path.join(HydraConfig.get().runtime.cwd, 'configs/cliport.yaml')
-        with open(cliport_cfg, 'r') as f:
-            cfg = yaml.safe_load(f)
-        h5py_file = generate_manip(cfg)
+        cliport_config_path = os.path.relpath(os.path.join(HydraConfig.get().runtime.cwd, 'configs'), os.getcwd())
+        cliport_config_name = 'cliport'
+        cfg = reload_cfg(cfg, cliport_config_path, cliport_config_name)
+        h5py_file = generate_manip(cfg, h5py_file)
     else:
         model = init_model(cfg, device)
         print(f'generating predictions on {cfg.task.key} task, {cfg.task.dataset.key} dataset')

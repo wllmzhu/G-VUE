@@ -6,6 +6,9 @@ hydra:
   run:
     dir: ${exp_dir}
 
+task:
+  key: navigation
+
 # =========================== to be filled out by user =========================== #
 output_dir: /home/huangjiangyong/william/r2r_output             #find a good directory to store logs, ckpts, etc.
 
@@ -17,7 +20,6 @@ downloaded_data: /home/huangjiangyong/william/r2r_all_data        #path to data 
 eval:
   #Automatically set to evaluate the best saved ckpt. Change this to evaluate something else.
   path: ${exp_dir}/snap/${backbone.key}/state_dict/best_val_unseen
-  #path: /home/huangjiangyong/william/r2r_output/22.06.27-ViT_CLIP_16-navigation/snap/ViT_CLIP_16/state_dict/best_val_unseen  # path to the torch ckpt to be evaluated
 
 exp_name: default
 exp_dir: ${output_dir}/${exp_name}
@@ -25,6 +27,7 @@ name: ${model.v_backbone.key}
 
 submit: 0
 test_only: False
+
 
 simulator:
   build_path: ${mattersim_repo}/build

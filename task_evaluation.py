@@ -3,6 +3,7 @@ import hydra
 import torch
 import numpy as np
 import h5py
+import ast
 from torch.utils.data import DataLoader
 from datasets.base import create_dataset
 from utils.misc import collate_fn
@@ -10,6 +11,7 @@ from task_evaluation_lib import evaluate
 from collections import OrderedDict
 from models.nav_decoder.eval import R2REvaluation
 from hydra.core.hydra_config import HydraConfig
+from hydra import compose, initialize
 
 subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
@@ -51,11 +53,15 @@ def evaluate_camera_pose(cfg, h5py_file):
 
 def evaluate_nav(cfg, h5py_file):
     task_scores = []
+
     featurized_scans = h5py_file['navigation/featurized_scans']
+    # b"12345" -> 12345 to prepare for literal_eval (restoring data structure from string)
+    featurized_scans = ast.literal_eval(np.array2string(np.array(featurized_scans))[2:-1]) 
+
     val_envs = OrderedDict(
         (split, R2REvaluation(cfg, [split], featurized_scans, None)) for split in subsets['navigation'])
     for env_name, evaluator in val_envs.items():
-        task_scores.extend(evaluate('navigation')(env_name, evaluator, h5py_file))
+        task_scores.append(evaluate('navigation')(env_name, evaluator, h5py_file))
     return task_scores
 
 
@@ -66,10 +72,22 @@ def evaluate_manip(h5py_file):
     return task_scores
 
 
+def reload_cfg(cfg, new_config_path, new_config_name):
+    backbone = cfg.backbone.key
+    exp_name = cfg.exp_name
+    hydra.core.global_hydra.GlobalHydra.instance().clear()
+    initialize(config_path=new_config_path, job_name="task_inference")
+    cfg = compose(config_name=new_config_name, overrides=[f'backbone={backbone}', f'exp_name={exp_name}'])
+    return cfg
+
+
 def evaluate_h5py(cfg, h5py_file):
     if cfg.task.key == 'camera_relocalization':
         task_scores = evaluate_camera_pose(cfg, h5py_file)
     elif cfg.task.key == 'navigation':
+        r2r_config_path = os.path.relpath(os.path.join(HydraConfig.get().runtime.cwd, 'configs'), os.getcwd())
+        r2r_config_name = 'r2r'
+        cfg = reload_cfg(cfg, r2r_config_path, r2r_config_name)
         task_scores = evaluate_nav(cfg, h5py_file)
     elif cfg.task.key == 'manipulation':
         task_scores = evaluate_manip(h5py_file)
@@ -96,6 +114,7 @@ def evaluate_h5py(cfg, h5py_file):
 @hydra.main(config_path='./configs', config_name='base')
 def main(cfg):
     h5py_file = h5py.File(os.path.join(HydraConfig.get().runtime.cwd, 'submission.h5py'), 'r')
+
     evaluate_h5py(cfg, h5py_file)
     h5py_file.close()
     

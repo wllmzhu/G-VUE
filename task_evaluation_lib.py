@@ -4,6 +4,7 @@ import numpy as np
 import h5py
 from math import ceil
 from tqdm import tqdm
+import ast
 
 
 def EvalDepth(dataloader, h5py_file):
@@ -14,7 +15,7 @@ def EvalDepth(dataloader, h5py_file):
 
     min_depth, max_depth = 1e-3, 10
     keys = ['d1', 'abs_rel', 'rms']
-    errors_all = np.zeros((0, 3))
+    errors_all = []
     sample_idx = 0
 
     for data in tqdm(dataloader):
@@ -26,7 +27,7 @@ def EvalDepth(dataloader, h5py_file):
 
         for i in range(B):
             target = targets[i]
-            valid_mask = torch.logical_and(target>min_depth, target<max_depth)
+            valid_mask = np.logical_and(target>min_depth, target<max_depth)
             errors = compute_depth_errors(all_preds[sample_idx][valid_mask], target[valid_mask])
             errors_all.append(errors)
             sample_idx += 1
@@ -268,12 +269,14 @@ def EvalBongard(dataloader, h5py_file):
 
 
 def EvalNav(env_name, evaluator, h5py_file):
-    grp = h5py_file['navigation']
-    task_record = dict(grp[env_name])
+    task_record = h5py_file['navigation'][env_name]
+    task_record = ast.literal_eval(np.array2string(np.array(task_record))[2:-1]) 
     print(f'evaluating navigation task on R2R {env_name} subset')
     score_summary, _ = evaluator.score(task_record)
-    acc_and_spl = [score_summary['success_rate'], score_summary['spl']]
-    return acc_and_spl
+    #acc_and_spl = [score_summary['success_rate'], score_summary['spl']]
+    task_score = score_summary['spl'] * 100
+    return task_score
+    
 
 def EvalManip(eval_task, h5py_file):
     grp = h5py_file['manipulation']
@@ -338,7 +341,7 @@ def box_iou(a, b):
 def compute_depth_errors(pred, gt):
     """ here pred and gt are both numpy.ndarray """
     delta = np.maximum((pred / gt), (gt / pred))
-    d1 = (delta < 1.25).float().mean()
+    d1 = (delta < 1.25).astype(np.float).mean()
 
     abs_rel = (np.abs(pred - gt) / gt).mean()
 

@@ -6,6 +6,9 @@ hydra:
   run:
     dir: ${train.train_dir}
 
+task:
+  key: manipulation
+
 root_dir: ${env:CLIPORT_ROOT}   # set this ENV variable if you didn't `python setup.py develop`
 tag: default
 debug: False

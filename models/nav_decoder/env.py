@@ -12,6 +12,8 @@ import os
 import random
 import networkx as nx
 
+from transformers import RobertaTokenizer, BertTokenizer
+
 from models.nav_decoder.constants import DISCRETIZED_VIEWS, VFOV
 
 from models.nav_decoder.utils import load_datasets, load_nav_graphs, pad_instr_tokens
@@ -101,6 +103,8 @@ class R2RBatch():
                  name=None):
         self.cfg = cfg
         self.env = EnvBatch(cfg, feature_store=feature_store, batch_size=batch_size)
+        self.tok = BertTokenizer.from_pretrained('bert-base-uncased')
+
         if feature_store:
             self.feature_size = self.env.feature_size
         else:
@@ -122,7 +126,9 @@ class R2RBatch():
                         if new_item['instr_encoding'] is not None:  # Filter the wrong data
                             self.data.append(new_item)
                             scans.append(item['scan'])
-                    except:
+                    except Exception as e:
+                        print(e)
+                        exit(0)
                         continue
                 else:
                     # Split multiple instructions into separate entries
@@ -133,14 +139,16 @@ class R2RBatch():
                             new_item['instructions'] = instr
 
                             ''' BERT tokenizer '''
-                            instr_tokens = tokenizer.tokenize(instr)
+                            instr_tokens = self.tok.tokenize(instr)
                             padded_instr_tokens, num_words = pad_instr_tokens(instr_tokens, cfg.model.decoder.max_input)
-                            new_item['instr_encoding'] = tokenizer.convert_tokens_to_ids(padded_instr_tokens)
+                            new_item['instr_encoding'] = self.tok.convert_tokens_to_ids(padded_instr_tokens)
 
                             if new_item['instr_encoding'] is not None:  # Filter the wrong data
                                 self.data.append(new_item)
                                 scans.append(item['scan'])
-                        except:
+                        except Exception as e:
+                            print(e)
+                            exit(0)
                             continue
 
         if name is None:
