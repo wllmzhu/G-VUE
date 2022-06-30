@@ -9,13 +9,13 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 * [ ] **Task 1.1:** Depth (NYU v2)
   * `image` → `[H,W] dense map `
-  * depth on each pixel
+  * value on each pixel represent depth
 * [ ] **Task 1.2:** Camera Pose Estimation (Cambridge Landmark & 7 Scene)
   * `image` → `7 numbers `
   * 3 for translation and 4 for orientation
 * [ ] **Task 1.3:** 3D Reconstruction (ShapeNet)
   * `image` → `[D,H,W] dense cube `
-  * Volumetric SDF
+  * volumetric SDF
 
 **Category 2: Ground** 
 
@@ -33,25 +33,23 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 * [ ] **Task 3.1:** Visual Question Answering (GQA)
   * `image + text` → `class label (vocab)`
-  * one or two word short response to question
+  * index on a fixed vocab set of words and compound words
 * [ ] **Task 3.2:** Common Sense Reasoning (VCR)
   * `image + text` → `class label`
-  * selection among 4 answer candidates
+  * index among 4 answer candidates
 * [ ] **Task 3.3:** Abstract Reasoning (Bongard-HOI)
   * `images` → `class label (binary)`
-  * positive class or negative class regarding shot samples
+  * positive class or negative class in the context of shot samples
 
 **Category 4: Act** 
 
 * [ ] **Task 4.1:** Navigation (R2R)
   * `image` → `class label (direction)`
-  * index, out of all neighbors, of the next one to move to
+  * index of the next neighboring viewpoint to move to, out of all neighbors
 * [ ] **Task 4.2:** Manipulation (CLIPort)
   * `image + text` → `pick and place (action)`
-  * where and how to manipulation are determined by dense affordance prediction
+  * where and how to manipulate, as determined by dense affordance prediction
   
-  
- 
 
 # Setup
 
