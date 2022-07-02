@@ -7,7 +7,7 @@ TASKS = [
     'navigation', 'manipulation'
 ]
 
-# --------------------------------------------------
+#---------------------------------------------------
 # Modify to customize submission
 
 EXPS = {
