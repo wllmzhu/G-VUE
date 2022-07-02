@@ -117,6 +117,16 @@ class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
             cfg=self.cfg,
             device=self.device_type,
         )
+    
+    def load(self, model_path):
+        load_sd = torch.load(model_path)['state_dict']
+        if 'transport.query_stream_one.v_backbone.backbone.positional_embedding' in load_sd.keys():
+            del load_sd['transport.query_stream_one.v_backbone.backbone.positional_embedding']
+        else:
+            del load_sd['transport.query_stream_one.v_backbone.backbone.pos_embed']
+        # avoid RuntimeError of size mismatch
+        self.load_state_dict(load_sd, strict=False)
+        self.to(device=self.device_type)
 
     def attn_forward(self, inp, softmax=True):
         inp_img = inp['inp_img']

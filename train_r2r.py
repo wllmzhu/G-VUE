@@ -16,7 +16,7 @@ from models.nav_decoder.eval import R2REvaluation
 
 import warnings
 warnings.filterwarnings("ignore")
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 from models.nav_decoder.vlnbert.vlnbert_init import get_tokenizer
 
