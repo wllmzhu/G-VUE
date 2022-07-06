@@ -12,7 +12,7 @@ task:
 root_dir: ${env:CLIPORT_ROOT}   # set this ENV variable if you didn't `python setup.py develop`
 tag: default
 debug: False
-date: null
+exp_name: default
 
 model:
   image_size: 224
@@ -31,7 +31,7 @@ dataset:
 train:
   # folders
   exp_folder: exps
-  train_dir: ${root_dir}/${train.exp_folder}/${date}-${train.agent}-n${train.n_demos}-train
+  train_dir: ${root_dir}/${train.exp_folder}/${exp_name}-train
   data_dir: ${root_dir}/data
 
   # task configs
@@ -82,13 +82,13 @@ eval:
 
   model_path: ${train.train_dir}/checkpoints/   # path to pre-trained models
   train_config: ${train.train_dir}/.hydra/config.yaml   # path to train config
-  save_path: ${root_dir}/${eval.exp_folder}/${date}-${train.agent}-n${train.n_demos}-eval/checkpoints/
+  save_path: ${root_dir}/${eval.exp_folder}/${exp_name}-eval/checkpoints/
   results_path: ${eval.save_path}   # path to existing results
 
   # record videos (super slow)
   record:
     save_video: False
-    save_video_path: ${root_dir}/${eval.exp_folder}/${date}-${train.agent}-n${train.n_demos}-eval/videos/
+    save_video_path: ${root_dir}/${eval.exp_folder}/${exp_name}-eval/videos/
     add_text: True
     fps: 20
     video_height: 640

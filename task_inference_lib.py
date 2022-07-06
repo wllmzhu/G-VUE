@@ -233,7 +233,8 @@ def InferManip(env, agent, eval_task, dataset, h5py_file, n_demos=100):
         total_rewards.append(total_reward)
         total_actions.append(actions)
     
-    grp.create_dataset(f'{eval_task}', data={'rewards': total_rewards, 'actions': total_actions})
+    grp.create_dataset(f'{eval_task}-rewards', data=total_rewards)
+    grp.create_dataset(f'{eval_task}-actions', data=str(total_actions))
     return h5py_file
   
 
