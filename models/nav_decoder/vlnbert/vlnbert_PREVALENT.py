@@ -14,7 +14,10 @@ import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
-from transformers import BertPreTrainedModel, BertConfig
+from transformers import BertPreTrainedModel
+
+from ...l_backbone import RoBERTa_r2r
+
 # Bad practice here to get v_feature size from hydra cfg
 from train_r2r import is_ResNet
 import pdb
@@ -42,37 +45,6 @@ try:
 except (ImportError, AttributeError) as e:
     logger.info("Better speed can be achieved with apex installed from https://www.github.com/nvidia/apex .")
 BertLayerNorm = torch.nn.LayerNorm
-
-class BertEmbeddings(nn.Module):
-    """Construct the embeddings from word, position and token_type embeddings.
-    """
-    def __init__(self, config):
-        super(BertEmbeddings, self).__init__()
-        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
-        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
-        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
-
-        # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
-        # any TensorFlow checkpoint file
-        self.LayerNorm = BertLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-
-    def forward(self, input_ids, token_type_ids=None, position_ids=None):
-        seq_length = input_ids.size(1)
-        if position_ids is None:
-            position_ids = torch.arange(seq_length, dtype=torch.long, device=input_ids.device)
-            position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
-        if token_type_ids is None:
-            token_type_ids = torch.zeros_like(input_ids)
-
-        words_embeddings = self.word_embeddings(input_ids)
-        position_embeddings = self.position_embeddings(position_ids)
-        token_type_embeddings = self.token_type_embeddings(token_type_ids)
-
-        embeddings = words_embeddings + position_embeddings + token_type_embeddings
-        embeddings = self.LayerNorm(embeddings)
-        embeddings = self.dropout(embeddings)
-        return embeddings
 
 
 class BertSelfAttention(nn.Module):
@@ -372,9 +344,9 @@ class VisionEncoder(nn.Module):
 
 
 class VLNBert(BertPreTrainedModel):
-    def __init__(self, config):
+    def __init__(self, config, cfg):
         super(VLNBert, self).__init__(config)
-        self.embeddings = BertEmbeddings(config)
+        # self.embeddings_roberta = RobertaEmbeddings(config)
         self.pooler = BertPooler(config)
 
         self.img_dim = config.img_feature_dim            # 2176
@@ -382,8 +354,13 @@ class VLNBert(BertPreTrainedModel):
         self.img_feature_type = config.img_feature_type  # ''
         self.vl_layers = config.vl_layers                # 4
         self.la_layers = config.la_layers                # 9
-        self.lalayer = nn.ModuleList(
-            [BertLayer(config) for _ in range(self.la_layers)])
+        # self.lalayer = nn.ModuleList(
+        #     [BertLayer(config) for _ in range(self.la_layers)])
+
+        self.l_backbone = RoBERTa_r2r(cache_dir=cfg.model.l_backbone.cfg_dir)
+        for p in self.l_backbone.parameters():
+            p.requires_grad_(False)
+
         self.addlayer = nn.ModuleList(
             [LXRTXLayer(config) for _ in range(self.vl_layers)])
         self.vision_encoder = VisionEncoder(self.config.img_feature_dim, self.config)
@@ -406,16 +383,7 @@ class VLNBert(BertPreTrainedModel):
 
         if mode == 'language':
             ''' LXMERT language branch (in VLN only perform this at initialization) '''
-            embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
-            text_embeds = embedding_output
-
-            for layer_module in self.lalayer:
-                temp_output = layer_module(text_embeds, extended_attention_mask)
-                text_embeds = temp_output[0]
-
-            sequence_output = text_embeds
-            pooled_output = self.pooler(sequence_output)
-
+            pooled_output, sequence_output = self.l_backbone(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
             return pooled_output, sequence_output
 
         elif mode == 'visual':

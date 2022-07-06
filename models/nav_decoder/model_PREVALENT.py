@@ -38,7 +38,8 @@ class VLNBERT(nn.Module):
                 position_ids=None, action_feats=None, pano_feats=None, cand_feats=None):
 
         if mode == 'language':
-            init_state, encoded_sentence = self.vln_bert(mode, sentence, attention_mask=attention_mask, lang_mask=lang_mask,)
+            with torch.no_grad():
+                init_state, encoded_sentence = self.vln_bert(mode, sentence, attention_mask=attention_mask, lang_mask=lang_mask,)
 
             return init_state, encoded_sentence
 

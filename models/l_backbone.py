@@ -27,8 +27,29 @@ class RoBERTa(nn.Module):
         return outputs[0], token_inputs
 
 
+class RoBERTa_r2r(nn.Module):
+    "Different settings compared to the general RoBERTa above. Skip tokenization, output pooler_output and sentence embedding"
+    def __init__(self, cache_dir=None):
+        super().__init__()
+        if cache_dir is None:
+            self.model = RobertaModel.from_pretrained('roberta-base')
+        else:
+            self.model = RobertaModel.from_pretrained(cache_dir)
+        
+    def forward(self, token_inputs, position_ids=None, token_type_ids=None, device=None, ):
+        if device is None:
+            token_inputs = token_inputs.cuda()
+        else:
+            token_inputs = token_inputs.cuda(device)
+        
+        outputs = self.model(token_inputs, output_hidden_states=True, position_ids=position_ids, token_type_ids=token_type_ids) 
+        
+        # return pooler_output, sentence embedding(first element of hidden_states)
+        return outputs[1], outputs[2][0]
+
+
 if __name__=='__main__':
-    roberta = RoBERTa().to('cuda:0')
+    roberta = RoBERTa_r2r().to('cuda:0')
     # seq_pair = roberta.tokenizer.encode("__bbox_begin__ pos_1 pos_10 pos_20 pos_30 __bbox_end__")
     # print(roberta.tokenizer.decode(seq_pair))
     # print(roberta(['How do you do?','I am fine thank you.']))
