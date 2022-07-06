@@ -120,10 +120,11 @@ class TwoStreamClipLingUNetTransporterAgent(TransporterAgent):
     
     def load(self, model_path):
         load_sd = torch.load(model_path)['state_dict']
-        if 'transport.query_stream_one.v_backbone.backbone.positional_embedding' in load_sd.keys():
-            del load_sd['transport.query_stream_one.v_backbone.backbone.positional_embedding']
-        else:
-            del load_sd['transport.query_stream_one.v_backbone.backbone.pos_embed']
+        curr_sd = self.state_dict()
+        for k in list(load_sd.keys()):
+            if 'positional_embedding' in k or 'pos_embed' in k:
+                if k in curr_sd.keys() and load_sd[k].shape != curr_sd[k].shape:
+                    del load_sd[k]
         # avoid RuntimeError of size mismatch
         self.load_state_dict(load_sd, strict=False)
         self.to(device=self.device_type)

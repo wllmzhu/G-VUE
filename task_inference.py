@@ -6,11 +6,12 @@ import numpy as np
 import h5py
 import json
 import yaml
+import cliport
 from collections import OrderedDict
 import models.nav_decoder.utils as r2r_utils 
 from models.nav_decoder.env import R2RBatch
 from models.nav_decoder.agent import GVUENavAgent
-import cliport.utils as cliport_utils
+from cliport.utils import utils as cliport_utils
 from cliport.environments.environment import Environment
 from torch.utils.data import DataLoader
 from models.base import JointModel
@@ -39,16 +40,19 @@ subsets = {
 
 def init_model(cfg, device):
     model = JointModel(cfg.model).to(device)
-    state_dict = model.state_dict()
-    ckpt = torch.load(cfg.eval.ckpt, map_location=device)
-    loaded_params = 0
-    for k, v in ckpt['model'].items():
-        if k in state_dict and state_dict[k].size() == v.size():
-            state_dict[k] = v
-            loaded_params += 1
+    if cfg.eval.ckpt is not None and os.path.exists(cfg.eval.ckpt):
+        state_dict = model.state_dict()
+        ckpt = torch.load(cfg.eval.ckpt, map_location=device)
+        loaded_params = 0
+        for k, v in ckpt['model'].items():
+            if k in state_dict and state_dict[k].size() == v.size():
+                state_dict[k] = v
+                loaded_params += 1
 
-    model.load_state_dict(state_dict)
-    print(f'loaded {loaded_params} parameters from {cfg.eval.ckpt} for {cfg.task.key} task')
+        model.load_state_dict(state_dict)
+        print(f'loaded {loaded_params} parameters from {cfg.eval.ckpt} for {cfg.task.key} task')
+    else:
+        print(f'{cfg.task.key} task: checkpoint not found, use weights from random initialization instead')
     return model
 
 
@@ -163,6 +167,7 @@ def generate_group(cfg, h5py_file):
         cfg = reload_cfg(cfg, r2r_config_path, r2r_config_name)
         h5py_file = generate_nav(cfg, h5py_file)
     elif cfg.task.key == 'manipulation':
+        os.environ['CLIPORT_ROOT'] = os.path.dirname(os.path.dirname(cliport.__file__))
         cliport_config_path = os.path.relpath(os.path.join(HydraConfig.get().runtime.cwd, 'configs'), os.getcwd())
         cliport_config_name = 'cliport'
         cfg = reload_cfg(cfg, cliport_config_path, cliport_config_name)
@@ -197,7 +202,7 @@ def main(cfg):
     elif cfg.task.key == '3d_reconstruction':
         cfg.eval.batch_size = 50
     
-    h5py_file = h5py.File(os.path.join(HydraConfig.get().runtime.cwd, 'submission.h5py'), 'w')
+    h5py_file = h5py.File(os.path.join(HydraConfig.get().runtime.cwd, 'submission.h5py'), 'a')
     h5py_file = generate_group(cfg, h5py_file)
     h5py_file.close()
     
