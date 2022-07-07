@@ -3,11 +3,6 @@ import numpy as np
 from task_evaluation_lib import evaluate
 
 
-def evaluate_h5py(pred_h5py, gt_h5py, task):
-    print(f'current task: {task}')
-    return evaluate(task)(pred_h5py, gt_h5py)
-
-
 TASKS = [
     'depth', 'camera_relocalization', '3d_reconstruction',
     'vl_retrieval', 'phrase_grounding', 'segmentation',
@@ -22,7 +17,8 @@ def main():
 
     scores = []
     for task in TASKS:
-        scores.append(evaluate_h5py(pred_h5py, gt_h5py, task))
+        print(f'Current task: {task}')
+        scores.append(evaluate(task)(pred_h5py, gt_h5py))
     print(f'Overall score of visual representation: {np.mean(scores):.2f}')
 
     pred_h5py.close()

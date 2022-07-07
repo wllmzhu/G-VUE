@@ -27,6 +27,7 @@ def EvalDepth(pred_h5py, gt_h5py):
 
     err2per = np.exp(-1.386*errors_all[1:])
     task_score = (errors_all[0]+err2per.sum()) / 3 * 100
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -73,6 +74,7 @@ def EvalCameraRelocalization(pred_h5py, gt_h5py):
         np.exp(-1.386*position_error_cl) + np.exp(-1.386*orientation_error_cl)
         + np.exp(-1.386*position_error_7s) + np.exp(-1.386*orientation_error_7s)
     ) / 4 * 100
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -85,9 +87,10 @@ def EvalRec(pred_h5py, gt_h5py):
     area_intersect = np.logical_and(all_preds, all_gts).reshape(subset_size, -1)
     area_union = np.logical_or(all_preds, all_gts).reshape(subset_size, -1)
     
-    iou = area_intersect.sum(-1) / area_union.sum(-1).mean()
+    iou = (area_intersect.sum(-1) / area_union.sum(-1)).mean()
+    print(f'Rec mIoU: {iou:.4f}')
     task_score = iou * 100
-    print(f'Rec IoU: {task_score:.2f}')
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -111,6 +114,7 @@ def EvalRetrieval(pred_h5py, gt_h5py):
     recall_10 = (highest_ranks < 10).astype(float).mean() * 100
     print(f'Recall@1: {recall_1:.2f}, Recall@5: {recall_5:.2f}, Recall@10: {recall_10:.2f}')
     task_score = (recall_1+recall_5+recall_10) / 3
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -124,10 +128,12 @@ def EvalBbox(pred_h5py, gt_h5py):
         print(f'evaluating phrase_grounding task on RefCOCO {subset} subset, size at {subset_size}')
         
         iou = box_iou(all_preds, all_gts)
-        acc_all.append((iou >= 0.5).astype(float).mean())
+        acc = (iou >= 0.5).astype(float).mean()
+        print(f'Bbox Acc@0.5: {acc:.4f}')
+        acc_all.append(acc)
     
     task_score = np.mean(acc_all) * 100
-    print(f'Bbox Acc@0.5: {task_score:.2f}')
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -140,9 +146,10 @@ def EvalSeg(pred_h5py, gt_h5py):
     num_classes = 151
     area_intersect, area_union = intersect_and_union(all_preds, all_gts, num_classes, ignore_index=0)[:2]
     
-    iou = area_intersect / area_union
-    task_score = np.nanmean(iou) * 100
-    print(f'mIoU: {task_score:.2f}')
+    miou = np.nanmean(area_intersect/area_union)
+    print(f'mIoU: {miou:.4f}')
+    task_score = miou * 100
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -153,8 +160,9 @@ def EvalQA(pred_h5py, gt_h5py):
     print(f'evaluating vqa task on GQA test-dev subset, size at {subset_size}')
     
     acc = (all_preds==all_gts).astype(float).mean()
+    print(f'Answer Acc: {acc:.4f}')
     task_score = acc * 100
-    print(f'Answer Acc: {task_score:.2f}')
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -165,8 +173,9 @@ def EvalVCR(pred_h5py, gt_h5py):
     print(f'evaluating common_sense task on VCR val subset, size at {subset_size}')
     
     acc = (all_preds==all_gts).astype(float).mean()
+    print(f'Answer Acc: {acc:.4f}')
     task_score = acc * 100
-    print(f'Answer Acc: {task_score:.2f}')
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -177,8 +186,9 @@ def EvalBongard(pred_h5py, gt_h5py):
     print(f'evaluating bongard task on Bongard-HOI test subset, size at {subset_size}')
 
     acc = (all_preds==all_gts).astype(float).mean()
+    print(f'Answer Acc: {acc:.4f}')
     task_score = acc * 100
-    print(f'Answer Acc: {task_score:.2f}')
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
@@ -187,10 +197,12 @@ def EvalNav(pred_h5py, gt_h5py=None):
     scores = []
     for subset, subset_size in subsets.items():
         print(f'evaluating navigation task on R2R {subset} subset, size at {subset_size}')
-        scores.append(np.array(pred_h5py['navigation'][f'{subset}-spl']))
+        score = np.array(pred_h5py['navigation'][f'{subset}-spl'])
+        print(f'SPL: {score:.4f}')
+        scores.append(score)
 
     task_score = np.mean(scores) * 100
-    print(f'SPL: {task_score:.2f}')
+    print(f'task score: {task_score:.2f}\n')
     return task_score
     
 
@@ -205,10 +217,12 @@ def EvalManip(pred_h5py, gt_h5py=None):
     for subset in subsets:
         rewards = np.array(pred_h5py['manipulation'][f'{subset}-rewards'])
         print(f'evaluating manipulation task on Ravens {subset} subset, size at {rewards.shape[0]}')
-        scores.append(np.mean(rewards))
+        score = np.mean(rewards)
+        print(f'Success Score: {score:.4f}')
+        scores.append(score)
     
     task_score = np.mean(scores) * 100
-    print(f'Success Score: {task_score:.2f}')
+    print(f'task score: {task_score:.2f}\n')
     return task_score
 
 
