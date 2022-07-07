@@ -121,7 +121,7 @@ def train(cfg, train_env, tok, n_iters, log_every=2000, val_envs={}, aug_env=Non
     record_file.close()
 
     start_iter = 0
-    if cfg.train.continue_training:
+    if cfg.train.continue_training.key:
         if cfg.train.data.aug_path is None:
             start_iter = listner.load(os.path.join(cfg.train.continue_training.path))
             print("\nLOAD the model from {}, iteration ".format(cfg.train.continue_training.path, start_iter))

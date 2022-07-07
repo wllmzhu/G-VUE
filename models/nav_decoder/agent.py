@@ -20,7 +20,6 @@ from models.nav_decoder.env import R2RBatch
 import models.nav_decoder.utils as utils
 from models.nav_decoder.utils import padding_idx, print_progress
 import models.nav_decoder.model_PREVALENT as model_PREVALENT
-import models.nav_decoder.model_OSCAR as model_OSCAR
 from collections import defaultdict
 
 
@@ -99,10 +98,7 @@ class GVUENavAgent(BaseAgent):
         self.cfg = cfg
 
         # Models
-        if cfg.model.decoder.type == 'oscar':
-            self.vln_bert = model_OSCAR.VLNBERT(cfg, eature_size=self.feature_size + cfg.model.decoder.angle_feat_size).cuda()
-            self.critic = model_OSCAR.Critic(cfg).cuda()
-        elif cfg.model.decoder.type == 'prevalent':
+        if cfg.model.decoder.type == 'prevalent':
             self.vln_bert = model_PREVALENT.VLNBERT(cfg, feature_size=self.feature_size + cfg.model.decoder.angle_feat_size).cuda()
             self.critic = model_PREVALENT.Critic(cfg).cuda()
         self.models = (self.vln_bert, self.critic)
@@ -269,9 +265,7 @@ class GVUENavAgent(BaseAgent):
                         'attention_mask': language_attention_mask,
                         'lang_mask':      language_attention_mask,
                         'token_type_ids': token_type_ids}
-        if self.cfg.model.decoder.type == 'oscar':
-            language_features = self.vln_bert(**language_inputs)
-        elif self.cfg.model.decoder.type == 'prevalent':
+        if self.cfg.model.decoder.type == 'prevalent':
             h_t, language_features = self.vln_bert(**language_inputs)
 
         # Record starting point
@@ -588,7 +582,7 @@ class GVUENavAgent(BaseAgent):
             if model_keys != load_keys:
                 print("NOTICE: DIFFERENT KEYS IN THE LISTEREN")
             state.update(states[name]['state_dict'])
-            model.load_state_dict(state)
+            model.load_state_dict(state, strict=False)
             if self.cfg.train.setting.loadOptim:
                 optimizer.load_state_dict(states[name]['optimizer'])
         all_tuple = [("vln_bert", self.vln_bert, self.vln_bert_optimizer),

@@ -1,3 +1,4 @@
+from logging import raiseExceptions
 import os
 import sys
 import hydra
@@ -79,16 +80,18 @@ def generate_camera_pose(cfg, model, h5py_file):
 
 
 def generate_nav(cfg, h5py_file):
+    if not os.path.exists(cfg.eval.path):
+        raise Exception('Cannot find nav ckpt')
     feat_dict = r2r_utils.read_img_features(cfg.train.data.v_feature, test_only=cfg.test_only)
     featurized_scans = set([key.split("_")[0] for key in list(feat_dict.keys())])
     val_envs = OrderedDict(((split, R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=[split])) for split in subsets['navigation']))
 
-    train_env = R2RBatch(cfg, feat_dict, batch_size=cfg.train.setting.batch_size, splits=['train'], )
-    agent = GVUENavAgent(cfg, train_env, "", None, cfg.train.setting.max_action)
+    train_env = R2RBatch(cfg, None, batch_size=cfg.train.setting.batch_size, splits=['train'], )
+    agent = GVUENavAgent(cfg, train_env, "", feat_dict, cfg.train.setting.max_action)
     agent.load(cfg.eval.path)
 
-    for _, env in val_envs.items():
-        h5py_file = inference('navigation')(agent, env, h5py_file)
+    for split, env in val_envs.items():
+        h5py_file = inference('navigation')(cfg, split, agent, env, featurized_scans, h5py_file)
 
     #Save featurized_scans
     h5py_file.create_dataset('navigation/featurized_scans', data=str(featurized_scans))
