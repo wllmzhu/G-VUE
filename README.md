@@ -57,6 +57,11 @@ For setup instructions, please see the `setup/` directory.
 
 # Repo Organization
 
+`scripts/`
+
+* Directory contains bash training scripts for each task.
+
+
 `train.py`, `train_r2r.py`, `train_cliport.py`
 
 * Train scripts. Not intended to be run by themselves. Intended to be ran through dataset-specific bash script located in the `scripts/` direcotory.
@@ -75,11 +80,6 @@ For setup instructions, please see the `setup/` directory.
 `local_eval.py`, `local_eval_cliport.py`
 
 * Evaluation scripts for local testing.
-
-
-`scripts/`
-
-* Directory contains bash training scripts for each task.
 
 
 `models/`
