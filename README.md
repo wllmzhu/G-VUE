@@ -7,46 +7,46 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 **Category 1: Perceive** 
 
-* [ ] **Task 1.1:** Depth (NYU v2)
+* **Task 1.1:** Depth (NYU v2)
   * `image` → `[H,W] dense map `
   * value on each pixel represent depth
-* [ ] **Task 1.2:** Camera Pose Estimation (Cambridge Landmark & 7 Scene)
+* **Task 1.2:** Camera Pose Estimation (Cambridge Landmark & 7 Scene)
   * `image` → `7 numbers `
   * 3 for translation and 4 for orientation
-* [ ] **Task 1.3:** 3D Reconstruction (ShapeNet)
+* **Task 1.3:** 3D Reconstruction (ShapeNet)
   * `image` → `[D,H,W] dense cube `
   * volumetric SDF
 
 **Category 2: Ground** 
 
-* [ ] **Task 2.1:** Image-Text Retrieval (Flickr30k)
+* **Task 2.1:** Image-Text Retrieval (Flickr30k)
   * `image + text` → `matching score`
   * cross-modal similarity
-* [ ] **Task 2.2:** Phrase Grounding (RefCOCO)
+* **Task 2.2:** Phrase Grounding (RefCOCO)
   * `image + text` → `4 numbers`
   * bounding box representation
-* [ ] **Task 2.3:** Semantic Segmentation (ADE20k)
+* **Task 2.3:** Semantic Segmentation (ADE20k)
   * `image` → `[H,W] dense map `
   * class label on each pixel
 
 **Category 3: Reason** 
 
-* [ ] **Task 3.1:** Visual Question Answering (GQA)
+* **Task 3.1:** Visual Question Answering (GQA)
   * `image + text` → `class label (vocab)`
   * index on a fixed vocab set of words and compound words
-* [ ] **Task 3.2:** Common Sense Reasoning (VCR)
+* **Task 3.2:** Common Sense Reasoning (VCR)
   * `image + text` → `class label`
   * index among 4 answer candidates
-* [ ] **Task 3.3:** Abstract Reasoning (Bongard-HOI)
+* **Task 3.3:** Abstract Reasoning (Bongard-HOI)
   * `images` → `class label (binary)`
   * positive class or negative class in the context of shot samples
 
 **Category 4: Act** 
 
-* [ ] **Task 4.1:** Navigation (R2R)
+* **Task 4.1:** Navigation (R2R)
   * `image` → `class label (direction)`
   * index of the next neighboring viewpoint to move to, out of all neighbors
-* [ ] **Task 4.2:** Manipulation (CLIPort)
+* **Task 4.2:** Manipulation (CLIPort)
   * `image + text` → `pick and place (action)`
   * where and how to manipulate, as determined by dense affordance prediction
   
