@@ -117,7 +117,9 @@ class CLIPLingUNet(CLIPLingUNetLat):
 
     def __init__(self, input_shape, output_dim, cfg, device, preprocess):
         super().__init__(input_shape, output_dim, cfg, device, preprocess)
-
+        
+        self._set_params(fix_v=True, fix_l=True)
+        
     def _build_decoder(self):
         # language
         self.lang_fuser1 = FusionMult(input_dim=self.input_dim // 2)
@@ -162,6 +164,21 @@ class CLIPLingUNet(CLIPLingUNetLat):
         self.conv2 = nn.Sequential(
             nn.Conv2d(16, self.output_dim, kernel_size=1)
         )
+    
+    def _set_params(self, fix_v=True, fix_l=True):
+        if fix_v:
+            # fix visual encoder
+            for p in self.clip_rn50.visual.parameters():
+                p.requires_grad_(False)
+        
+        if fix_l:
+            # fix language encoder
+            for p in self.clip_rn50.transformer.parameters():
+                p.requires_grad_(False)
+            self.clip_rn50.token_embedding.weight.requires_grad_(False)
+            self.clip_rn50.positional_embedding.requires_grad_(False)
+            self.clip_rn50.ln_final.weight.requires_grad_(False)
+            self.clip_rn50.ln_final.bias.requires_grad_(False)
 
     def forward(self, x, l):
         # x = self.preprocess(x)
