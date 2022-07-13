@@ -27,7 +27,7 @@ class RoBERTa(nn.Module):
         return outputs[0], token_inputs
 
 
-class RoBERTa_r2r(nn.Module):
+class RoBERTa_R2R(nn.Module):
     "Different settings compared to the general RoBERTa above. Skip tokenization, output pooler_output and sentence embedding"
     def __init__(self, cache_dir=None):
         super().__init__()
@@ -49,7 +49,7 @@ class RoBERTa_r2r(nn.Module):
 
 
 if __name__=='__main__':
-    roberta = RoBERTa_r2r().to('cuda:0')
+    roberta = RoBERTa_R2R().to('cuda:0')
     # seq_pair = roberta.tokenizer.encode("__bbox_begin__ pos_1 pos_10 pos_20 pos_30 __bbox_end__")
     # print(roberta.tokenizer.decode(seq_pair))
     # print(roberta(['How do you do?','I am fine thank you.']))
