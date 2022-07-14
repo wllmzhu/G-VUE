@@ -1,12 +1,12 @@
-hydra:
-  run:
-    dir: ${exp_dir}
-
 defaults:
   - _self_
   - backbone: null
   - task: null
 
+hydra:
+  run:
+    dir: ${exp_dir}
+    
 exp_name: default
 output_dir: /scratch/huangjiangyong/data/GVUE
 exp_dir: ${output_dir}/${exp_name}
