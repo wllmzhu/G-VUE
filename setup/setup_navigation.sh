@@ -26,11 +26,11 @@ python2 $DOWNLOAD_SCRIPT -o $DATA_DIR --type undistorted_camera_parameters matte
 
 # Unzip the downloaded data
 cd ${DATA_DIR}/v1/scans
-bash ${CURR_DIR}/preprocess/r2r/unzip_matterport.sh
+bash ${CURR_DIR}/setup/preprocess/r2r/unzip_matterport.sh
 cd ${CURR_DIR}
 
 # Resize skyboxes to (224,224) to decrease loading time. Script modified from Matterport.
-python preprocess/r2r/downsize_skybox.py
+python setup/preprocess/r2r/downsize_skybox.py
 
 # Download pretrained Prevalent weights. URL obtained from https://github.com/YicongHong/Recurrent-VLN-BERT
 mkdir -p ${DATA_DIR}/Prevalent/pretrained_model

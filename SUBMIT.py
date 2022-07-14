@@ -28,7 +28,7 @@ def main():
 
     for task in TASKS:
         exp_name = EXPS[task]
-        bash_cmd = f'python task_inference.py exp_name={exp_name} task={task} backbone={BACKBONE}'
+        bash_cmd = f'python base_scripts/task_inference.py exp_name={exp_name} task={task} backbone={BACKBONE}'
         os.system(bash_cmd)
     
     print('Generated submission.h5py for submission')

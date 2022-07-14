@@ -18,5 +18,5 @@ myproject.egg-info/
 logs/
 .nfs*
 
-preprocess/r2r/download_mp.py
+setup/preprocess/r2r/download_mp.py
 *h5py*

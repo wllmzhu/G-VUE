@@ -20,7 +20,7 @@ from models.manip_decoder.agents import GVUEManipAgent
 from datasets.base import create_dataset
 from datasets.ravens import RavensDataset
 from utils.misc import collate_fn
-from task_inference_lib import inference
+from .task_inference_lib import inference
 from hydra.core.hydra_config import HydraConfig
 import omegaconf
 from hydra import compose, initialize
