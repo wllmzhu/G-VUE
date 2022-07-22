@@ -57,29 +57,19 @@ For setup instructions, please see the `setup/` directory.
 
 # Repo Organization
 
-`scripts/`
+`run/`
 
-* Directory contains bash training scripts for each task.
-
-
-`train.py`, `train_r2r.py`, `train_cliport.py`
-
-* Train scripts. Not intended to be run by themselves. Intended to be ran through dataset-specific bash script located in the `scripts/` direcotory.
+* Directory contains bash scripts for training each task.
 
 
-`task_inference.py`, `task_inference_lib.py`
+`base_scripts/`
 
-* Inference scripts. Not intended to be run by themselves. Intended to be ran through `SUBMIT.py`.
+* Directory contains train.py, local_eval.py and other base train/eval python scripts.
 
 
 `SUBMIT.py`
 
 * Generate submission files to be submitted to online benchmark and evaluated.
-
-
-`local_eval.py`, `local_eval_cliport.py`
-
-* Evaluation scripts for local testing.
 
 
 `models/`
