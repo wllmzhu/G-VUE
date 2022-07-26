@@ -68,13 +68,13 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework_image.jpg" width="800" height="550">
 
 # Visual Representations
-**ResNet-ImageNet**
-**ResNet-MoCo**
-**ResNet-CLIP**
-**ResNet-Ego**
-**ViT-32-CLIP**
-**ViT-16-CLIP**
-**ViT-16-MAE**
+* **ResNet-ImageNet**
+* **ResNet-MoCo**
+* **ResNet-CLIP**
+* **ResNet-Ego**
+* **ViT-32-CLIP**
+* **ViT-16-CLIP**
+* **ViT-16-MAE**
 
 # Setup
 
