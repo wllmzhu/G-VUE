@@ -9,50 +9,47 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 * **Task 1.1:** Depth (NYU v2)
   * `image` → `[H,W] dense map `
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-2.png" width="50" height="50">
-  * value on each pixel represent depth
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-2.png" width="50" height="50">
 * **Task 1.2:** Camera Pose Estimation (Cambridge Landmark & 7 Scene)
   * `image` → `7 numbers `
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-2.png" width="220" height="30">
-  * 3 for translation and 4 for orientation
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-2.png" width="220" height="30">
 * **Task 1.3:** 3D Reconstruction (ShapeNet)
   * `image` → `[D,H,W] dense cube `
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-2.png" width="50" height="50">
-  * volumetric SDF
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-2.png" width="50" height="50">
 
 **Category 2: Ground** 
 
 * **Task 2.1:** Image-Text Retrieval (Flickr30k)
   * `image + text` → `matching score`
-  * cross-modal similarity
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-1.png" width="220" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-2.png" width="200" height="30">
 * **Task 2.2:** Phrase Grounding (RefCOCO)
   * `image + text` → `4 numbers`
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="200" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-2.png" width="220" height="30">
-  * bounding box representation
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="200" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-2.png" width="220" height="30">
 * **Task 2.3:** Semantic Segmentation (ADE20k)
   * `image` → `[H,W] dense map `
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-2.png" width="50" height="50">
-  * class label on each pixel
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-2.png" width="50" height="50">
 
 **Category 3: Reason** 
 
 * **Task 3.1:** Visual Question Answering (GQA)
   * `image + text` → `class label (vocab)`
-  * index on a fixed vocab set of words and compound words
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-1.png" width="190" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-2.png" width="200" height="30">
 * **Task 3.2:** Common Sense Reasoning (VCR)
   * `image + text` → `class label`
-  * index among 4 answer candidates
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="190" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
 * **Task 3.3:** Abstract Reasoning (Bongard-HOI)
   * `images` → `class label (binary)`
-  * positive class or negative class in the context of shot samples
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="220" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
 
 **Category 4: Act** 
 
 * **Task 4.1:** Navigation (R2R)
   * `image` → `class label (direction)`
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-1.png" width="220" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-2.png" width="200" height="50">
   * index of the next neighboring viewpoint to move to, out of all neighbors
 * **Task 4.2:** Manipulation (CLIPort)
   * `image + text` → `pick and place (action)`
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-1.png" width="220" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-2.png" width="200" height="50">
   * where and how to manipulate, as determined by dense affordance prediction
   
 
