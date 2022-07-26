@@ -8,7 +8,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 **Category 1: Perceive** 
 
 * **Task 1.1:** Depth (NYU v2)
-  * ![alt text](https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-1.png?raw=true) → ![alt text](https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-2.png?raw=true)
+  * ![alt text](https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-1.png =80x80) → ![alt text](https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-2.png =80x80)
   * `image` → `[H,W] dense map `
   * value on each pixel represent depth
 * **Task 1.2:** Camera Pose Estimation (Cambridge Landmark & 7 Scene)
