@@ -54,7 +54,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 # Model Architecture
 
-<img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework image.png" width="3588" height="2475"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework image.png" width="3588" height="2475">
+<img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework image.png" width="3588" height="2475"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework image.png" width="600" height="412">
 
 # Setup
 
