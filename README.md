@@ -21,7 +21,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 * **Task 2.1:** Image-Text Retrieval (Flickr30k)
   * `image + text` → `matching score`
-  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-1.png" width="220" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-2.png" width="200" height="30">
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-1.png" width="200" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-2.png" width="200" height="30">
 * **Task 2.2:** Phrase Grounding (RefCOCO)
   * `image + text` → `4 numbers`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="200" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-2.png" width="220" height="30">
@@ -33,19 +33,19 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 * **Task 3.1:** Visual Question Answering (GQA)
   * `image + text` → `class label (vocab)`
-  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-1.png" width="190" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-2.png" width="200" height="30">
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-1.png" width="200" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-2.png" width="200" height="30">
 * **Task 3.2:** Common Sense Reasoning (VCR)
   * `image + text` → `class label`
-  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="190" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="200" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
 * **Task 3.3:** Abstract Reasoning (Bongard-HOI)
   * `images` → `class label (binary)`
-  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="220" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="170" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
 
 **Category 4: Act** 
 
 * **Task 4.1:** Navigation (R2R)
   * `image` → `class label (direction)`
-  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-1.png" width="220" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-2.png" width="200" height="50">
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-1.png" width="200" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-2.png" width="200" height="50">
   * index of the next neighboring viewpoint to move to, out of all neighbors
 * **Task 4.2:** Manipulation (CLIPort)
   * `image + text` → `pick and place (action)`
