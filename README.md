@@ -39,7 +39,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
 * **Task 3.3:** Abstract Reasoning (Bongard-HOI)
   * `images` → `class label (binary)`
-  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="170" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
+  * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/7-1.png" width="170" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/7-2.png" width="200" height="30">
 
 **Category 4: Act** 
 
