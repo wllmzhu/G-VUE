@@ -27,7 +27,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * cross-modal similarity
 * **Task 2.2:** Phrase Grounding (RefCOCO)
   * `image + text` → `4 numbers`
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="265" height="50">      <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-2.png" width="200" height="30">
+  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="230" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-2.png" width="200" height="30">
   * bounding box representation
 * **Task 2.3:** Semantic Segmentation (ADE20k)
   * `image` → `[H,W] dense map `
