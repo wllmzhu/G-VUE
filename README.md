@@ -13,7 +13,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * value on each pixel represent depth
 * **Task 1.2:** Camera Pose Estimation (Cambridge Landmark & 7 Scene)
   * `image` → `7 numbers `
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-2.png" width="30" height="200">
+  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-1.png" width="50" height="50">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-2.png" width="200" height="30">
   * 3 for translation and 4 for orientation
 * **Task 1.3:** 3D Reconstruction (ShapeNet)
   * `image` → `[D,H,W] dense cube `
@@ -27,7 +27,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * cross-modal similarity
 * **Task 2.2:** Phrase Grounding (RefCOCO)
   * `image + text` → `4 numbers`
-  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="50" height="265">  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-2.png" width="30" height="200">
+  *  <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="265" height="50">      <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-2.png" width="200" height="30">
   * bounding box representation
 * **Task 2.3:** Semantic Segmentation (ADE20k)
   * `image` → `[H,W] dense map `
