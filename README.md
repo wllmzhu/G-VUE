@@ -51,7 +51,10 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * `image + text` → `pick and place (action)`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-1.png" width="220" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-2.png" width="210" height="50">
   * where and how to manipulate, as determined by dense affordance prediction
-  
+
+# Model Architecture
+
+<img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework image.png" width="3588" height="2475"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework image.png" width="3588" height="2475">
 
 # Setup
 
