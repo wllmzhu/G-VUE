@@ -22,35 +22,43 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 
 **Category 2: Ground** 
 
-* **Task 2.1:** Image-Text Retrieval (Flickr30k)
+* **Task 2.1:** Image-Text Retrieval
+  * Flickr30k
   * `image + text` → `matching score`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-2.png" width="200" height="30">
-* **Task 2.2:** Phrase Grounding (RefCOCO)
+* **Task 2.2:** Phrase Grounding
+  * RefCOCO
   * `image + text` → `4 numbers`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-2.png" width="220" height="30">
-* **Task 2.3:** Semantic Segmentation (ADE20k)
+* **Task 2.3:** Semantic Segmentation
+  * ADE20k
   * `image` → `[H,W] dense map `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-2.png" width="50" height="50">
 
 **Category 3: Reason** 
 
-* **Task 3.1:** Visual Question Answering (GQA)
+* **Task 3.1:** Visual Question Answering 
+  * GQA
   * `image + text` → `class label (vocab)`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-2.png" width="200" height="30">
-* **Task 3.2:** Common Sense Reasoning (VCR)
+* **Task 3.2:** Common Sense Reasoning 
+  * VCR
   * `image + text` → `class label`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
-* **Task 3.3:** Abstract Reasoning (Bongard-HOI)
+* **Task 3.3:** Abstract Reasoning 
+  * Bongard-HOI
   * `images` → `class label (binary)`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/7-1.png" width="170" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/7-2.png" width="200" height="30">
 
 **Category 4: Act** 
 
-* **Task 4.1:** Navigation (R2R)
+* **Task 4.1:** Navigation 
+  * Room to Room
   * `image` → `class label (direction)`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/10-2.png" width="200" height="50">
   * index of the next neighboring viewpoint to move to, out of all neighbors
-* **Task 4.2:** Manipulation (CLIPort)
+* **Task 4.2:** Manipulation 
+  * CLIPort
   * `image + text` → `pick and place (action)`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-1.png" width="220" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-2.png" width="210" height="50">
   * where and how to manipulate, as determined by dense affordance prediction
