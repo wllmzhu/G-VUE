@@ -8,15 +8,15 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 **Category 1: Perceive** 
 
 * **Task 1.1:** Depth 
-  * (NYU v2)
+  * NYU v2
   * `image` → `[H,W] dense map `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-2.png" width="50" height="50">
 * **Task 1.2:** Camera Pose Estimation 
-  * (Cambridge Landmark & 7 Scene)
+  * Cambridge Landmark & 7 Scene
   * `image` → `7 numbers `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-2.png" width="220" height="30">
 * **Task 1.3:** 3D Reconstruction
-  * (ShapeNet)
+  * ShapeNet
   * `image` → `[D,H,W] dense cube `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-2.png" width="50" height="50">
 
