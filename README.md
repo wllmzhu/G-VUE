@@ -1,9 +1,21 @@
-# G-VUE
+<h1 align="center">
+  <b>G-VUE</b><br>
+</h1>
+
+<p align="center">
+      <a href="https://www.python.org/">
+        <img src="https://img.shields.io/badge/Python-3.5-ff69b4.svg" /></a>
+       <a href= "https://pytorch.org/">
+        <img src="https://img.shields.io/badge/PyTorch-1.3-2BAF2B.svg" /></a>
+         <a href="https://sites.google.com/view/g-vue">
+        <img src="https://img.shields.io/badge/website-G--VUE-red" /></a>
+</p>
+
 
 We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehensive benchmark covering the full spectrum of visual cognitive abilities with four disjoint functional domains —Perceive, Ground, Reason, and Act. G-VUE provides a path toward a general-purpose vision system and allows for fair comparisons between different visual representations over a full spectrum of visual tasks. Specifically, Perceive tests a model's geometry understanding. Ground examines a model's acquisition of visual semantics. Reason probes a model's capacity for logical deduction and common sense reasoning. Act investigates a model's ability for planning and decision-making by learning visual policies. The four domains are embodied in 11 carefully curated tasks, from 3D reconstruction to visual reasoning and navigation. Along with the benchmark, we also provide a general encoder-decoder framework for the tasks in G-VUE. This enables any arbitrary visual representation to be used to accomplish all the 11 tasks. 
 
 
-# Tasks
+## Tasks
 
 **Category 1: Perceive** 
 
@@ -63,11 +75,12 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-1.png" width="220" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/11-2.png" width="210" height="50">
   * where and how to manipulate, as determined by dense affordance prediction
 
-# Model Architecture
+## Model Architecture
 
 <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/framework_image.jpg" width="800" height="550">
 
-# Visual Representations
+
+## Visual Representations
 * **ResNet-ImageNet**
 * **ResNet-MoCo**
 * **ResNet-CLIP**
@@ -76,11 +89,13 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 * **ViT-16-CLIP**
 * **ViT-16-MAE**
 
-# Setup
+
+## Setup
 
 For setup instructions, please see the `setup/` directory.
 
-# Repo Organization
+
+## Repo Organization
 
 `run/`
 
