@@ -4,9 +4,9 @@
 
 <p align="center">
       <a href="https://www.python.org/">
-        <img src="https://img.shields.io/badge/Python-3.5-ff69b4.svg" /></a>
+        <img src="https://img.shields.io/badge/Python-3.8-blue.svg" /></a>
        <a href= "https://pytorch.org/">
-        <img src="https://img.shields.io/badge/PyTorch-1.3-2BAF2B.svg" /></a>
+        <img src="https://img.shields.io/badge/PyTorch-1.10-2BAF2B.svg" /></a>
          <a href="https://sites.google.com/view/g-vue">
         <img src="https://img.shields.io/badge/website-G--VUE-red" /></a>
 </p>
