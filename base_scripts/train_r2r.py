@@ -22,7 +22,7 @@ from models.nav_decoder.vlnbert.vlnbert_init import get_tokenizer
 
 is_ResNet = None
 
-@hydra.main(config_path="./configs", config_name='r2r')
+@hydra.main(config_path="../configs", config_name='r2r')
 def main(cfg):
     log_dir = cfg.train.log.dir
     if not os.path.exists(log_dir):

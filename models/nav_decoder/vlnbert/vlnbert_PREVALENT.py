@@ -343,48 +343,48 @@ class VisionEncoder(nn.Module):
         return output
 
 
-#======================
-# class BertEmbeddings(nn.Module):
-#     """Construct the embeddings from word, position and token_type embeddings.
-#     """
-#     def __init__(self, config):
-#         super(BertEmbeddings, self).__init__()
-#         self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
-#         self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
-#         self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
+class BertEmbeddings(nn.Module):
+    """Construct the embeddings from word, position and token_type embeddings.
+    """
+    def __init__(self, config):
+        super(BertEmbeddings, self).__init__()
+        self.word_embeddings = nn.Embedding(config.vocab_size, config.hidden_size, padding_idx=0)
+        self.position_embeddings = nn.Embedding(config.max_position_embeddings, config.hidden_size)
+        self.token_type_embeddings = nn.Embedding(config.type_vocab_size, config.hidden_size)
 
-#         # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
-#         # any TensorFlow checkpoint file
-#         self.LayerNorm = BertLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-#         self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        # self.LayerNorm is not snake-cased to stick with TensorFlow model variable name and be able to load
+        # any TensorFlow checkpoint file
+        self.LayerNorm = BertLayerNorm(config.hidden_size, eps=config.layer_norm_eps)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
-#     def forward(self, input_ids, token_type_ids=None, position_ids=None):
-#         seq_length = input_ids.size(1)
-#         if position_ids is None:
-#             position_ids = torch.arange(seq_length, dtype=torch.long, device=input_ids.device)
-#             position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
-#         if token_type_ids is None:
-#             token_type_ids = torch.zeros_like(input_ids)
+    def forward(self, input_ids, token_type_ids=None, position_ids=None):
+        seq_length = input_ids.size(1)
+        if position_ids is None:
+            position_ids = torch.arange(seq_length, dtype=torch.long, device=input_ids.device)
+            position_ids = position_ids.unsqueeze(0).expand_as(input_ids)
+        if token_type_ids is None:
+            token_type_ids = torch.zeros_like(input_ids)
 
-#         words_embeddings = self.word_embeddings(input_ids)
-#         position_embeddings = self.position_embeddings(position_ids)
-#         token_type_embeddings = self.token_type_embeddings(token_type_ids)
+        words_embeddings = self.word_embeddings(input_ids)
+        position_embeddings = self.position_embeddings(position_ids)
+        token_type_embeddings = self.token_type_embeddings(token_type_ids)
 
-#         embeddings = words_embeddings + position_embeddings + token_type_embeddings
-#         embeddings = self.LayerNorm(embeddings)
-#         embeddings = self.dropout(embeddings)
-#         return embeddings
-#===================================
-
-
+        embeddings = words_embeddings + position_embeddings + token_type_embeddings
+        embeddings = self.LayerNorm(embeddings)
+        embeddings = self.dropout(embeddings)
+        return embeddings
 
 
 class VLNBert(BertPreTrainedModel):
     def __init__(self, config, cfg):
         super(VLNBert, self).__init__(config)
+        self.cfg = cfg
 
-        #============
-        # self.embeddings = BertEmbeddings(config)
+        # [ABLATION]
+        # Only need this for the lxmert version, since the roberta backbone packages the embedding within it.
+        if cfg.model.ablation.l_backbone == 'lxmert':
+            self.embeddings = BertEmbeddings(config)
+        # ==========
         
         self.pooler = BertPooler(config)
 
@@ -394,21 +394,28 @@ class VLNBert(BertPreTrainedModel):
         self.vl_layers = config.vl_layers                # 4
         self.la_layers = config.la_layers                # 9
 
-        self.l_backbone = RoBERTa_R2R(cache_dir=cfg.model.l_backbone.cfg_dir)
-        for p in self.l_backbone.parameters():
-            p.requires_grad_(False)
-        #=======================
-        # self.lalayer = nn.ModuleList(
-        #     [BertLayer(config) for _ in range(self.la_layers)])
-        # for layer in self.lalayer:
-        #     for p in layer.parameters():
-        #         p.requires_grad_(False) 
-
-
         self.addlayer = nn.ModuleList(
             [LXRTXLayer(config) for _ in range(self.vl_layers)])
         self.vision_encoder = VisionEncoder(self.config.img_feature_dim, self.config)
-        self.init_weights()
+        
+        self.init_weights() 
+
+        # [ABLATION]
+        if cfg.model.ablation.l_backbone == 'lxmert':
+            self.lalayer = nn.ModuleList(
+                [BertLayer(config) for _ in range(self.la_layers)])
+            for layer in self.lalayer:
+                for p in layer.parameters():
+                    p.requires_grad_(False) 
+            self.init_weights()             
+        elif cfg.model.ablation.l_backbone == 'roberta':
+            self.l_backbone = RoBERTa_R2R(cache_dir=cfg.model.l_backbone.cfg_dir)
+            for p in self.l_backbone.parameters():
+                p.requires_grad_(False)
+        else:
+            print('l_backbone must be roberta or lxmert, please check the yaml file for model.ablation.l_backbone')
+            exit(0)
+        # ==========
 
     def forward(self, mode, input_ids, token_type_ids=None,
         attention_mask=None, lang_mask=None, vis_mask=None, position_ids=None, head_mask=None, img_feats=None):
@@ -426,17 +433,19 @@ class VLNBert(BertPreTrainedModel):
         head_mask = [None] * self.config.num_hidden_layers
 
         if mode == 'language':
-            ''' LXMERT language branch (in VLN only perform this at initialization) '''
-
-            pooled_output, sequence_output = self.l_backbone(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
-            #==================
-            # embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
-            # text_embeds = embedding_output
-            # for layer_module in self.lalayer:
-            #     temp_output = layer_module(text_embeds, extended_attention_mask)
-            #     text_embeds = temp_output[0]
-            # sequence_output = text_embeds
-            # pooled_output = self.pooler(sequence_output)
+            ''' RoBERTa/LXMERT language branch (in VLN only perform this at initialization) '''
+            # ABLATION
+            if self.cfg.model.ablation.l_backbone == 'roberta': 
+                pooled_output, sequence_output = self.l_backbone(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
+            else: # lxmert
+                embedding_output = self.embeddings(input_ids, position_ids=position_ids, token_type_ids=token_type_ids)
+                text_embeds = embedding_output
+                for layer_module in self.lalayer:
+                    temp_output = layer_module(text_embeds, extended_attention_mask)
+                    text_embeds = temp_output[0]
+                sequence_output = text_embeds
+                pooled_output = self.pooler(sequence_output)
+            # ==========
 
             return pooled_output, sequence_output
 
