@@ -10,11 +10,10 @@ task:
   key: navigation
 
 # =========================== to be filled out by user =========================== #
-output_dir: /home/huangjiangyong/william/r2r_output             #find a good directory to store logs, ckpts, etc.
-
-mattersim_repo: /home/huangjiangyong/Documents/G-VUE-Matterport3D    #path to G-VUE-Matterport3D repo (printed by G-VUE-setup.sh)
-downloaded_data: /home/huangjiangyong/william/r2r_all_data        #path to data directory (also need to supply as argument to setup_navigation.sh)
-#l_backbone_cfg: null    #language backbone cfg, just like other tasks
+output_dir: /home/huangjiangyong/william/r2r_output                                #find a good directory to store logs, ckpts, etc.
+mattersim_repo: /home/huangjiangyong/Documents/G-VUE-Matterport3D                  #path to G-VUE-Matterport3D repo (printed by G-VUE-setup.sh)
+downloaded_data: /home/huangjiangyong/william/r2r_all_data                         #path to data directory (also need to supply as argument to setup_navigation.sh)
+l_backbone_cfg: /mnt/huangjiangyong/roberta-base                                   #language backbone cfg, just like other tasks
 # ================================================================================ #
 
 eval:
@@ -57,8 +56,8 @@ model:
     dropout: 0.5  
     crossentropy_ignoreid: -100
   ablation:
-    encoder: 'roberta' # in ['roberta', 'lxmert']
-    decoder_fromscratch: False
+    l_backbone: 'lxmert' # in ['roberta', 'lxmert']
+    decoder_fromscratch: True
 
 # For eval, set 'type' to validlistener
 train: 

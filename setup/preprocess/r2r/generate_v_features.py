@@ -150,7 +150,7 @@ def read_tsv(cfg):
     return in_data
 
 
-@hydra.main(config_path='../../configs', config_name='r2r.yaml')
+@hydra.main(config_path='../../../configs', config_name='r2r.yaml')
 def main(cfg):
     generate_img_features(cfg)
     # data = read_tsv(cfg)
