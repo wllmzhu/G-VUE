@@ -46,7 +46,7 @@ model:
   image_size: 224
   v_sizes: ${model.v_backbone.hidden_dim}
   v_backbone: ${backbone}
-  l_backbone:
+  l_backbone: # For RoBERTa only. No need to provide anything for LXMERT
       cfg_dir: ${l_backbone_cfg}
       hidden_dim: 768
   decoder:
@@ -56,7 +56,10 @@ model:
     featdropout: 0.4
     dropout: 0.5  
     crossentropy_ignoreid: -100
-  
+  ablation:
+    encoder: 'roberta' # in ['roberta', 'lxmert']
+    decoder_fromscratch: False
+
 # For eval, set 'type' to validlistener
 train: 
   type: listener    # in ['listener', 'auglistener', 'validlistener']
