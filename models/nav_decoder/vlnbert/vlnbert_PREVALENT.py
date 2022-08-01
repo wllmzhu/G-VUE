@@ -394,6 +394,10 @@ class VLNBert(BertPreTrainedModel):
         self.vl_layers = config.vl_layers                # 4
         self.la_layers = config.la_layers                # 9
 
+        self.addlayer = nn.ModuleList(
+            [LXRTXLayer(config) for _ in range(self.vl_layers)])
+        self.vision_encoder = VisionEncoder(self.config.img_feature_dim, self.config)
+
         # [ABLATION]
         if cfg.model.ablation.l_backbone == 'lxmert':
             self.lalayer = nn.ModuleList(
@@ -401,6 +405,7 @@ class VLNBert(BertPreTrainedModel):
             for layer in self.lalayer:
                 for p in layer.parameters():
                     p.requires_grad_(False) 
+            self.init_weights()
         elif cfg.model.ablation.l_backbone == 'roberta':
             self.l_backbone = RoBERTa_R2R(cache_dir=cfg.model.l_backbone.cfg_dir)
             for p in self.l_backbone.parameters():
@@ -409,11 +414,6 @@ class VLNBert(BertPreTrainedModel):
             print('l_backbone must be roberta or lxmert, please check the yaml file for model.ablation.l_backbone')
             exit(0)
         # ==========
-
-        self.addlayer = nn.ModuleList(
-            [LXRTXLayer(config) for _ in range(self.vl_layers)])
-        self.vision_encoder = VisionEncoder(self.config.img_feature_dim, self.config)
-        self.init_weights()
 
     def forward(self, mode, input_ids, token_type_ids=None,
         attention_mask=None, lang_mask=None, vis_mask=None, position_ids=None, head_mask=None, img_feats=None):

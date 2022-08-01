@@ -35,9 +35,9 @@ def get_vlnbert_models(cfg, config=None):
             visual_model = model_class.from_pretrained(model_name_or_path, config=vis_config, cfg=cfg)
             
         # Otherwise, need to make decoder from scratch
-        if cfg.model.ablation.l_backbone == 'roberta':
+        if cfg.model.ablation.l_backbone == 'roberta': # Simply initialize an empty VLNBert, the l_backbone will be loaded with RoBERTa weights.
             visual_model = model_class(config=vis_config, cfg=cfg)
-        else: # LXMERT. We initialize an empty VLNBert, then load only the lxmert language backbone weights
+        else: # LXMERT. We initialize an empty VLNBert, then load only the PREVALENT LXMERT weights into the corresponding fields in empty VLNBert.
             pretrained = model_class.from_pretrained(model_name_or_path, config=vis_config, cfg=cfg)
             visual_model = model_class(config=vis_config, cfg=cfg)
             want_list = ['embeddings.word_embeddings', 'embeddings.position_embeddings',
