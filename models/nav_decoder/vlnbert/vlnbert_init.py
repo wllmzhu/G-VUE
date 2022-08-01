@@ -4,8 +4,17 @@ from transformers import RobertaConfig, RobertaTokenizer, BertConfig, BertTokeni
 
 def get_tokenizer(cfg):
     if cfg.model.decoder.type == 'prevalent':
-        tokenizer_class = RobertaTokenizer
-        tokenizer = tokenizer_class.from_pretrained(cfg.model.l_backbone.cfg_dir)
+        # [ABLATION]
+        if cfg.model.ablation.l_backbone == 'roberta':
+            tokenizer_class = RobertaTokenizer
+            tokenizer = tokenizer_class.from_pretrained(cfg.model.l_backbone.cfg_dir)
+        elif cfg.model.ablation.l_backbone == 'lxmert':
+            tokenizer_class = BertTokenizer
+            tokenizer = tokenizer_class.from_pretrained('bert-base-uncased')
+        else:
+            print('l_backbone must be roberta or lxmert, please check the yaml file for model.ablation.l_backbone')
+            exit(0)
+        # ==========
     return tokenizer
 
 def get_vlnbert_models(cfg, config=None):

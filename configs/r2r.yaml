@@ -56,8 +56,8 @@ model:
     dropout: 0.5  
     crossentropy_ignoreid: -100
   ablation:
-    l_backbone: 'lxmert' # in ['roberta', 'lxmert']
-    decoder_fromscratch: True
+    l_backbone: 'roberta' # in ['roberta', 'lxmert']
+    decoder_fromscratch: False
 
 # For eval, set 'type' to validlistener
 train: 
