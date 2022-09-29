@@ -9,6 +9,8 @@ import json
 import yaml
 import cliport
 from collections import OrderedDict
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import models.nav_decoder.utils as r2r_utils 
 from models.nav_decoder.env import R2RBatch
 from models.nav_decoder.agent import GVUENavAgent
@@ -29,7 +31,7 @@ subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
     'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
-    'navigation': ['val_seen', 'val_unseen'],
+    'navigation': ['val_unseen'],
     'manipulation': [
         'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
         'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
@@ -194,7 +196,7 @@ def generate_group(cfg, h5py_file):
     return h5py_file
 
 
-@hydra.main(config_path='./configs', config_name='base')
+@hydra.main(config_path='../configs', config_name='base')
 def main(cfg):
     if cfg.task.key == 'vl_retrieval':
         cfg.eval.batch_size = 1

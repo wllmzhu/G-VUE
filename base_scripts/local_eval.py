@@ -4,11 +4,27 @@ from omegaconf import OmegaConf
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.metrics import build_evaluator
 from models.base import JointModel
 from datasets.base import create_dataset
 from utils.misc import collate_fn
 import utils.io as io
+
+
+subsets = {
+    'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
+    'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
+    'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
+    'navigation': ['val_seen', 'val_unseen'],
+    'manipulation': [
+        'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
+        'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
+        'packing-unseen-google-objects-seq', 'packing-boxes-pairs-unseen-colors',
+        'separating-piles-unseen-colors', 'towers-of-hanoi-seq-unseen-colors'
+    ]
+}
 
 
 def eval_non_train_full(cfg):
@@ -17,7 +33,7 @@ def eval_non_train_full(cfg):
     datasets = {}
     max_size = 0
     for subset in cfg.task.dataset.info.subsets:
-        if subset != 'train':
+        if subset in subsets[cfg.task.key]:
             datasets.update({
                 subset: create_dataset(cfg, subset)
             })
@@ -64,7 +80,7 @@ def eval_non_train_full(cfg):
         print(eval_str)
 
 
-@hydra.main(config_path='./configs', config_name='base')
+@hydra.main(config_path='../configs', config_name='base')
 def main(cfg):
     if cfg.task.key == 'vl_retrieval':
         cfg.eval.batch_size = 1

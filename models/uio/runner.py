@@ -131,10 +131,10 @@ class ModelRunner:
           self.model.predict_with_answer_options, static_argnums=[2])
       return self._compiled_option_fn
     else:
-      return self.model.predict_batch_with_aux
+      return self.model.predict_with_answer_options
 
   def run(self, input_images, input_texts, output_text_len=128, generate_image=False,
-          beam_search=None, num_decodes=None, answer_options=None, mask_regions=None) -> Dict:
+          beam_search=None, num_decodes=None, answer_options=None, mask_regions=None, top_k=1) -> Dict:
     """Runs UnifiedIO on input images/texts and produces output images/text
 
     :param input_images: List of images as [h, w, 3] float32/uint8 arrays or None
@@ -204,10 +204,14 @@ class ModelRunner:
       if self.log_inputs:
         logging.info(f"Running model text_inputs={input_texts} and "
                      f"{output_options.shape[1]} answer options")
-      out = self.model.predict_with_answer_options(
-        params=self.params, batch=batch, max_options=self.max_options)
+      out = self._get_answer_options_fn()(
+        params=self.params, batch=batch, max_options=self.max_options, top_k=top_k)
+      
       # Add a fake beam dimensi7on to be compatible with the no answer options case
-      out = {k: jnp.expand_dims(v, 1) for k, v in out.items()}
+      # out = {k: jnp.expand_dims(v, 1) for k, v in out.items()}
+
+      # directly extract top-k indices
+      return {'topk_indices': out['topk_indices'].reshape(len(input_images), -1)}
 
     if generate_image:
       output_image = out["image"]
@@ -235,14 +239,16 @@ class ModelRunner:
         output_text = [x[0] for x in output_text]
       if output_image is not None:
         output_image = [x[0] for x in output_image]
-    out = dict(
+    outputs = dict(
       text_tokens=np.array(out["text_tokens"]),
       text=output_text,
       image_tokens=np.array(out["image_tokens"]) if "image_tokens" in out else None,
       image=np.array(output_image),
       score=np.array(out["scores"]),
     )
-    return out
+    if "all_scores" in out:
+      outputs["all_scores"] = np.array(out["all_scores"])
+    return outputs
 
   def _extract_text(self, out):
     return {k: out[k][0] for k in ["text", "score"]}
@@ -268,12 +274,18 @@ class ModelRunner:
   def _extract_boxes(self, out, image_size, include_labels=False):
     tokens = out["text_tokens"][0]
     if len(tokens) == 1:
-      all_labels, all_boxes = utils.tokens_to_regions(tokens[0], image_size)
+      try:
+        all_labels, all_boxes = utils.tokens_to_regions(tokens[0], image_size)
+      except:
+        all_labels, all_boxes = [], np.zeros((1, 4))
     else:
       all_boxes = []
       all_labels = []
       for line in tokens:
-        labels, boxes = utils.tokens_to_regions(line, image_size)
+        try:
+          labels, boxes = utils.tokens_to_regions(line, image_size)
+        except:
+          labels, boxes = [], np.zeros((1, 4))
         all_labels.append(labels)
         all_boxes.append(boxes)
 

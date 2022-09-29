@@ -158,7 +158,8 @@ class UnifiedIOModel(nn.Module):
       self,
       params: PyTreeDef,
       batch: Mapping[str, jnp.ndarray],
-      max_options=800
+      max_options=800,
+      top_k=1
   ):
     text_encoder_inputs = batch['text_encoder_inputs']
     text_encoder_masks = batch.get('text_encoder_masks')
@@ -229,18 +230,23 @@ class UnifiedIOModel(nn.Module):
       padded_targets = jnp.zeros(soft_targets.shape[:2] + (text_logits.shape[-1] - vocab_size,))
       soft_targets = jnp.concatenate([soft_targets, padded_targets], axis=-1)
       total_loss = cross_entropy_with_logits(text_logits, soft_targets)
+      total_loss = total_loss * text_decoder_masks
 
       text_loss = jnp.sum(total_loss, axis=1)
       text_loss = jnp.reshape(text_loss, [batch_size, -1])
       all_losses.append(text_loss)
 
     text_loss = jnp.concatenate(all_losses, -1)
-    selected_option_ix = jnp.argmin(text_loss, -1)
-    ix = jnp.arange(0, len(selected_option_ix))
-    selected_options = output_options[ix, selected_option_ix]
-    text_loss = text_loss[ix, selected_option_ix]
+    # selected_option_ix = jnp.argmin(text_loss, -1)
+    # ix = jnp.arange(0, len(selected_option_ix))
+    # selected_options = output_options[ix, selected_option_ix]
+    # text_loss = text_loss[ix, selected_option_ix]
 
-    return {'scores': text_loss, 'text_tokens': selected_options}
+    # return {'scores': text_loss, 'text_tokens': selected_options}
+
+    # instead of extract the most confident answer, we utilize the top-k indices for evaluation
+    _, selected_options_ix = jax.lax.top_k(-text_loss, k=top_k)
+    return {'topk_indices': selected_options_ix}
 
   def _compute_logits_from_slice(
       self, flat_ids: jnp.ndarray, flat_cache: Mapping[str, jnp.ndarray], cur_index: int,

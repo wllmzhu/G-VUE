@@ -10,9 +10,14 @@ decoder:
   embed_dim: 1024
 
 num_epochs: 100
+train_batch_size: 256
+train_num_workers: 20
+train_val_interval: 10
+num_val_samples: 500
+eval_batch_size: 1
+eval_num_workers: 0
+
 loss: ContrastiveLoss
-
-text_batch_size: 1000
 metrics: EvalRetrieval
-
+text_batch_size: 1000
 visualize: VisRetrieval

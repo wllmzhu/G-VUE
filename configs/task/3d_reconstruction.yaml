@@ -54,8 +54,14 @@ decoder:
             attn_resolutions: [8]
             dropout: 0.0
     
-
 num_epochs: 100
+train_batch_size: 32
+train_num_workers: 8
+train_val_interval: 10
+num_val_samples: 5000
+eval_batch_size: 50
+eval_num_workers: 20
+
 loss: CrossEntropyLoss
 
 metrics: EvalRec

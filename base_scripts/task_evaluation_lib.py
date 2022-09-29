@@ -193,7 +193,7 @@ def EvalBongard(pred_h5py, gt_h5py):
 
 
 def EvalNav(pred_h5py, gt_h5py=None):
-    subsets = {'val_seen': 1021, 'val_unseen': 2349}
+    subsets = {'val_unseen': 2349}
     scores = []
     for subset, subset_size in subsets.items():
         print(f'evaluating navigation task on R2R {subset} subset, size at {subset_size}')

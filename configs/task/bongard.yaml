@@ -26,6 +26,13 @@ decoder:
     num_classes: 2
 
 num_epochs: 30
+train_batch_size: 32
+train_num_workers: 8
+train_val_interval: 1
+num_val_samples: 10000
+eval_batch_size: 32
+eval_num_workers: 8
+
 loss: BongardLoss
 
 metrics: EvalBongard

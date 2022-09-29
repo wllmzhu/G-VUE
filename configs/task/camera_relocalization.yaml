@@ -34,6 +34,13 @@ decoder:
     num_classes: 7
 
 num_epochs: 200
+train_batch_size: 32
+train_num_workers: 8
+train_val_interval: 5
+num_val_samples: 10000
+eval_batch_size: 50
+eval_num_workers: 20
+
 loss: CameraRelocalizationLoss
 
 metrics: EvalCameraRelocalization

@@ -26,6 +26,13 @@ decoder:
     num_classes: 1843
 
 num_epochs: 30
+train_batch_size: 128
+train_num_workers: 20
+train_val_interval: 1
+num_val_samples: 50000
+eval_batch_size: 100
+eval_num_workers: 20
+
 loss: CrossEntropyLoss
 
 metrics: EvalQA

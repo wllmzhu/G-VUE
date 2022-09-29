@@ -5,6 +5,8 @@ from pathlib import Path
 
 import torch
 # from cliport import agents
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.manip_decoder.agents import GVUEManipAgent, ClipLingUNetTransporterAgent
 from datasets.ravens import RavensDataset, RavensMultiTaskDataset
 
@@ -14,7 +16,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger
 
 
-@hydra.main(config_path="./configs", config_name='cliport')
+@hydra.main(config_path="../configs", config_name='cliport')
 def main(cfg):
     # Logger
     wandb_logger = WandbLogger(name=cfg.tag) if cfg.train.log else None

@@ -7,7 +7,9 @@ import json
 import numpy as np
 import hydra
 # from cliport import agents
-from models.manip_decoder.agents import GVUEManipAgent
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from models.manip_decoder.agents import GVUEManipAgent, ClipLingUNetTransporterAgent
 from datasets.ravens import RavensDataset, RavensMultiTaskDataset
 from cliport import tasks
 from cliport.utils import utils
@@ -21,7 +23,7 @@ UNSEEN_TASKS = [
 ]
 
 
-@hydra.main(config_path='./configs', config_name='cliport')
+@hydra.main(config_path='../configs', config_name='cliport')
 def main(cfg):
     vcfg = cfg.eval
 
@@ -103,6 +105,7 @@ def main(cfg):
                 # Initialize agent.
                 utils.set_seed(train_run, torch=True)
                 agent = GVUEManipAgent(name, tcfg, None, ds)
+                # agent = ClipLingUNetTransporterAgent(name, tcfg, None, ds)
 
                 # Load checkpoint
                 agent.load(model_file)

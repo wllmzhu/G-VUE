@@ -34,8 +34,8 @@ model:
 training:
   ckpt: ${exp_dir}/ckpts/model.pth
   num_epochs: ${task.num_epochs}
-  batch_size: 128
-  num_workers: 20
+  batch_size: ${task.train_batch_size}   # 128
+  num_workers: ${task.train_num_workers}   # 20
   lr: 1e-4
   lr_backbone: 1e-5
   betas: [0.9, 0.99]
@@ -47,11 +47,11 @@ training:
   vis_step: 5000
   clip_max_norm: 1.0
   num_vis_samples: 15
-  eval_interval: 1
+  val_interval: ${task.train_val_interval}   # 1
 
 eval:
   ckpt: ${exp_dir}/ckpts/model.pth
-  batch_size: 100
-  num_workers: 20
-  num_val_samples: 1000
+  batch_size: ${task.eval_batch_size}   # 100
+  num_workers: ${task.eval_num_workers}   # 20
+  num_val_samples: ${task.num_val_samples}   # 1000
   lower_better: ['abs_rel', 'sq_rel', 'rms', 'log_rms', 'log10', 'position_error', 'orientation_error']

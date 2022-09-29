@@ -7,7 +7,8 @@ import random
 import numpy as np
 from collections import defaultdict
 import hydra
-
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.nav_decoder.utils import timeSince, read_img_features, print_progress
 import utils
 from models.nav_decoder.env import R2RBatch
