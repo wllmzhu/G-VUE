@@ -22,12 +22,12 @@ This directory contains the encoder-decoder model implementation.
 * Constains the `DenseType`, `LabelType`, and `Rec3DType` decoder.
 
 
-`manip_decoder/`
+`manipulation/`
 
 * Directory contains the Manipulation/CLIPort decoder, `GVUEManipAgent`, and related modules (agent, environment, etc.).
 
 
-`nav_decoder/` 
+`navigation/` 
 
 * Directory contains the Navigation/R2R decoder, `GVUENavAgent`, and related modules (agent, environment, etc.).
 

@@ -22,14 +22,9 @@ from utils.visualize import visualize
 import utils.io as io
 
 
-def train_worker(gpu, cfg):
-    cfg.gpu = gpu
-    if cfg.gpu is not None:
-        print(f'Use GPU: {cfg.gpu} for training')
-    device = f'cuda:{cfg.gpu}'
-
-    if gpu == 0:
-        print(OmegaConf.to_yaml(cfg))
+def train(cfg):
+    device = f'cuda' if torch.cuda.is_available() else 'cpu'
+    print(OmegaConf.to_yaml(cfg))
 
     datasets = {
         'train': create_dataset(cfg, 'train'),
@@ -40,29 +35,6 @@ def train_worker(gpu, cfg):
 
     model = JointModel(cfg.model)
 
-    if cfg.multiprocessing_distributed:
-        cfg.rank = cfg.rank * cfg.ngpus_per_node + cfg.gpu
-
-        torch.cuda.set_device(cfg.gpu)
-        
-        dist.init_process_group(
-            backend=cfg.dist_backend, 
-            init_method=cfg.dist_url,
-            world_size=cfg.world_size,
-            rank=cfg.rank)
-
-        model.to(device)
-        model = torch.nn.parallel.DistributedDataParallel(
-            model, device_ids=[cfg.gpu], find_unused_parameters=True)
-
-        # create sampler for dataloader
-        sampler = {'val': None}
-        sampler['train'] = torch.utils.data.distributed.DistributedSampler(
-            datasets['train'], shuffle=True)
-    else:
-        model.to(device)
-        sampler = {'train': None, 'val': None}
-
     dataloaders = {
         'train': DataLoader(
             datasets['train'],
@@ -70,8 +42,7 @@ def train_worker(gpu, cfg):
             collate_fn=collate_fn,
             num_workers=cfg.training.num_workers,
             pin_memory=True,
-            shuffle=(sampler[subset] is None),
-            sampler=sampler[subset]
+            shuffle=True,
         ),
         'val': DataLoader(
             datasets['val'],
@@ -79,13 +50,11 @@ def train_worker(gpu, cfg):
             collate_fn=collate_fn,
             num_workers=cfg.eval.num_workers,
             pin_memory=True,
-            shuffle=(sampler[subset] is None),
-            sampler=sampler[subset]
+            shuffle=True
         )
     }
 
-    if gpu == 0:
-        writer = SummaryWriter(log_dir=cfg.tb_dir)
+    writer = SummaryWriter(log_dir=cfg.tb_dir)
 
     if cfg.backbone.fix:
         params = []
@@ -154,8 +123,7 @@ def train_worker(gpu, cfg):
                 multiplier=1,
                 total_epoch=warmup_iters,
                 last_epoch=-1)   # updated every iter not epoch
-            if gpu == 0:
-                print('Warmup iters:', warmup_iters)
+            print('Warmup iters:', warmup_iters)
 
         if os.path.exists(cfg.training.ckpt):
             warmup_scheduler.load_state_dict(ckpt['warmup_scheduler'])
@@ -169,10 +137,6 @@ def train_worker(gpu, cfg):
     val_interval = cfg.training.val_interval
 
     for epoch in range(last_epoch+1, cfg.training.num_epochs):
-
-        if cfg.multiprocessing_distributed:
-            sampler['train'].set_epoch(epoch)
-
         for it, data in enumerate(dataloaders['train']):
             imgs, txts, targets = data
             if txts[0] is None:
@@ -196,7 +160,7 @@ def train_worker(gpu, cfg):
                 )
             optimizer.step()
             
-            if gpu == 0 and step % cfg.training.log_step == 0:
+            if step % cfg.training.log_step == 0:
                 loss_str = f'Epoch: {epoch} | Iter: {it} | Step: {step} | '
                 if cfg.training.lr_linear_decay:
                     loss_str += f' LR: {warmup_scheduler.get_last_lr()[0]} | '
@@ -217,13 +181,13 @@ def train_worker(gpu, cfg):
                 writer.add_scalar(f'Loss/train', loss_value, step)
                 print(loss_str)
 
-            # if gpu == 0 and step % cfg.training.vis_step == 0:
-            if gpu == 0 and step % cfg.training.vis_step == 0 and epoch == cfg.training.num_epochs-1:
+            # if step % cfg.training.vis_step == 0:
+            if step % cfg.training.vis_step == 0 and epoch == cfg.training.num_epochs-1:
                 for subset in ['train', 'val']:
                     print(f'Visualizing {subset} ...')
                     visualize(model, dataloaders[subset], cfg, step, subset)
 
-            if gpu == 0 and step % (10*cfg.training.log_step) == 0:
+            if step % (10*cfg.training.log_step) == 0:
                 print('Exp:', cfg.exp_name)
                 
             step += 1
@@ -233,7 +197,7 @@ def train_worker(gpu, cfg):
             elif cfg.training.lr_warmup is True and epoch == 0 and it < warmup_iters:
                 warmup_scheduler.step(it)
         
-        if gpu == 0 and epoch % val_interval == val_interval-1:
+        if epoch % val_interval == val_interval-1:
             model_selection_metric = 0
             for eval_subset in ['val']:
                 dataloader = dataloaders['val']
@@ -295,17 +259,8 @@ def get_lrs(optimizer):
 def main(cfg):
     io.mkdir_if_not_exists(cfg.ckpt_dir, recursive=True)
     io.mkdir_if_not_exists(cfg.tb_dir, recursive=True)
-
-    if cfg.multiprocessing_distributed:
-        cfg.world_size = cfg.ngpus_per_node * cfg.num_nodes
-        cfg.training.batch_size = int(cfg.training.batch_size / cfg.ngpus_per_node)
-        cfg.training.num_workers = int(
-            (cfg.training.num_workers + cfg.ngpus_per_node - 1) / cfg.ngpus_per_node
-        )
-
-        mp.spawn(train_worker, nprocs=cfg.ngpus_per_node, args=(cfg,))
-    else:
-        train_worker(cfg.gpu, cfg)
+    
+    train(cfg)
     
 
 if __name__=='__main__':

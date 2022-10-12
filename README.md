@@ -1,6 +1,6 @@
-<h1 align="center">
-  <b>G-VUE</b><br>
-</h1>
+<h2 align="center">
+  <b>G-VUE: General-purpose Visual Understanding Evaluation</b><br>
+</h2>
 
 <p align="center">
       <a href="https://www.python.org/">
@@ -11,25 +11,31 @@
         <img src="https://img.shields.io/badge/website-G--VUE-red" /></a>
 </p>
 
+## Overview
+We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehensive benchmark covering the full spectrum of visual cognitive abilities with four disjoint functional domains — *Perceive*, *Ground*, *Reason*, and *Act*.
+- *Perceive* characterizes the basic ability of understanding geometry from raw visual input.
+- *Ground* examines the acquisition of visual semantics.
+- *Reason* probes abstraction, logical deduction and commonsense reasoning.
+- *Act* investigates the capability for planning and decision-making by learning policies.
 
-We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehensive benchmark covering the full spectrum of visual cognitive abilities with four disjoint functional domains —Perceive, Ground, Reason, and Act. G-VUE provides a path toward a general-purpose vision system and allows for fair comparisons between different visual representations over a full spectrum of visual tasks. Specifically, Perceive tests a model's geometry understanding. Ground examines a model's acquisition of visual semantics. Reason probes a model's capacity for logical deduction and common sense reasoning. Act investigates a model's ability for planning and decision-making by learning visual policies. The four domains are embodied in 11 carefully curated tasks, from 3D reconstruction to visual reasoning and navigation. Along with the benchmark, we also provide a general encoder-decoder framework for the tasks in G-VUE. This enables any arbitrary visual representation to be used to accomplish all the 11 tasks. 
+The four domains are embodied in 11 carefully curated tasks, spanning from 3D reconstruction to visual reasoning and navigation. Along with the benchmark, we also provide a general encoder-decoder framework for the tasks in G-VUE. Such a design disentangles visual representation and accommodates arbitrary visual representation to handle all the 11 tasks. 
 
 
 ## Tasks
 
 **Category 1: Perceive** 
 
-* **Task 1.1:** Depth 
-  * NYU v2
+* **Task 1.1:** Depth Estimation
+  * NYUv2
   * `image` → `[H,W] dense map `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/2-2.png" width="50" height="50">
 * **Task 1.2:** Camera Pose Estimation 
   * Cambridge Landmark & 7 Scene
-  * `image` → `7 numbers `
+  * `image` → `translation and orientation `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/4-2.png" width="220" height="30">
 * **Task 1.3:** 3D Reconstruction
   * ShapeNet
-  * `image` → `[D,H,W] dense cube `
+  * `image` → `[D,H,W] volumetric SDF `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/1-2.png" width="50" height="50">
 
 **Category 2: Ground** 
@@ -40,10 +46,10 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/9-2.png" width="200" height="30">
 * **Task 2.2:** Phrase Grounding
   * RefCOCO
-  * `image + text` → `4 numbers`
+  * `image + text` → `[x1,y1,x2,y2]`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/5-2.png" width="220" height="30">
 * **Task 2.3:** Semantic Segmentation
-  * ADE20k
+  * ADE20K
   * `image` → `[H,W] dense map `
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-1.png" width="50" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/3-2.png" width="50" height="50">
 
@@ -53,11 +59,11 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
   * GQA
   * `image + text` → `class label (vocab)`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/6-2.png" width="200" height="30">
-* **Task 3.2:** Common Sense Reasoning 
+* **Task 3.2:** Commonsense Reasoning 
   * VCR
   * `image + text` → `class label`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-1.png" width="200" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/8-2.png" width="200" height="30">
-* **Task 3.3:** Abstract Reasoning 
+* **Task 3.3:** Abstract and Few-shot Reasoning
   * Bongard-HOI
   * `images` → `class label (binary)`
   * <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/7-1.png" width="170" height="50"> → <img src="https://github.com/wllmzhu/G-VUE/blob/main/github/readme/7-2.png" width="200" height="30">

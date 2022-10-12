@@ -19,7 +19,7 @@ def get_tokenizer(cfg):
 
 def get_vlnbert_models(cfg, config=None):
     if cfg.model.decoder.type == 'prevalent':
-        from models.nav_decoder.vlnbert.vlnbert_PREVALENT import VLNBert
+        from models.navigation.vlnbert.vlnbert_PREVALENT import VLNBert
         model_class = VLNBert
         model_name_or_path = cfg.train.pretrained_path.prevalent
 

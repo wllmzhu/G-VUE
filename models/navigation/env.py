@@ -6,7 +6,7 @@ import csv
 import numpy as np
 import math
 import base64
-import models.nav_decoder.utils as utils
+import models.navigation.utils as utils
 import json
 import os
 import random
@@ -14,9 +14,9 @@ import networkx as nx
 
 from transformers import RobertaTokenizer, BertTokenizer
 
-from models.nav_decoder.constants import DISCRETIZED_VIEWS, VFOV
+from models.navigation.constants import DISCRETIZED_VIEWS, VFOV
 
-from models.nav_decoder.utils import load_datasets, load_nav_graphs, pad_instr_tokens
+from models.navigation.utils import load_datasets, load_nav_graphs, pad_instr_tokens
 
 csv.field_size_limit(sys.maxsize)
 

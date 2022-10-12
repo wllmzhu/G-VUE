@@ -2,19 +2,18 @@
 The whole VisualModel is composed of three parts: v_backbone + l_backbone + task_decoder
 l_backbone should be fixed, since it is not relevant to visual representation
 v_backbone is preferred to be fixed, but finetuning is also ok, by modifying cfg.v_backbone.fix to False
-task_decoder is supposed to be trained, from which we evaluate visual represenation
+task_decoder is supposed to be trained
 """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 from einops import rearrange
 from clip.model import AttentionPool2d
 from .v_backbone import build_v_backbone
 from .l_backbone import RoBERTa
 from .decoder import build_decoder
 from .loss import build_loss
-from .decoder_utils import ViTPyramid, LabelMLP
+from .decoder_utils import LabelMLP
 
 
 class JointModel(nn.Module):
@@ -38,30 +37,6 @@ class JointModel(nn.Module):
             self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.hidden_dim)
             self.decoder = build_decoder(cfg.task.decoder)
             self.v_backbone.requires_pyramid = True if cfg.task.decoder.key == 'DenseType' else False
-
-        # if 'ViT' in cfg.v_backbone.key and cfg.task.decoder.key == 'DenseType':
-        #     # cross-attention with Q at different resolutions
-        #     self.vit_pyramid = ViTPyramid(
-        #         reductions=cfg.v_backbone.reduction,
-        #         hidden_dims=cfg.v_backbone.hidden_dim,
-        #         num_cross=len(cfg.v_backbone.extract_layer)-1
-        #     )
-        #     # Benchmarking Detection with ViT, Li et al.
-        #     self.vit_pyramid = nn.ModuleList(
-        #         [
-        #             nn.Sequential(
-        #                 nn.ConvTranspose2d(cfg.v_backbone.hidden_dim[0], cfg.v_backbone.hidden_dim[0], 2, 2),
-        #                 nn.GroupNorm(32, cfg.v_backbone.hidden_dim[0]),
-        #                 nn.GELU(),
-        #                 nn.ConvTranspose2d(cfg.v_backbone.hidden_dim[0], cfg.v_backbone.hidden_dim[0], 2, 2),
-        #             ),
-        #             nn.ConvTranspose2d(cfg.v_backbone.hidden_dim[1], cfg.v_backbone.hidden_dim[1], 2, 2),
-        #             nn.Identity(),
-        #             nn.MaxPool2d(2),
-        #         ]
-        #     )
-        # else:
-        #     self.vit_pyramid = None
 
         if cfg.task.key == 'bongard':
             self.register_parameter(
@@ -109,10 +84,6 @@ class JointModel(nn.Module):
             txt_pad_masks = None
         
         v_feature_list = self.v_backbone(imgs)
-
-        # if self.vit_pyramid is not None:
-        #     v_feature_list = self.vit_pyramid(imgs, v_feature_list)
-        #     v_feature_list = [self.vit_pyramid[i](f) for i, f in enumerate(v_feature_list)]
 
         # assume 'channel' lies ahead of 'shape' in visual features
         # [B, C, h, w] for CNNs, as well as for ViTs

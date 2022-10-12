@@ -1,16 +1,13 @@
-"""Ravens main training script."""
+""" Ravens main training script """
 
 import os
-import pickle
 import json
-
 import numpy as np
 import hydra
-# from cliport import agents
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.manip_decoder.agents import GVUEManipAgent, ClipLingUNetTransporterAgent
-from datasets.ravens import RavensDataset, RavensMultiTaskDataset
+from models.manipulation.agents import GVUEManipAgent, ClipLingUNetTransporterAgent
+from datasets.ravens import RavensDataset
 from cliport import tasks
 from cliport.utils import utils
 from cliport.environments.environment import Environment
@@ -47,16 +44,6 @@ def main(cfg):
 
     # Load eval dataset.
     dataset_type = vcfg.type
-    # if 'multi' in dataset_type:
-    #     ds = RavensMultiTaskDataset(vcfg.data_dir,
-    #                                 tcfg,
-    #                                 group=eval_task,
-    #                                 mode=mode,
-    #                                 n_demos=vcfg.n_demos,
-    #                                 augment=False)
-    # else:
-    #     ds = RavensDataset(os.path.join(vcfg.data_dir, f"{eval_task}-{mode}"),
-    #                        tcfg, n_demos=vcfg.n_demos, augment=False)
 
     all_results = {}
     name = '{}-{}-n{}'.format(eval_task, vcfg.agent, vcfg.n_demos)

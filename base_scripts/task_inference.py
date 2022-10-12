@@ -1,30 +1,26 @@
-from logging import raiseExceptions
 import os
 import sys
 import hydra
 import torch
-import numpy as np
 import h5py
 import json
-import yaml
 import cliport
 from collections import OrderedDict
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import models.nav_decoder.utils as r2r_utils 
-from models.nav_decoder.env import R2RBatch
-from models.nav_decoder.agent import GVUENavAgent
+import models.navigation.utils as r2r_utils 
+from models.navigation.env import R2RBatch
+from models.navigation.agent import GVUENavAgent
 from cliport.utils import utils as cliport_utils
 from cliport.environments.environment import Environment
 from torch.utils.data import DataLoader
 from models.base import JointModel
-from models.manip_decoder.agents import GVUEManipAgent
+from models.manipulation.agents import GVUEManipAgent
 from datasets.base import create_dataset
 from datasets.ravens import RavensDataset
 from utils.misc import collate_fn
 from .task_inference_lib import inference
 from hydra.core.hydra_config import HydraConfig
-import omegaconf
 from hydra import compose, initialize
 
 subsets = {
@@ -198,15 +194,6 @@ def generate_group(cfg, h5py_file):
 
 @hydra.main(config_path='../configs', config_name='base')
 def main(cfg):
-    if cfg.task.key == 'vl_retrieval':
-        cfg.eval.batch_size = 1
-        cfg.eval.num_workers = 0
-    elif cfg.task.key == 'bongard':
-        cfg.eval.batch_size = 32
-        cfg.eval.num_workers = 8
-    elif cfg.task.key == '3d_reconstruction':
-        cfg.eval.batch_size = 50
-    
     h5py_file = h5py.File(os.path.join(HydraConfig.get().runtime.cwd, 'submission.h5py'), 'a')
     h5py_file = generate_group(cfg, h5py_file)
     h5py_file.close()

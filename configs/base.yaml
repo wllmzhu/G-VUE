@@ -13,15 +13,6 @@ exp_dir: ${output_dir}/${exp_name}
 tb_dir: ${exp_dir}/tb_logs
 ckpt_dir: ${exp_dir}/ckpts
 
-gpu: 0
-num_nodes: 1
-ngpus_per_node: 4
-world_size: null
-rank: 0
-dist_backend: nccl
-dist_url: 'tcp://localhost:10001'
-multiprocessing_distributed: False
-
 model:
   task: ${task}
   image_size: 224

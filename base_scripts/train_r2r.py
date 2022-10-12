@@ -9,17 +9,16 @@ from collections import defaultdict
 import hydra
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.nav_decoder.utils import timeSince, read_img_features, print_progress
-import utils
-from models.nav_decoder.env import R2RBatch
-from models.nav_decoder.agent import GVUENavAgent
-from models.nav_decoder.eval import R2REvaluation
+from models.navigation.utils import timeSince, read_img_features, print_progress
+from models.navigation.env import R2RBatch
+from models.navigation.agent import GVUENavAgent
+from models.navigation.eval import R2REvaluation
 
 import warnings
 warnings.filterwarnings("ignore")
 from torch.utils.tensorboard import SummaryWriter
 
-from models.nav_decoder.vlnbert.vlnbert_init import get_tokenizer
+from models.navigation.vlnbert.vlnbert_init import get_tokenizer
 
 is_ResNet = None
 

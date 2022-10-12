@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 import numpy as np
-import h5py
 from math import ceil
 from tqdm import tqdm
 from cliport import tasks

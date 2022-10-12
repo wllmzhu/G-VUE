@@ -14,12 +14,12 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch import optim
 import torch.nn.functional as F
-from models.nav_decoder.constants import DISCRETIZED_VIEWS
+from models.navigation.constants import DISCRETIZED_VIEWS
 
-from models.nav_decoder.env import R2RBatch
-import models.nav_decoder.utils as utils
-from models.nav_decoder.utils import padding_idx, print_progress
-import models.nav_decoder.model_PREVALENT as model_PREVALENT
+from models.navigation.env import R2RBatch
+import models.navigation.utils as utils
+from models.navigation.utils import padding_idx, print_progress
+import models.navigation.model_PREVALENT as model_PREVALENT
 from collections import defaultdict
 
 

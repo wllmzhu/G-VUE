@@ -34,7 +34,7 @@ class OneStreamAttentionLangFusion(TwoStreamAttentionLangFusion):
                 # try to forward without resize
                 x = self.attn_stream_one(x, l)
             except:
-                # compromise to resize
+                # resize
                 h, w = x.shape[-2:]
                 x, _ = resize_transform(x, size=self.cfg.model.image_size, p=None)
                 x = self.attn_stream_one(x, l)
@@ -72,7 +72,7 @@ class OneStreamTransportLangFusion(TwoStreamTransportLangFusion):
                 # try to forward without resize
                 logits = self.key_stream_one(in_tensor, l)
             except:
-                # compromise to resize
+                # resize
                 h1, w1 = in_tensor.shape[-2:]
                 in_tensor, _ = resize_transform(in_tensor, size=self.cfg.model.image_size, p=None)
                 logits = self.key_stream_one(in_tensor, l)
@@ -84,7 +84,7 @@ class OneStreamTransportLangFusion(TwoStreamTransportLangFusion):
             # try to forward without resize, since crop is a region
             kernel = self.query_stream_one(crop, l)
         except:
-            # compromise to resize
+            # resize
             h2, w2 = crop.shape[-2:]
             crop, _ = resize_transform(crop, size=self.cfg.model.image_size, p=None)
             kernel = self.query_stream_one(crop, l)

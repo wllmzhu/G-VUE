@@ -6,7 +6,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
-from models.nav_decoder.vlnbert.vlnbert_init import get_vlnbert_models
+from models.navigation.vlnbert.vlnbert_init import get_vlnbert_models
 
 class VLNBERT(nn.Module):
     def __init__(self, cfg, feature_size):

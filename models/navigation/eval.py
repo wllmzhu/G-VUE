@@ -9,9 +9,9 @@ import numpy as np
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-from models.nav_decoder.env import R2RBatch
-from models.nav_decoder.utils import load_datasets, load_nav_graphs, ndtw_graphload, DTW
-from models.nav_decoder.agent import BaseAgent
+from models.navigation.env import R2RBatch
+from models.navigation.utils import load_datasets, load_nav_graphs, ndtw_graphload, DTW
+from models.navigation.agent import BaseAgent
 
 
 class R2REvaluation(object):

@@ -7,7 +7,7 @@ import torch
 # from cliport import agents
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.manip_decoder.agents import GVUEManipAgent, ClipLingUNetTransporterAgent
+from models.manipulation.agents import GVUEManipAgent, ClipLingUNetTransporterAgent
 from datasets.ravens import RavensDataset, RavensMultiTaskDataset
 
 import hydra

@@ -2,7 +2,6 @@ import os
 import hydra
 from omegaconf import OmegaConf
 import torch
-import numpy as np
 from torch.utils.data import DataLoader
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -10,7 +9,6 @@ from models.metrics import build_evaluator
 from models.base import JointModel
 from datasets.base import create_dataset
 from utils.misc import collate_fn
-import utils.io as io
 
 
 subsets = {
@@ -27,7 +25,7 @@ subsets = {
 }
 
 
-def eval_non_train_full(cfg):
+def eval_full(cfg):
     device = f'cuda:{cfg.gpu}' if torch.cuda.is_available() else 'cpu'
 
     datasets = {}
@@ -82,16 +80,7 @@ def eval_non_train_full(cfg):
 
 @hydra.main(config_path='../configs', config_name='base')
 def main(cfg):
-    if cfg.task.key == 'vl_retrieval':
-        cfg.eval.batch_size = 1
-        cfg.eval.num_workers = 0
-    elif cfg.task.key == 'bongard':
-        cfg.eval.batch_size = 32
-        cfg.eval.num_workers = 8
-    elif cfg.task.key == '3d_reconstruction':
-        cfg.eval.batch_size = 50
-    
-    eval_non_train_full(cfg)
+    eval_full(cfg)
     
 
 if __name__=='__main__':
