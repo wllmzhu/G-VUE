@@ -18,7 +18,7 @@ We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 - *Reason* probes abstraction, logical deduction and commonsense reasoning.
 - *Act* investigates the capability for planning and decision-making by learning policies.
 
-The four domains are embodied in 11 carefully curated tasks, spanning from 3D reconstruction to visual reasoning and navigation. Along with the benchmark, we also provide a general encoder-decoder framework for the tasks in G-VUE. Such a design disentangles visual representation and accommodates arbitrary visual representation to handle all the 11 tasks. 
+The four domains are embodied in 11 carefully curated tasks, spanning from 3D reconstruction to visual reasoning and navigation. Along with the benchmark, we also provide a general encoder-decoder framework, which disentangles visual representation and accommodates arbitrary visual representation for holistic evaluation on all the 11 tasks. 
 
 
 ## Tasks
