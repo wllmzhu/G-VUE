@@ -19,7 +19,9 @@ def main():
     for task in TASKS:
         print(f'Current task: {task}')
         scores.append(evaluate(task)(pred_h5py, gt_h5py))
-    print(f'Overall score of visual representation: {np.mean(scores):.2f}')
+    task_weights = np.ones(11)
+    task_weights[-2:] = 1.5
+    print(f'Overall score of visual representation: {np.average(scores, weights=task_weights):.2f}')
 
     pred_h5py.close()
     gt_h5py.close()
