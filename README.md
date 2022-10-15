@@ -1,20 +1,20 @@
-<h2 align="center">
+<h1 align="center">
   <b>G-VUE: General-purpose Visual Understanding Evaluation</b><br>
-</h2>
+</h1>
 
-<p align="center">
+<div align="center">
       <a href="https://www.python.org/">
-        <img src="https://img.shields.io/badge/Python-3.8-blue.svg" /></a>
-       <a href= "https://pytorch.org/">
-        <img src="https://img.shields.io/badge/PyTorch-1.10-2BAF2B.svg" /></a>
-         <a href="https://sites.google.com/view/g-vue">
-        <img src="https://img.shields.io/badge/website-G--VUE-red" /></a>
-</p>
+        <img src="https://img.shields.io/badge/Python-3.8-blue.svg" alt="Python"/></a>
+      <a href="https://arxiv.org/">
+        <img src="https://img.shields.io/badge/Paper-arXiv-green" alt="Paper arXiv"></a>
+      <a href="https://sites.google.com/view/g-vue">
+        <img src="https://img.shields.io/badge/Website-G--VUE-9cf" alt="Website"/></a>
+</div>
 
 ## Overview
 #### Benchmark
 We present General-purpose Visual Understanding Evaluation (G-VUE), a comprehensive benchmark covering the full spectrum of visual cognitive abilities with four disjoint functional domains — *Perceive*, *Ground*, *Reason*, and *Act*.
-<div style="text-align:center">
+<div align="center">
 <img src="github/readme/teaser.png" alt="G-VUE Benchmark" title="G-VUE Benchmark" width="50%" height="50%">
 </div>
 
@@ -27,8 +27,9 @@ The four domains are embodied in 11 carefully curated tasks, spanning from 3D re
 
 #### Framework
 Along with the benchmark, we also provide a general encoder-decoder framework, which disentangles visual representation and accommodates arbitrary visual representation for holistic evaluation on all the 11 tasks.
+<div align="center">
 <img src="github/readme/framework.png" alt="G-VUE Framework" title="G-VUE Framework">
-
+</div>
 
 ## Tasks
 
@@ -36,22 +37,22 @@ Along with the benchmark, we also provide a general encoder-decoder framework, w
 
 * **Task 1.1:** Depth Estimation
   * NYUv2
-  * `image` → `[H,W] dense map `
+  * `image` → `dense map [H,W]`
   * <img src="github/readme/2-1.png" width="50" height="50"> → <img src="github/readme/2-2.png" width="50" height="50">
 * **Task 1.2:** Camera Pose Estimation 
   * Cambridge Landmark & 7 Scene
-  * `image` → `translation and orientation `
+  * `image` → `translation and orientation [7]`
   * <img src="github/readme/4-1.png" width="50" height="50"> → <img src="github/readme/4-2.png" width="220" height="30">
 * **Task 1.3:** 3D Reconstruction
   * ShapeNet
-  * `image` → `[D,H,W] volumetric SDF `
+  * `image` → `volumetric SDF [D,H,W]`
   * <img src="github/readme/1-1.png" width="50" height="50"> → <img src="github/readme/1-2.png" width="50" height="50">
 
 **Category 2: Ground** 
 
 * **Task 2.1:** Image-Text Retrieval
   * Flickr30k
-  * `image + text` → `matching score`
+  * `image + text` → `similarity score [1]`
   * <img src="github/readme/9-1.png" width="200" height="50"> → <img src="github/readme/9-2.png" width="200" height="30">
 * **Task 2.2:** Phrase Grounding
   * RefCOCO
