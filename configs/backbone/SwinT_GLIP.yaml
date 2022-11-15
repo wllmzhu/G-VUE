@@ -1,0 +1,22 @@
+key: SwinT_GLIP
+fix: True
+grid_feature_ratio: 32
+reduction: [4, 8, 16, 32]
+hidden_dim: [96, 192, 384, 768]
+ckpt_path: /scratch/huangjiangyong/data/GLIP/swint-tiny_glip.pth
+
+CONV_BODY: SWINT-FPN-RETINANET
+EMBED_DIM: 96
+OUT_CHANNELS: [96, 192, 384, 768]
+DEPTHS: [2, 2, 6, 2]
+NUM_HEADS: [3, 6, 12, 24]
+WINDOW_SIZE: 7
+MLP_RATIO: 4
+DROP_PATH_RATE: 0.2
+APE: False
+VERSION: v1
+OUT_NORM: True
+LAYER_SCALE: 0
+FREEZE_CONV_BODY_AT: 2
+USE_CHECKPOINT: False
+OUT_FEATURES: [stage2, stage3, stage4, stage5]

@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
 from .decoder_utils import resize
+from .glip.swint import build_swint_backbone
 from r3m import load_r3m
 from fvcore.common.registry import Registry
 BACKBONE = Registry('Backbone')
@@ -359,6 +360,27 @@ class ViT_MAE(nn.Module):
                 return self.extract_features(imgs)
         else:
             return self.extract_features(imgs)
+
+
+@BACKBONE.register()
+class SwinT_GLIP(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.backbone = build_swint_backbone(cfg)
+
+        load_sd = torch.load(cfg.ckpt_path)
+        self.backbone.load_state_dict(load_sd)
+
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
+    
+    def forward(self, imgs):
+        if self.fix:
+            with torch.no_grad():
+                return self.backbone(imgs)
+        else:
+            return self.backbone(imgs)
 
 
 @BACKBONE.register()
