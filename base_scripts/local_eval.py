@@ -30,14 +30,13 @@ def eval_full(cfg):
 
     datasets = {}
     max_size = 0
-    for subset in cfg.task.dataset.info.subsets:
-        if subset in subsets[cfg.task.key]:
-            datasets.update({
-                subset: create_dataset(cfg, subset)
-            })
-            l = len(datasets[subset])
-            print(f'{subset} set size: {l}')
-            max_size = max(l, max_size)
+    for subset in subsets[cfg.task.key]:
+        datasets.update({
+            subset: create_dataset(cfg, subset)
+        })
+        l = len(datasets[subset])
+        print(f'{subset} set size: {l}')
+        max_size = max(l, max_size)
     cfg.eval.num_val_samples = max_size
 
     print(OmegaConf.to_yaml(cfg))

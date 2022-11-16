@@ -1,5 +1,7 @@
 import csv
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../')))
 from models.v_backbone import build_v_backbone
 from transforms.r2r_transforms import make_r2r_transforms
 from models.navigation.constants import DISCRETIZED_VIEWS, VFOV, TSV_FIELDNAMES
