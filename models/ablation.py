@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import clip
 from .loss import build_loss
-from .decoder_utils import LabelMLP
 
 
 class CLIPDualModel(nn.Module):
@@ -21,8 +20,8 @@ class CLIPDualModel(nn.Module):
         else:
             raise NotImplementedError
 
-        self.v_proj = LabelMLP(self.backbone.visual.output_dim, cfg.task.decoder.embed_dim)
-        self.l_proj = LabelMLP(self.backbone.visual.output_dim, cfg.task.decoder.embed_dim)
+        self.v_proj = nn.Linear(self.backbone.visual.output_dim, cfg.task.decoder.embed_dim)
+        self.l_proj = nn.Linear(self.backbone.visual.output_dim, cfg.task.decoder.embed_dim)
 
         self.initialize()
 
@@ -51,10 +50,10 @@ class CLIPDualModel(nn.Module):
         #  [B, D]
 
         img_feats = self.v_proj(img_feats.type(next(self.v_proj.parameters()).dtype))
-        # [B, 1024]
+        # [B, embed_dim]
 
         txt_feats = self.l_proj(txt_feats.type(next(self.l_proj.parameters()).dtype))
-        # [B, 1024]
+        # [B, embed_dim]
 
         # normalize
         img_feats = F.normalize(img_feats)

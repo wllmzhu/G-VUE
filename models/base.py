@@ -29,8 +29,8 @@ class JointModel(nn.Module):
                 cfg.v_backbone.hidden_dim[-1],
                 num_heads=8, output_dim=cfg.v_backbone.hidden_dim[-1]
             )
-            self.v_proj = LabelMLP(cfg.v_backbone.hidden_dim[-1], cfg.task.decoder.embed_dim)
-            self.l_proj = LabelMLP(cfg.l_backbone.hidden_dim, cfg.task.decoder.embed_dim)
+            self.v_proj = nn.Linear(cfg.v_backbone.hidden_dim[-1], cfg.task.decoder.embed_dim)
+            self.l_proj = nn.Linear(cfg.l_backbone.hidden_dim, cfg.task.decoder.embed_dim)
             self.v_backbone.requires_pyramid = False
         else:
             # default
@@ -110,13 +110,12 @@ class JointModel(nn.Module):
         #  [B, T, D],  [B, T]
 
         img_feats = self.attnpool(imgs[-1])
-
         img_feats = self.v_proj(img_feats)
-        # [B, 1024]
+        # [B, embed_dim]
 
         txt_feats = txt_seqs[:, 0]   # first token
         txt_feats = self.l_proj(txt_feats)
-        # [B, 1024]
+        # [B, embed_dim]
 
         # normalize
         img_feats = F.normalize(img_feats)

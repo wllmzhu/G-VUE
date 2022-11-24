@@ -20,6 +20,7 @@ def CrossEntropyLossWithIgnore(outputs, gts):
 
 @LOSS.register()
 def ContrastiveLoss(outputs, gts):
+    outputs /= 0.07
     gts = torch.arange(outputs.shape[0]).to(outputs.device)
     return (F.cross_entropy(outputs, gts) + F.cross_entropy(outputs.T, gts)) / 2
 

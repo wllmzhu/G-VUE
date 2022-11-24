@@ -7,6 +7,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from models.metrics import build_evaluator
 from models.base import JointModel
+from models.ablation import CLIPDualModel
 from datasets.base import create_dataset
 from utils.misc import collate_fn
 
@@ -15,7 +16,7 @@ subsets = {
     'depth': ['test'], 'camera_relocalization': ['test'], '3d_reconstruction': ['test'],
     'vl_retrieval': ['test'], 'phrase_grounding': ['val', 'testA', 'testB'], 'segmentation': ['val'],
     'vqa': ['testdev'], 'common_sense': ['val'], 'bongard': ['test'],
-    'navigation': ['val_seen', 'val_unseen'],
+    'navigation': ['val_unseen'],
     'manipulation': [
         'assembling-kits-seq-unseen-colors', 'packing-unseen-google-objects-group',
         'put-block-in-bowl-unseen-colors', 'stack-block-pyramid-seq-unseen-colors',
@@ -26,7 +27,7 @@ subsets = {
 
 
 def eval_full(cfg):
-    device = f'cuda:{cfg.gpu}' if torch.cuda.is_available() else 'cpu'
+    device = f'cuda' if torch.cuda.is_available() else 'cpu'
 
     datasets = {}
     max_size = 0
@@ -41,7 +42,8 @@ def eval_full(cfg):
 
     print(OmegaConf.to_yaml(cfg))
 
-    model = JointModel(cfg.model).to(device)
+    model = JointModel(cfg.model)
+    model.to(device)
     state_dict = model.state_dict()
     ckpt = torch.load(cfg.eval.ckpt, map_location=device)
     for k, v in ckpt['model'].items():

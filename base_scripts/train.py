@@ -15,6 +15,7 @@ from warmup_scheduler import GradualWarmupScheduler
 from pytorch_transformers.optimization import WarmupLinearSchedule
 
 from models.base import JointModel
+from models.ablation import CLIPDualModel
 from datasets.base import create_dataset
 from utils.html_writer import HtmlWriter
 from utils.misc import collate_fn
@@ -24,6 +25,8 @@ import utils.io as io
 
 def train(cfg):
     device = f'cuda' if torch.cuda.is_available() else 'cpu'
+    if cfg.task.key == 'vl_retrieval':
+        cfg.training.lr = 1e-3
     print(OmegaConf.to_yaml(cfg))
 
     datasets = {
@@ -34,6 +37,7 @@ def train(cfg):
         print(f'{subset} set size:', len(dataset))
 
     model = JointModel(cfg.model)
+    model.to(device)
 
     dataloaders = {
         'train': DataLoader(

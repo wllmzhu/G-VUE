@@ -9,7 +9,7 @@ dataset:
 decoder:
   embed_dim: 1024
 
-num_epochs: 100
+num_epochs: 50
 train_batch_size: 256
 train_num_workers: 20
 train_val_interval: 10
