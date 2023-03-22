@@ -7,6 +7,7 @@ from einops import rearrange
 from .decoder_utils import resize
 from .glip.swint import build_swint_backbone
 from r3m import load_r3m
+from vip import load_vip
 from fvcore.common.registry import Registry
 BACKBONE = Registry('Backbone')
 
@@ -370,6 +371,28 @@ class SwinT_GLIP(nn.Module):
 
         load_sd = torch.load(cfg.ckpt_path)
         self.backbone.load_state_dict(load_sd)
+
+        self.fix = cfg.fix
+        if self.fix:
+            self.backbone.eval()
+    
+    def forward(self, imgs):
+        if self.fix:
+            with torch.no_grad():
+                return self.backbone(imgs)
+        else:
+            return self.backbone(imgs)
+
+
+@BACKBONE.register()
+class ResNet_VIP(nn.Module):
+    def __init__(self, cfg):
+        super().__init__()
+        self.backbone = timm.create_model('resnet50', pretrained=False, features_only=True)
+        vip_weights = load_vip().module.convnet.state_dict()
+        del vip_weights['fc.weight']
+        del vip_weights['fc.bias']
+        self.backbone.load_state_dict(vip_weights)
 
         self.fix = cfg.fix
         if self.fix:
