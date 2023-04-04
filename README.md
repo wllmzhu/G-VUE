@@ -3,12 +3,14 @@
 </h2>
 
 <div align="center">
-      <a href="https://pytorch.org">
-        <img src="https://img.shields.io/badge/Code-PyTorch-blue" alt="PyTorch"/></a>
-      <a href="https://arxiv.org/abs/2211.15402">
+      <a href="https://arxiv.org/abs/2211.15402" target="_blank">
         <img src="https://img.shields.io/badge/Paper-arXiv-green" alt="Paper arXiv"></a>
-      <a href="https://sites.google.com/view/g-vue">
+      <a href="https://sites.google.com/view/g-vue" target="_blank">
         <img src="https://img.shields.io/badge/Website-G--VUE-9cf" alt="Website"/></a>
+      <a href="https://eval.ai/web/challenges/challenge-page/1791/overview" target="_blank">
+        <img src="https://img.shields.io/badge/Leaderboard-eval.ai-orange" alt="Leaderboard"/></a>
+      <a href="https://pytorch.org" target="_blank">
+        <img src="https://img.shields.io/badge/Code-PyTorch-blue" alt="PyTorch"/></a>
 </div>
 
 ## Overview
