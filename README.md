@@ -1,5 +1,5 @@
 <h2 align="center">
-  <b>G-VUE: General-purpose Visual Understanding Evaluation</b><br>
+  <b>G-VUE: <ins>G</ins>eneral-purpose <ins>V</ins>isual <ins>U</ins>nderstanding <ins>E</ins>valuation</b><br>
 </h2>
 
 <div align="center">
@@ -12,6 +12,15 @@
       <a href="https://pytorch.org" target="_blank">
         <img src="https://img.shields.io/badge/Code-PyTorch-blue" alt="PyTorch"/></a>
 </div>
+
+<h3 align="center">
+  <b><i>Perceive</i>, <i>Ground</i>, <i>Reason</i>, and <i>Act</i>: A Benchmark <br/>
+  for General-purpose Visual Representation</b>
+</h3>
+
+<h4 align="center">
+Jiangyong Huang<sup>*</sup>, William Yicheng Zhu<sup>*</sup>, Baoxiong Jia, <br/> Zan Wang, Xiaojian Ma, Qing Li, Siyuan Huang
+</h4>
 
 ## Overview
 #### Benchmark
