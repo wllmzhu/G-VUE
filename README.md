@@ -1,6 +1,11 @@
 <h2 align="center">
-  <b>G-VUE: <ins>G</ins>eneral-purpose <ins>V</ins>isual <ins>U</ins>nderstanding <ins>E</ins>valuation</b><br>
+  <b><i>Perceive</i>, <i>Ground</i>, <i>Reason</i>, and <i>Act</i>: A Benchmark for General-purpose Visual Representation</b>
 </h2>
+
+<div align="center" margin-bottom="6em">
+Jiangyong Huang<sup>✶</sup>, William Yicheng Zhu<sup>✶</sup>, Baoxiong Jia, Zan Wang, Xiaojian Ma, Qing Li, Siyuan Huang
+</div>
+&nbsp;
 
 <div align="center">
       <a href="https://arxiv.org/abs/2211.15402" target="_blank">
@@ -12,19 +17,11 @@
       <a href="https://pytorch.org" target="_blank">
         <img src="https://img.shields.io/badge/Code-PyTorch-blue" alt="PyTorch"/></a>
 </div>
-
-<h3 align="center">
-  <b><i>Perceive</i>, <i>Ground</i>, <i>Reason</i>, and <i>Act</i>: A Benchmark <br/>
-  for General-purpose Visual Representation</b>
-</h3>
-
-<h4 align="center">
-Jiangyong Huang<sup>*</sup>, William Yicheng Zhu<sup>*</sup>, Baoxiong Jia, <br/> Zan Wang, Xiaojian Ma, Qing Li, Siyuan Huang
-</h4>
+&nbsp;
 
 ## Overview
 #### Benchmark
-We propose General-purpose Visual Understanding Evaluation (G-VUE), a comprehensive benchmark covering the full spectrum of visual cognitive abilities with four disjoint functional domains — *Perceive*, *Ground*, *Reason*, and *Act*.
+We propose <b><ins>G</ins>eneral-purpose <ins>V</ins>isual <ins>U</ins>nderstanding <ins>E</ins>valuation (G-VUE)</b>, a comprehensive benchmark covering the full spectrum of visual cognitive abilities over four functional domains — *Perceive*, *Ground*, *Reason*, and *Act*.
 <div align="center">
 <img src="github/readme/teaser.png" alt="G-VUE Benchmark" title="G-VUE Benchmark" width="60%" height="60%">
 </div>
@@ -37,9 +34,9 @@ We propose General-purpose Visual Understanding Evaluation (G-VUE), a comprehens
 The four domains are embodied in 11 carefully curated tasks, spanning from 3D reconstruction to visual reasoning and navigation.
 
 #### Framework
-Along with the benchmark, we also provide a general encoder-decoder framework, which disentangles visual representation and accommodates arbitrary visual representation for holistic evaluation on all the 11 tasks.
+Along with the benchmark, we also introduce **a general encoder-decoder framework** that that supports the evaluation of arbitrary visual representation on all 11 tasks.
 <div align="center">
-<img src="github/readme/framework.png" alt="G-VUE Framework" title="G-VUE Framework">
+<img src="github/readme/framework.png" alt="G-VUE Framework" title="G-VUE Framework" width="85%">
 </div>
 
 ## Tasks
@@ -194,4 +191,12 @@ For setup instructions, please see the `setup/` directory.
 
 
 
-
+## BibTex
+```
+@article{huang2022perceive,
+  title={Perceive, Ground, Reason, and Act: A Benchmark for General-purpose Visual Representation},
+  author={Huang, Jiangyong and Zhu, William Yicheng and Jia, Baoxiong and Wang, Zan and Ma, Xiaojian and Li, Qing and Huang, Siyuan},
+  journal={arXiv preprint arXiv:2211.15402},
+  year={2022}
+}
+```
