@@ -19,6 +19,11 @@ Jiangyong Huang<sup>✶</sup>, William Yicheng Zhu<sup>✶</sup>, Baoxiong Jia, 
 </div>
 &nbsp;
 
+- [Overview](#overview)
+- [Tasks](#tasks)
+- [Datasets](#datasets)
+- [Models](#visual-representations)
+
 ## Overview
 #### Benchmark
 We propose <b><ins>G</ins>eneral-purpose <ins>V</ins>isual <ins>U</ins>nderstanding <ins>E</ins>valuation (G-VUE)</b>, a comprehensive benchmark covering the full spectrum of visual cognitive abilities over four functional domains — *Perceive*, *Ground*, *Reason*, and *Act*.
@@ -31,7 +36,7 @@ We propose <b><ins>G</ins>eneral-purpose <ins>V</ins>isual <ins>U</ins>nderstand
 - *Reason* probes abstraction, logical deduction and commonsense reasoning.
 - *Act* investigates the capability for planning and decision-making by learning policies.
 
-The four domains are embodied in 11 carefully curated tasks, spanning from 3D reconstruction to visual reasoning and navigation.
+The four domains are embodied in 11 meticulously chosen tasks, spanning from 3D reconstruction to visual reasoning and navigation.
 
 #### Framework
 Along with the benchmark, we also introduce **a general encoder-decoder framework** that that supports the evaluation of arbitrary visual representation on all 11 tasks.
@@ -39,27 +44,30 @@ Along with the benchmark, we also introduce **a general encoder-decoder framewor
 <img src="github/readme/framework.png" alt="G-VUE Framework" title="G-VUE Framework" width="85%">
 </div>
 
+#### Implementation
+We curate and organize a suite of modules for the training and evaluation of the 11 tasks, including configs, dataloaders, decoders, losses, metrics, and visualization tools.
+
 ## Tasks
 
-| Task | Dataset | #Train / #Val/ #Test | Text | Output | Metrics |
+| Task | Dataset | #Train/#Val/#Test | Text | Output | Metrics |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Perceive** |  |  |  |  |  |
+| ***Perceive*** |  |  |  |  |  |
 | Depth Estimation | NYUv2 | 24k/-/0.6k | N | Depth Map | d<1.25, AbsRel, RMSE |
 | Camera Pose Estimation | CL & 7-Scenes | (3.8k,26k)/-/(1.1k,17k) | N | Camera Pose | Mean Trans. & Orient. Error |
 | 3D Reconstruction | ShapeNetCore | 30k/-/7.8k | N | Volumetric SDF | 3D IoU |
-| **Ground** |  |  |  |  |  |
+| ***Ground*** |  |  |  |  |  |
 | Image-Text Retrieval | Flickr30k | 29k/1.0k/1.0k | Y | Matching Score | Recall@1,5,10 |
 | Phrase Grounding | RefCOCO | 42k/3.8k/(2.0k,1.8k) | Y | Bbox | Acc@0.5 |
-| Semantic Segmentation | ADE20k | 20k/2.0k/- | N | Segmentation Map | mIoU |
-| **Reason** |  |  |  |  |  |
+| Semantic Segmentation | ADE20K | 20k/2.0k/- | N | Segmentation Map | mIoU |
+| ***Reason*** |  |  |  |  |  |
 | Question Answering | GQA | 943k/132k/12.5k | Y | Choice | Accuracy |
 | Commonsense Reasoning | VCR | 213k/26.5k/- | Y | Choice | Accuracy |
 | Abstract Reasoning | Bongard-HOI | 23k/17k/14k | N | Binary Label | Accuracy |
-| **Act** |  |  |  |  |  |
+| ***Act*** |  |  |  |  |  |
 | Navigation | R2R | 14k/(1.0k,2.3k)/4.2k | Y | Next Move | SPL |
 | Manipulation | Ravens | 0.8k/0.08k/0.8k | Y | Pick & Place | Success Score |
 
-**Category 1: Perceive** 
+**Category 1: *Perceive*** 
 
 * **Task 1.1:** Depth Estimation
   * NYUv2
@@ -74,7 +82,7 @@ Along with the benchmark, we also introduce **a general encoder-decoder framewor
   * `image` → `volumetric SDF [D,H,W]`
   * <img src="github/readme/1-1.png" width="50" height="50"> → <img src="github/readme/1-2.png" width="50" height="50">
 
-**Category 2: Ground** 
+**Category 2: *Ground*** 
 
 * **Task 2.1:** Image-Text Retrieval
   * Flickr30k
@@ -89,7 +97,7 @@ Along with the benchmark, we also introduce **a general encoder-decoder framewor
   * `image` → `dense map [H,W]`
   * <img src="github/readme/3-1.png" width="50" height="50"> → <img src="github/readme/3-2.png" width="50" height="50">
 
-**Category 3: Reason** 
+**Category 3: *Reason*** 
 
 * **Task 3.1:** Visual Question Answering 
   * GQA
@@ -104,19 +112,32 @@ Along with the benchmark, we also introduce **a general encoder-decoder framewor
   * `images` → `class logits [2]`
   * <img src="github/readme/7-1.png" width="170" height="50"> → <img src="github/readme/7-2.png" width="200" height="30">
 
-**Category 4: Act** 
+**Category 4: *Act*** 
 
 * **Task 4.1:** Navigation 
   * Room to Room
-  * `image + text` → `class label (direction)`
+  * `image + text` → `direction label`
   * <img src="github/readme/10-1.png" width="200" height="50"> → <img src="github/readme/10-2.png" width="200" height="50">
-  * index of the next neighboring viewpoint to move to, out of all neighbors
+  * Index of the neighboring viewpoint for next movement
 * **Task 4.2:** Manipulation 
   * CLIPort
-  * `image + text` → `pick and place (action)`
+  * `image + text` → `action position and rotation`
   * <img src="github/readme/11-1.png" width="220" height="50"> → <img src="github/readme/11-2.png" width="210" height="50">
-  * where and how to manipulate, as determined by dense affordance prediction
+  * Where and how to manipulate inferred from dense affordance prediction
 
+
+## Datasets
+- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger dataset for this task.
+- Camera pose estimation. Download [Cambridge Landmarks](https://www.repository.cam.ac.uk/handle/1810/251342) and [7-Scenes](https://www.microsoft.com/en-us/research/project/rgb-d-dataset-7-scenes).
+- Single-view 3D reconstruction. Download [ShapeNetCore](https://shapenet.org).
+- Image-text retrieval. Download [Flickr30k](https://shannon.cs.illinois.edu/DenotationGraph).
+- Phrase grounding. Download [RefCOCO](https://github.com/lichengunc/refer).
+- Semantic segmentation. We adopt the data version in [MIT Scene Parsing Benchmark](http://sceneparsing.csail.mit.edu) instead of [ADE20K original data](https://groups.csail.mit.edu/vision/datasets/ADE20K). Download the former.
+- Visual question answering. Download [GQA](https://cs.stanford.edu/people/dorarad/gqa).
+- Commonsense reasoning. Download [VCR](https://visualcommonsense.com).
+- Abstract and Few-shot Reasoning. Download [Bongard-HOI](https://zenodo.org/record/7079175#.ZDUtL-ZBw7c).
+- Navigation.
+- Manipulation.
 
 ## Visual Representations
 | Representation | Architecture | Pre-training mechanism | Data |
@@ -129,13 +150,7 @@ Along with the benchmark, we also introduce **a general encoder-decoder framewor
 | ViT-16-CLIP | ViT-B/16 | Vision-language Contrastive Learning | WebImageText |
 | ViT-16-MAE | ViT-B/16 | Self-supervised Masked Image Modeling | ImageNet |
 
-In addition to the above representative visual representations, we evaluate three latest models: GLIP, OFA and Unified-IO. We extract the visual backbone Swin-Tiny of GLIP to evaluate on adaptation, while directly use OFA-Huge and Unified-IO-XL to make inference on G-VUE. Details can be found in our paper.
-
-
-## Experimental Results
-<div align="center">
-<img src="github/readme/results.png" alt="Experimental results" title="Experimental results">
-</div>
+In addition to the above prevalent visual representations as evaluated in the original paper, we add support for three newer models: GLIP, OFA and Unified-IO. We extract the visual backbone Swin-Tiny of GLIP to evaluate on adaptation, while directly use OFA-Huge and Unified-IO-XL to make inference on G-VUE. Details can be found in our paper.
 
 
 ## Setup
