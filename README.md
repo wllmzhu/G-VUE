@@ -20,26 +20,38 @@ Jiangyong Huang<sup>✶</sup>, William Yicheng Zhu<sup>✶</sup>, Baoxiong Jia, 
 &nbsp;
 
 - [Overview](#overview)
+
 - [Tasks](#tasks)
+
 - [Datasets](#datasets)
+
 - [Models](#visual-representations)
+
+- [Get Started](#get-started)
+
+- [Repo Structure](#repository-structure)
 
 ## Overview
 #### Benchmark
 We propose <b><ins>G</ins>eneral-purpose <ins>V</ins>isual <ins>U</ins>nderstanding <ins>E</ins>valuation (G-VUE)</b>, a comprehensive benchmark covering the full spectrum of visual cognitive abilities over four functional domains — *Perceive*, *Ground*, *Reason*, and *Act*.
+
 <div align="center">
 <img src="github/readme/teaser.png" alt="G-VUE Benchmark" title="G-VUE Benchmark" width="60%" height="60%">
 </div>
 
 - *Perceive* characterizes the basic ability of understanding geometry from raw visual input.
+
 - *Ground* examines the acquisition of visual semantics.
+
 - *Reason* probes abstraction, logical deduction and commonsense reasoning.
+
 - *Act* investigates the capability for planning and decision-making by learning policies.
 
 The four domains are embodied in 11 meticulously chosen tasks, spanning from 3D reconstruction to visual reasoning and navigation.
 
 #### Framework
 Along with the benchmark, we also introduce **a general encoder-decoder framework** that that supports the evaluation of arbitrary visual representation on all 11 tasks.
+
 <div align="center">
 <img src="github/readme/framework.png" alt="G-VUE Framework" title="G-VUE Framework" width="85%">
 </div>
@@ -127,17 +139,32 @@ We curate and organize a suite of modules for the training and evaluation of the
 
 
 ## Datasets
-- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger dataset for this task.
+### Preparation
+
+- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger training set for this task. For convenience, I wrap the training and testing set together, which can be accessed at [NYUv2 data in G-VUE]().
+
 - Camera pose estimation. Download [Cambridge Landmarks](https://www.repository.cam.ac.uk/handle/1810/251342) and [7-Scenes](https://www.microsoft.com/en-us/research/project/rgb-d-dataset-7-scenes).
+
 - Single-view 3D reconstruction. Download [ShapeNetCore](https://shapenet.org).
+
 - Image-text retrieval. Download [Flickr30k](https://shannon.cs.illinois.edu/DenotationGraph).
+
 - Phrase grounding. Download [RefCOCO](https://github.com/lichengunc/refer).
+
 - Semantic segmentation. We adopt the data version in [MIT Scene Parsing Benchmark](http://sceneparsing.csail.mit.edu) instead of [ADE20K original data](https://groups.csail.mit.edu/vision/datasets/ADE20K). Download the former.
+
 - Visual question answering. Download [GQA](https://cs.stanford.edu/people/dorarad/gqa).
+
 - Commonsense reasoning. Download [VCR](https://visualcommonsense.com).
+
 - Abstract and Few-shot Reasoning. Download [Bongard-HOI](https://zenodo.org/record/7079175#.ZDUtL-ZBw7c).
-- Navigation.
-- Manipulation.
+
+- Navigation. Refer to for details.
+
+- Manipulation. Refer to for details.
+
+### Compilation
+- The datasets of the 9 tasks except ***Act*** are directly ready to use. Just modify the task-specific *yaml* files in `configs/task`. In particular, modify the paths in `dataset.info` scope in *yaml* to ensure validity. You can refer to the original path format to organize the data directory structure.
 
 ## Visual Representations
 | Representation | Architecture | Pre-training mechanism | Data |
@@ -150,54 +177,87 @@ We curate and organize a suite of modules for the training and evaluation of the
 | ViT-16-CLIP | ViT-B/16 | Vision-language Contrastive Learning | WebImageText |
 | ViT-16-MAE | ViT-B/16 | Self-supervised Masked Image Modeling | ImageNet |
 
+Pre-trained model checkpoints.
+
 In addition to the above prevalent visual representations as evaluated in the original paper, we add support for three newer models: GLIP, OFA and Unified-IO. We extract the visual backbone Swin-Tiny of GLIP to evaluate on adaptation, while directly use OFA-Huge and Unified-IO-XL to make inference on G-VUE. Details can be found in our paper.
 
+## Get Started
+1. Environment and dependency.
+   
+   ```
+   # create environment
+   conda env create -f environment.yaml
+   
+   # install CLIP API
+   pip install ftfy regex tqdm
+   pip install git+https://github.com/openai/CLIP.git
+   
+   # install mmcv package, specify your corresponding version of PyTorch and Cuda
+   pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
+   ```
 
-## Setup
+2. Prepare data. See [Datasets](#datasets).
 
-For setup instructions, please see the `setup/` directory.
+3. Prepare models.
+   
+   - To use the visual backbones incorporated in G-VUE, see [Models](#visual-representations) for the pre-trained checkpoints. Note that we have not finetuned them, instead we just keep the original checkpoints from prior works.
+   
+   - To use your customized visual backbone, you only need two additional steps. First, implement the code of `Customized` class in `models/v_backbone.py` to produce a legal visual representation. Then, modify `Customized.yaml` in `configs/backbone` to add corresponding configs for this visual backbone.
 
+4. Check the configs before running.
 
-## Repo Organization
+5. For training on one task, run:
+   
+   ```
+   bash run/train_{task}.sh {DATE} {BACKBONE}   # e.g., bash run/train_depth.sh 22.6.10 ResNet_CLIP
+   ```
+   The {DATE} can be anything else that serves as an identifier. Note that the evaluation results of `Navigation` are shown together during training. For evaluating the remaining tasks, run:
+   
+   ```
+   bash run/eval.sh {DATE} {BACKBONE} {TASK}   # e.g., bash run/eval.sh 22.6.10 ResNet_CLIP depth
+   ```
+   Make sure the identifier {DATE} is the same with the training experiment that you wan to evaluate, otherwise it would be unable to locate the checkpoints.
+   
 
+## Repository Structure
 `run/`
 
-* Directory contains bash scripts for training each task.
+* Contains shell scripts for training and evaluating.
 
 
 `base_scripts/`
 
-* Directory contains train.py, local_eval.py and other base train/eval python scripts.
+* Contains `train.py`, `local_eval.py` and other base train/eval python scripts.
 
 
 `SUBMIT.py`
 
-* Generate submission files to be submitted to online benchmark and evaluated.
+* Generates submission files to be submitted to online benchmark and evaluated.
 
 
 `models/`
 
-* Directory contains the encoder-decoder model implementation.
+* Contains the code implementation for the general encoder-decoder framework.
 
 
 `datasets/`
 
-* Directory contains task dataset implementations. For Navigation, dataset/environment is located in the `models\` directory.
+* Contains dataset and dataloaders for various tasks. The dataset and environment of `Navigation` can be found in `models/navigation`.
 
 
 `configs/`
 
-* Directory contains hydra config files used in configuring the entire repo, including models, datasets, and training.
+* Contains hydra config files used to configure running arguments.
 
 
 `setup/`
 
-* (Work-in-progress, currently refactoring and moving stuff here). Directory contains setup scripts and related code.
+* Contains setup scripts and related code.
 
 
 `transforms/`
 
-* Utils for `datasets/`. Implementations of dataset-specific image, text, and label transforms.
+* Contains dataset-specific transforms of image, text, and label.
 
 
 `utils/`
