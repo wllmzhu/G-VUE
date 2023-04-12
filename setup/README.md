@@ -1,57 +1,45 @@
 # Setup
 
-1. Create environment from "environment.yaml".
+## Environment for Act:Navigation task
 
-    ```bash
-    conda env create -f environment.yml
-    ```
+1. Clone the [modified Matterport3D repo](https://github.com/wllmzhu/G-VUE-Matterport3D) and run its setup script.
 
-2. Install API of [CLIP](https://github.com/openai/CLIP) for initializing baseline backbones.
+   ```bash
+   git clone --recursive https://github.com/wllmzhu/G-VUE-Matterport3D
+   cd G-VUE-Matterport3D
+   bash G-VUE-setup.sh
+   ```
 
-    ```bash
-    pip install ftfy regex tqdm
-    pip install git+https://github.com/openai/CLIP.git
-    ```
+2. As instructed by the setup script, copy the `Matterport3D` repo directory to the fill in the `mattersim_repo` field in `configs/r2r.yaml`.
 
-3. Specify your pytorch version and cuda version to Install mmcv package. Take our versions for example.
+3. Download the data to `<data_directory>`, which is specified in the `downloaded_data` field in `configs/r2r.yaml`.
 
-    ```bash
-    pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
-    ```
+4. Run the `setup_navigation.sh` script with the same `<data_directory>`.
 
-4. Environment for Act:Navigation task
-
-    Clone the modified Matterport3D repo and run the setup script.
-
-    ```bash
-    git clone --recursive https://github.com/wllmzhu/G-VUE-Matterport3D
-    cd G-VUE-Matterport3D
-    bash G-VUE-setup.sh
-    ```
-
-    As instructed by the setup script, copy the Matterport3D repo directory to the r2r config yaml's "mattersim_repo" field.
-
-    Specify a \<data_directory\> to download all the required data in the r2r config yaml's "downloaded_data" field,
-
-    then run the setup_navigation.sh script and feed in this \<data_directory\>
-
-    ```bash
-    bash scripts/setup_navigation.sh <data_directory>
-    ```
+   ```bash
+   bash setup/setup_navigation.sh <data_directory>
+   ```
 
 
-5. Environment for Act:Manipulation task. Please refer to [CLIPort](https://github.com/cliport/cliport) for details.
+## Environment for Act:Manipulation task
 
-    ```bash
-    git clone https://github.com/cliport/cliport.git
-    cd cliport
-    ```
+The setup procedures are similar to [CLIPort](https://github.com/cliport/cliport), which you can refer to for more details. The simplified procedures are as follows:
 
-    Note: make following preparations before installing `cliport`
-      - run `export CLIPORT_ROOT=${path_to_cliport_repo}`
-      - make sure to comment or delete the line `install_requires` in `setup.py`, to prevent from disturbing packages
+1. Clone repo.
+
+   ```bash
+   git clone https://github.com/cliport/cliport.git
+   ```
+
+2. Specify the environment variable of path before installing `CLIPort`.
+
+   ```bash
+   cd cliport
+   export CLIPORT_ROOT=${pwd}
+   ```
+
+3. Install. If installation errors are raised by the packages in `install_requires` in `setup.py`, try to comment or delete the corresponding line.
 
     ```bash
     python setup.py develop
     ```
-

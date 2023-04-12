@@ -141,7 +141,7 @@ We curate and organize a suite of modules for the training and evaluation of the
 ## Datasets
 ### Preparation
 
-- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger training set for this task. For convenience, I wrap the training and testing set together, which can be accessed at [NYUv2 data in G-VUE]().
+- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger training set for this task. For convenience, we wrap the training and testing set together, which can be accessed at [NYUv2 data in G-VUE]().
 
 - Camera pose estimation. Download [Cambridge Landmarks](https://www.repository.cam.ac.uk/handle/1810/251342) and [7-Scenes](https://www.microsoft.com/en-us/research/project/rgb-d-dataset-7-scenes).
 
@@ -159,9 +159,9 @@ We curate and organize a suite of modules for the training and evaluation of the
 
 - Abstract and Few-shot Reasoning. Download [Bongard-HOI](https://zenodo.org/record/7079175#.ZDUtL-ZBw7c).
 
-- Navigation. Refer to for details.
+- Navigation. Refer to [setup readme](https://github.com/wllmzhu/G-VUE/tree/main/setup##environment-for-act:navigation-task) for details.
 
-- Manipulation. Refer to for details.
+- Manipulation. Refer to [setup readme](https://github.com/wllmzhu/G-VUE/tree/main/setup##environment-for-act:manipulation-task) for details.
 
 ### Compilation
 - The datasets of the 9 tasks except ***Act*** are directly ready to use. Just modify the task-specific *yaml* files in `configs/task`. In particular, modify the paths in `dataset.info` scope in *yaml* to ensure validity. You can refer to the original path format to organize the data directory structure.
@@ -184,7 +184,7 @@ In addition to the above prevalent visual representations as evaluated in the or
 ## Get Started
 1. Environment and dependency.
    
-   ```
+   ```bash
    # create environment
    conda env create -f environment.yaml
    
@@ -208,12 +208,12 @@ In addition to the above prevalent visual representations as evaluated in the or
 
 5. For training on one task, run:
    
-   ```
+   ```bash
    bash run/train_{task}.sh {DATE} {BACKBONE}   # e.g., bash run/train_depth.sh 22.6.10 ResNet_CLIP
    ```
    The {DATE} can be anything else that serves as an identifier. Note that the evaluation results of `Navigation` are shown together during training. For evaluating the remaining tasks, run:
    
-   ```
+   ```bash
    bash run/eval.sh {DATE} {BACKBONE} {TASK}   # e.g., bash run/eval.sh 22.6.10 ResNet_CLIP depth
    ```
    Make sure the identifier {DATE} is the same with the training experiment that you wan to evaluate, otherwise it would be unable to locate the checkpoints.
@@ -267,7 +267,7 @@ In addition to the above prevalent visual representations as evaluated in the or
 
 
 ## BibTex
-```
+```bibtex
 @article{huang2022perceive,
   title={Perceive, Ground, Reason, and Act: A Benchmark for General-purpose Visual Representation},
   author={Huang, Jiangyong and Zhu, William Yicheng and Jia, Baoxiong and Wang, Zan and Ma, Xiaojian and Li, Qing and Huang, Siyuan},
