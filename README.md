@@ -141,7 +141,7 @@ We curate and organize a suite of modules for the training and evaluation of the
 ## Datasets
 ### Preparation
 
-- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger training set for this task. For convenience, we wrap the training and testing set together, which can be accessed at [NYUv2 data in G-VUE]().
+- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger training set for this task. For convenience, we wrap the training and testing set together, which can be accessed at [NYUv2 data in G-VUE](https://drive.google.com/file/d/1EeghfiUbRF3trPTnDz2ZVvYSCkfVOOSL/view?usp=sharing).
 
 - Camera pose estimation. Download [Cambridge Landmarks](https://www.repository.cam.ac.uk/handle/1810/251342) and [7-Scenes](https://www.microsoft.com/en-us/research/project/rgb-d-dataset-7-scenes).
 
@@ -159,12 +159,16 @@ We curate and organize a suite of modules for the training and evaluation of the
 
 - Abstract and Few-shot Reasoning. Download [Bongard-HOI](https://zenodo.org/record/7079175#.ZDUtL-ZBw7c).
 
-- Navigation. Refer to [setup readme](https://github.com/wllmzhu/G-VUE/tree/main/setup##environment-for-act:navigation-task) for details.
+- Navigation. Refer to [setup readme](https://github.com/wllmzhu/G-VUE/tree/main/setup#environment-for-actnavigation-task) for details.
 
-- Manipulation. Refer to [setup readme](https://github.com/wllmzhu/G-VUE/tree/main/setup##environment-for-act:manipulation-task) for details.
+- Manipulation. Refer to [setup readme](https://github.com/wllmzhu/G-VUE/tree/main/setup#environment-for-actmanipulation-task) for details.
 
 ### Compilation
-- The datasets of the 9 tasks except ***Act*** are directly ready to use. Just modify the task-specific *yaml* files in `configs/task`. In particular, modify the paths in `dataset.info` scope in *yaml* to ensure validity. You can refer to the original path format to organize the data directory structure.
+- For the 9 tasks except ***Act***, just check and modify the path in `dataset.info` scope in task-specific *yaml* files in `configs/task/`.
+
+- For the two tasks in ***Act***, the path should be automatically aligned when setting up the environment. You can double-check `configs/r2r.yaml` and `configs/cliport.yaml`.
+
+- The original path in *yaml* files can serve as format prompt for you to organize the data directory structure.
 
 ## Visual Representations
 | Representation | Architecture | Pre-training mechanism | Data |
@@ -177,9 +181,24 @@ We curate and organize a suite of modules for the training and evaluation of the
 | ViT-16-CLIP | ViT-B/16 | Vision-language Contrastive Learning | WebImageText |
 | ViT-16-MAE | ViT-B/16 | Self-supervised Masked Image Modeling | ImageNet |
 
-Pre-trained model checkpoints.
+Details of these models are as follows:
 
-In addition to the above prevalent visual representations as evaluated in the original paper, we add support for three newer models: GLIP, OFA and Unified-IO. We extract the visual backbone Swin-Tiny of GLIP to evaluate on adaptation, while directly use OFA-Huge and Unified-IO-XL to make inference on G-VUE. Details can be found in our paper.
+- RN-IN denotes the ResNet-50 pre-trained in [ResNet](https://arxiv.org/abs/1512.03385). You can discard its pre-trained weights since `timm` handles it automatically.
+
+- RN-MoCo denotes the ResNet-50 pre-trained in [MoCo-v3](https://arxiv.org/abs/2104.02057). Download the pre-trained weights at [ResNet-50-Mocov3](https://dl.fbaipublicfiles.com/moco-v3/r-50-1000ep/r-50-1000ep.pth.tar), and assign the checkpoint path to the `ckpt_path` in `configs/backbone/ResNet_MoCov3.yaml`.
+
+- RN-CLIP denotes the ResNet-50 pre-trained in [CLIP](https://openai.com/research/clip). You can discard its pre-trained weights since `clip` API handles it automatically.
+
+- RN-Ego denotes the ResNet-50 pre-trained in [R3M](https://sites.google.com/view/robot-r3m/). You can discard its pre-trained weights since `r3m` API handles it automatically.
+
+- ViT-32-CLIP denotes the ViT-B-32 pre-trained in [CLIP](https://openai.com/research/clip). You can discard its pre-trained weights since `clip` API handles it automatically.
+
+- ViT-16-CLIP denotes the ViT-B-16 pre-trained in [CLIP](https://openai.com/research/clip). You can discard its pre-trained weights since `clip` API handles it automatically.
+
+- ViT-16-MAE denotes the ViT-B-16 pre-trained in [MAE](https://arxiv.org/abs/2111.06377). Download the pre-trained weights at [ViT-B-16-MAE](https://dl.fbaipublicfiles.com/mae/pretrain/mae_pretrain_vit_base.pth), and assign the checkpoint path to the `ckpt_path` in `configs/backbone/ViT_MAE.yaml`.
+
+
+In addition to the above prevalent visual representations that are evaluated in our paper, we add support for more latest models, including [OFA](https://arxiv.org/abs/2202.03052), [Unified-IO](https://unified-io.allenai.org/), [GLIP](https://arxiv.org/abs/2112.03857), and [VIP](https://sites.google.com/view/vip-rl).
 
 ## Get Started
 1. Environment and dependency.
@@ -204,19 +223,24 @@ In addition to the above prevalent visual representations as evaluated in the or
    
    - To use your customized visual backbone, you only need two additional steps. First, implement the code of `Customized` class in `models/v_backbone.py` to produce a legal visual representation. Then, modify `Customized.yaml` in `configs/backbone` to add corresponding configs for this visual backbone.
 
-4. Check the configs before running.
+   - Langauge encoder. Download [RoBERTa-base](https://huggingface.co/roberta-base). Modify the corresponding path at:
+     - `model.l_backbone.cfg_dir` in `configs/base.yaml`.
+     - `l_backbone_cfg` in `configs/r2r.yaml`.
+     - `l_backbone.cfg_dir` in `configs/cliport.yaml`.
+
+4. Check the configs before running, especially `output_dir` and `exp_name`.
 
 5. For training on one task, run:
    
    ```bash
    bash run/train_{task}.sh {DATE} {BACKBONE}   # e.g., bash run/train_depth.sh 22.6.10 ResNet_CLIP
    ```
-   The {DATE} can be anything else that serves as an identifier. Note that the evaluation results of `Navigation` are shown together during training. For evaluating the remaining tasks, run:
+   The `{DATE}` can be anything else that serves as an identifier. Note that the evaluation results of `Navigation` are shown together during training. For evaluating the remaining tasks, run:
    
    ```bash
    bash run/eval.sh {DATE} {BACKBONE} {TASK}   # e.g., bash run/eval.sh 22.6.10 ResNet_CLIP depth
    ```
-   Make sure the identifier {DATE} is the same with the training experiment that you wan to evaluate, otherwise it would be unable to locate the checkpoints.
+   Make sure the identifier `{DATE}` is the same with the training experiment that you want to evaluate, otherwise it would be unable to locate the checkpoints.
    
 
 ## Repository Structure
