@@ -1,5 +1,5 @@
 <h2 align="center">
-  <b><i>Perceive</i>, <i>Ground</i>, <i>Reason</i>, and <i>Act</i>: A Benchmark for General-purpose Visual Representation</b>
+  <b><i>Perceive</i>, <i>Ground</i>, <i>Reason</i>, and <i>Act</i>: A Benchmark <br/> for General-purpose Visual Representation</b>
 </h2>
 
 <div align="center" margin-bottom="6em">
