@@ -211,6 +211,12 @@ In addition to the above prevalent visual representations that are evaluated in 
    pip install ftfy regex tqdm
    pip install git+https://github.com/openai/CLIP.git
    
+   # install R3M API
+   pip install git+https://github.com/facebookresearch/r3m.git
+   
+   # install VIP API
+   pip install git+https://github.com/facebookresearch/vip.git
+   
    # install mmcv package, specify your corresponding version of PyTorch and Cuda
    pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
    ```
