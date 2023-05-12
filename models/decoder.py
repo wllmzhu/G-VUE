@@ -59,7 +59,7 @@ class LabelType(nn.Module):
             txt_seqs = txt_seqs.permute(1, 0, 2)   # [B, T, C] -> [T, B, C]
             img_seqs = torch.cat([img_seqs, txt_seqs], dim=0)
             txt_pad_masks = ~txt_pad_masks
-            img_masks = torch.cat([img_masks, txt_pad_masks], dim=1)
+            img_masks = torch.cat([img_masks, txt_pad_masks], dim=1).bool()
             pos_embed = torch.cat([pos_embed, torch.zeros_like(txt_seqs)], dim=0)
         
         memory = self.block_1(src=img_seqs, src_key_padding_mask=img_masks, pos=pos_embed)
