@@ -141,7 +141,7 @@ We curate and organize a suite of modules for the training and evaluation of the
 ## Datasets
 ### Preparation
 
-- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger training set for this task. For convenience, we wrap the training and testing set together, which can be accessed at [NYUv2 data in G-VUE](https://drive.google.com/file/d/1EeghfiUbRF3trPTnDz2ZVvYSCkfVOOSL/view?usp=sharing).
+- Depth estimation. Due to the limited data in [NYUv2 official link](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html), we follow [BTS](https://github.com/cleinc/bts) to obtain a larger training set for this task. For convenience, we wrap the training and testing set together, which can be accessed at [NYUv2 data in G-VUE](https://disk.pku.edu.cn:443/link/D77A021E20C27D88480A38A508CDF67E).
 
 - Camera pose estimation. Download [Cambridge Landmarks](https://www.repository.cam.ac.uk/handle/1810/251342) and [7-Scenes](https://www.microsoft.com/en-us/research/project/rgb-d-dataset-7-scenes).
 
